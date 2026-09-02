@@ -1,4 +1,4 @@
-import { AppError } from '../errors/AppError.js';
+import { AppError } from '../errors/index.js';
 import { ERROR_CODES } from '../constants/errorCodes.constant.js';
 import { logger } from '../config/logger.config.js';
 import { env } from '../config/env.config.js';

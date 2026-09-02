@@ -1,5 +1,16 @@
-import { AppError } from './AppError.js';
 import { ERROR_CODES } from '../constants/errorCodes.constant.js';
+
+export class AppError extends Error {
+  constructor(message, statusCode = 500, errorCode = ERROR_CODES.INTERNAL_SERVER_ERROR, details = null) {
+    super(message);
+    this.name = this.constructor.name;
+    this.statusCode = statusCode;
+    this.errorCode = errorCode;
+    this.details = details;
+    this.isOperational = true;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
 
 export class BadRequestError extends AppError {
   constructor(message = 'Bad Request', errorCode = ERROR_CODES.BAD_REQUEST, details = null) {
@@ -36,5 +47,3 @@ export class ValidationError extends AppError {
     super(message, 422, ERROR_CODES.VALIDATION_ERROR, details);
   }
 }
-
-export { AppError };
