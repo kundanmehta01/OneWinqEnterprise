@@ -1,26 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Eye, Edit3, CheckCircle, MapPin, Mail, Phone, Building2, ChevronDown } from 'lucide-react';
 import { Button } from '../common/Button';
 import { formatDate } from '../../utils/formatDate';
 
 export const TemplatePreviewPane = ({ template, onEdit, onFullPreview }) => {
-  const t = template || {
-    name: 'Executive Profile',
-    category: 'Executive',
-    type: 'Individual',
-    createdOn: '2025-05-10',
-    updatedAt: '2025-05-18',
-    assignedTo: '24 members',
-    status: 'active'
+  const [fullPreviewOpen, setFullPreviewOpen] = useState(false);
+  if (!template) {
+    return <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-6 text-center text-sm text-slate-400">Select a template to preview its details.</div>;
+  }
+  const t = template;
+  const palette = t.layoutConfig?.colorPalette || {};
+  const primaryColor = palette.primary || '#4f46e5';
+  const accentColor = palette.accent || '#7c3aed';
+  const theme = t.layoutConfig?.theme || t.theme || 'modern';
+  const sectionOrder = Array.isArray(t.sectionOrder) ? t.sectionOrder : ['headline', 'about', 'experience', 'skills', 'contact'];
+
+  const openFullPreview = () => {
+    setFullPreviewOpen(true);
+    onFullPreview?.(t);
   };
 
+  const PreviewCard = ({ expanded = false }) => (
+    <div className={`rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-sm ${expanded ? 'max-w-lg mx-auto' : 'mb-6'}`}>
+      <div className="h-28 relative overflow-hidden" style={{ background: `linear-gradient(110deg, ${primaryColor}, ${accentColor})` }}>
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px]" />
+        <div className="absolute bottom-3 left-5 text-white text-[10px] font-semibold uppercase tracking-wider">{theme} profile</div>
+      </div>
+      <div className="px-5 pb-5 pt-0 -mt-10 relative">
+        <div className="w-16 h-16 rounded-full border-4 border-white shadow-md flex items-center justify-center text-white font-bold text-xl" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}>P</div>
+        <h4 className="text-base font-extrabold text-slate-900 mt-3">Profile Preview</h4>
+        <p className="text-xs font-semibold text-slate-500 mt-0.5">{t.name}</p>
+        <div className="flex flex-wrap items-center gap-3 mt-3 text-[11px] text-slate-400"><span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> {t.category || 'Organization'}</span><span className="flex items-center gap-1"><Mail className="w-3 h-3" /> Contact</span></div>
+        <div className="mt-4 pt-3 border-t border-slate-100 space-y-3">{sectionOrder.map((section) => <div key={section}><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{String(section).replace(/[_-]/g, ' ')}</p><div className="h-2 bg-slate-100 rounded-full w-4/5 mt-1.5" /></div>)}</div>
+      </div>
+    </div>
+  );
+
   return (
+
     <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-6 flex flex-col justify-between">
       <div>
         <h3 className="text-base font-bold text-slate-900 mb-4">Template Preview &amp; Details</h3>
 
         {/* Digital Business Card Mockup */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-sm mb-6">
+        <PreviewCard />
+        {/* Kept preview details below; the full preview action opens the expanded card. */}
+        {false && <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-sm mb-6">
           {/* Card Banner */}
           <div className="h-28 bg-gradient-to-r from-indigo-800 via-indigo-600 to-violet-600 relative overflow-hidden">
             <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px]" />
@@ -85,7 +110,7 @@ export const TemplatePreviewPane = ({ template, onEdit, onFullPreview }) => {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Key-Value Details */}
         <div className="space-y-2.5 text-xs">
@@ -111,7 +136,7 @@ export const TemplatePreviewPane = ({ template, onEdit, onFullPreview }) => {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400">Assigned To</span>
-            <span className="font-semibold text-indigo-600">{t.assignedTo || '24 members'}</span>
+            <span className="font-semibold text-indigo-600">{t.assignedTo || t.assignedCount || '-'}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-400">Status</span>
@@ -129,7 +154,7 @@ export const TemplatePreviewPane = ({ template, onEdit, onFullPreview }) => {
           variant="outline"
           size="md"
           icon={Eye}
-          onClick={() => onFullPreview?.(t)}
+          onClick={openFullPreview}
           className="flex-1"
         >
           Preview Template
@@ -146,6 +171,14 @@ export const TemplatePreviewPane = ({ template, onEdit, onFullPreview }) => {
           <ChevronDown className="w-3.5 h-3.5" />
         </Button>
       </div>
+      {fullPreviewOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 p-4 flex items-center justify-center" onClick={() => setFullPreviewOpen(false)}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-50 rounded-3xl p-6" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4"><div><h3 className="text-lg font-bold text-slate-900">{t.name} Preview</h3><p className="text-xs text-slate-500">Live preview of the selected template layout</p></div><button type="button" onClick={() => setFullPreviewOpen(false)} className="text-sm font-semibold text-slate-500 hover:text-slate-900">Close</button></div>
+            <PreviewCard expanded />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

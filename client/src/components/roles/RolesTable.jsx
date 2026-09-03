@@ -78,9 +78,7 @@ export const RolesTable = ({
     }
   ];
 
-  const tableData =
-    roles.length > 0
-      ? roles.map((r, idx) => ({
+  const tableData = roles.map((r) => ({
           _id: r._id,
           name: r.name,
           description: r.description || 'Organization access role',
@@ -88,8 +86,7 @@ export const RolesTable = ({
           usersCount: r.usersCount ?? (r.name === 'Super Admin' ? 2 : r.name === 'HR Admin' ? 5 : 4),
           isActive: r.isActive ?? true,
           permissions: r.permissions || []
-        }))
-      : sampleFallbackRoles;
+        }));
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-5">

@@ -23,6 +23,8 @@ export const InviteMemberModal = ({
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [inviteResult, setInviteResult] = useState(null);
+  const [copyStatus, setCopyStatus] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,21 +41,31 @@ export const InviteMemberModal = ({
 
     setLoading(true);
     try {
-      await invitationService.create({
+      const result = await invitationService.create({
         email: formData.email,
         name: formData.name,
         designation: formData.designation,
         roleId: formData.roleId,
         departmentId: formData.departmentId || undefined
       });
-      success('Invitation sent successfully to ' + formData.email);
+      setInviteResult(result || null);
+      success('Invitation created for ' + formData.email);
       onSuccess?.();
-      onClose();
     } catch (err) {
       notifyError(err.message || 'Failed to send invitation');
     } finally {
       setLoading(false);
     }
+  };
+
+  const token = inviteResult?.token || inviteResult?.invitationToken || inviteResult?.data?.token;
+  const returnedLink = inviteResult?.inviteUrl || inviteResult?.invitationUrl || inviteResult?.link || inviteResult?.url || inviteResult?.data?.inviteUrl;
+  const invitationLink = returnedLink || (token ? `${window.location.origin}/accept-invitation?token=${encodeURIComponent(token)}` : '');
+  const copyLink = async () => {
+    if (!invitationLink) return;
+    await navigator.clipboard?.writeText(invitationLink);
+    setCopyStatus('Copied');
+    setTimeout(() => setCopyStatus(''), 1800);
   };
 
   return (
@@ -107,13 +119,15 @@ export const InviteMemberModal = ({
           />
         </div>
 
+        {inviteResult && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-2">
+            <p className="text-xs font-bold text-emerald-800">Invitation created successfully</p>
+            {invitationLink ? <><p className="text-[11px] text-emerald-700 break-all">{invitationLink}</p><div className="flex gap-2"><Button type="button" variant="secondary" onClick={copyLink}>{copyStatus || 'Copy invitation link'}</Button><Button type="button" variant="secondary" onClick={() => window.open(invitationLink, '_blank')}>Open link</Button></div></> : <p className="text-[11px] text-amber-700">The API did not return a token or invitation URL. No link can be generated safely on the frontend.</p>}
+          </div>
+        )}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-          <Button variant="secondary" onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button type="submit" isLoading={loading}>
-            Send Invitation
-          </Button>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>Close</Button>
+          {!inviteResult && <Button type="submit" isLoading={loading}>Send Invitation</Button>}
         </div>
       </form>
     </Modal>

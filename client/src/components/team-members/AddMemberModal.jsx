@@ -32,10 +32,19 @@ export const AddMemberModal = ({
     setErrors({});
 
     const newErrors = {};
-    if (!formData.name) newErrors.name = 'Full name is required';
-    if (!formData.email) newErrors.email = 'Email address is required';
-    if (!formData.designation) newErrors.designation = 'Designation is required';
+    const name = formData.name.trim();
+    const email = formData.email.trim().toLowerCase();
+    const designation = formData.designation.trim();
+    const employeeId = formData.employeeId.trim();
+    const password = formData.password;
+    if (!name) newErrors.name = 'Full name is required';
+    else if (name.length < 2) newErrors.name = 'Full name must be at least 2 characters';
+    if (!email) newErrors.email = 'Email address is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Enter a valid email address';
+    if (!designation) newErrors.designation = 'Designation is required';
     if (!formData.roleId) newErrors.roleId = 'Please select a role';
+    else if (!/^[0-9a-fA-F]{24}$/.test(formData.roleId)) newErrors.roleId = 'Please select a valid role';
+    if (password && password.length < 8) newErrors.password = 'Password must be at least 8 characters';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -45,15 +54,15 @@ export const AddMemberModal = ({
     setLoading(true);
     try {
       const payload = {
-        name: formData.name,
-        email: formData.email,
-        designation: formData.designation,
+        name,
+        email,
+        designation,
         roleId: formData.roleId,
         status: formData.status
       };
-      if (formData.employeeId) payload.employeeId = formData.employeeId;
+      if (employeeId) payload.employeeId = employeeId;
       if (formData.departmentId) payload.departmentId = formData.departmentId;
-      if (formData.password) payload.password = formData.password;
+      if (password) payload.password = password;
 
       await teamMemberService.create(payload);
       success('Team member has been created successfully');
@@ -135,6 +144,7 @@ export const AddMemberModal = ({
           placeholder="At least 8 characters"
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          error={errors.password}
           helperText="Leave empty to let member set their password via invitation link"
         />
 

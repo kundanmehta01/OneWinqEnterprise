@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTemplates } from '../../hooks/useTemplates';
 import { TemplatesHeader } from '../../components/templates/TemplatesHeader';
 import { TemplatesStats } from '../../components/templates/TemplatesStats';
 import { TemplatesTable } from '../../components/templates/TemplatesTable';
 import { TemplatePreviewPane } from '../../components/templates/TemplatePreviewPane';
 import { CreateTemplateModal } from '../../components/templates/CreateTemplateModal';
+import { EditTemplateModal } from '../../components/templates/EditTemplateModal';
 import { Pagination } from '../../components/common/Pagination';
 import { templateService } from '../../services/templateService';
 import { useNotification } from '../../hooks/useNotification';
@@ -12,12 +13,23 @@ import { useNotification } from '../../hooks/useNotification';
 export const TemplatesPage = () => {
   const { templates, loading, refetch } = useTemplates();
   const { success, error: notifyError } = useNotification();
-
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
   const [search, setSearch] = useState('');
 
-  const activeSelected = selectedTemplate || (templates.length > 0 ? templates[0] : null);
+  const filteredTemplates = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return templates;
+    return templates.filter((template) =>
+      [template.name, template.description, template.category, template.type, template.status]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term))
+    );
+  }, [templates, search]);
+
+  const activeSelected =
+    filteredTemplates.find((template) => template._id === selectedTemplate?._id) || filteredTemplates[0] || null;
 
   const handleDuplicate = async (id) => {
     try {
@@ -34,6 +46,7 @@ export const TemplatesPage = () => {
     try {
       await templateService.archive(id);
       success('Template archived');
+      setSelectedTemplate(null);
       refetch();
     } catch (err) {
       notifyError(err.message || 'Failed to archive template');
@@ -42,10 +55,7 @@ export const TemplatesPage = () => {
 
   return (
     <div className="space-y-6">
-      <TemplatesHeader
-        onCreateTemplate={() => setCreateModalOpen(true)}
-        onCategories={() => {}}
-      />
+      <TemplatesHeader onCreateTemplate={() => setCreateModalOpen(true)} onCategories={() => {}} />
 
       <TemplatesStats
         totalTemplates={templates.length}
@@ -55,24 +65,23 @@ export const TemplatesPage = () => {
         totalUsage={templates.reduce((acc, t) => acc + (t.version || 1), 0)}
       />
 
-      {/* 2-Column Split: Table + Live Preview & Details */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 space-y-4">
           <TemplatesTable
-            templates={templates}
+            templates={filteredTemplates}
             selectedTemplate={activeSelected}
             onSelectTemplate={setSelectedTemplate}
             search={search}
             onSearchChange={setSearch}
+            onEdit={setEditingTemplate}
             onDuplicate={handleDuplicate}
             onArchive={handleArchive}
           />
-
           <Pagination
             currentPage={1}
             totalPages={1}
-            totalItems={templates.length}
-            itemsPerPage={10}
+            totalItems={filteredTemplates.length}
+            itemsPerPage={filteredTemplates.length || 10}
             onPageChange={() => {}}
             label="templates"
           />
@@ -81,7 +90,7 @@ export const TemplatesPage = () => {
         <div className="lg:col-span-4">
           <TemplatePreviewPane
             template={activeSelected}
-            onEdit={() => {}}
+            onEdit={setEditingTemplate}
             onFullPreview={() => {}}
           />
         </div>
@@ -92,6 +101,14 @@ export const TemplatesPage = () => {
         onClose={() => setCreateModalOpen(false)}
         onSuccess={refetch}
       />
+      <EditTemplateModal
+        isOpen={Boolean(editingTemplate)}
+        template={editingTemplate}
+        onClose={() => setEditingTemplate(null)}
+        onSuccess={refetch}
+      />
     </div>
   );
 };
+
+export default TemplatesPage;

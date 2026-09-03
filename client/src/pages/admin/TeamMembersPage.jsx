@@ -6,6 +6,8 @@ import { TeamMembersHeader } from '../../components/team-members/TeamMembersHead
 import { TeamMembersStats } from '../../components/team-members/TeamMembersStats';
 import { TeamMembersFilters } from '../../components/team-members/TeamMembersFilters';
 import { TeamMembersTable } from '../../components/team-members/TeamMembersTable';
+import { EditMemberModal } from '../../components/team-members/EditMemberModal';
+import { MemberDetailsModal } from '../../components/team-members/MemberDetailsModal';
 import { AddMemberModal } from '../../components/team-members/AddMemberModal';
 import { InviteMemberModal } from '../../components/team-members/InviteMemberModal';
 import { Pagination } from '../../components/common/Pagination';
@@ -30,6 +32,8 @@ export const TeamMembersPage = () => {
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState(null);
+  const [detailsMember, setDetailsMember] = useState(null);
 
   const handleArchive = async (id) => {
     if (!window.confirm('Are you sure you want to archive this team member?')) return;
@@ -42,7 +46,35 @@ export const TeamMembersPage = () => {
     }
   };
 
+    const handleEdit = async (member) => {
+    try {
+      setEditingMember(await teamMemberService.getById(member._id));
+    } catch (err) {
+      notifyError(err.message || 'Failed to load team member');
+    }
+  };
+
+  const handleSave = async (id, payload) => {
+    try {
+      await teamMemberService.update(id, payload);
+      success('Team member updated');
+      refetch();
+    } catch (err) {
+      notifyError(err.message || 'Failed to update team member');
+      throw err;
+    }
+  };
+
+  const handleViewProfile = async (member) => {
+    try {
+      setDetailsMember(await teamMemberService.getById(member._id));
+    } catch (err) {
+      notifyError(err.message || 'Failed to load member profile');
+    }
+  };
+
   return (
+
     <div className="space-y-6">
       <TeamMembersHeader
         onAddMember={() => setAddModalOpen(true)}
@@ -71,6 +103,8 @@ export const TeamMembersPage = () => {
         <TeamMembersTable
           members={members}
           loading={loading}
+          onEditMember={handleEdit}
+          onViewProfile={handleViewProfile}
           onArchiveMember={handleArchive}
         />
 
@@ -99,6 +133,19 @@ export const TeamMembersPage = () => {
         departments={departments}
         roles={roles}
         onSuccess={refetch}
+      />
+
+      <EditMemberModal
+        isOpen={Boolean(editingMember)}
+        member={editingMember}
+        departments={departments}
+        onClose={() => setEditingMember(null)}
+        onSave={handleSave}
+      />
+      <MemberDetailsModal
+        isOpen={Boolean(detailsMember)}
+        member={detailsMember}
+        onClose={() => setDetailsMember(null)}
       />
     </div>
   );

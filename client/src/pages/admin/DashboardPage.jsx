@@ -22,7 +22,15 @@ export const DashboardPage = () => {
   }
 
   const overview = dashboardData?.overview || {};
-  const trends = dashboardData?.analyticsTrends || [];
+  const trends = Array.isArray(dashboardData?.analyticsTrends)
+    ? dashboardData.analyticsTrends
+    : Array.isArray(dashboardData?.analytics?.memberGrowth)
+      ? dashboardData.analytics.memberGrowth
+      : Array.isArray(dashboardData?.analytics?.trends)
+        ? dashboardData.analytics.trends
+        : Array.isArray(dashboardData?.memberGrowth)
+          ? dashboardData.memberGrowth
+          : [];
   const recentActivity = dashboardData?.recentActivity || [];
 
   return (
@@ -35,7 +43,7 @@ export const DashboardPage = () => {
 
       {/* Row 2: Members Growth & Profile Completion Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7 min-w-0">
           <MembersGrowthChart trends={trends} />
         </div>
         <div className="lg:col-span-5">

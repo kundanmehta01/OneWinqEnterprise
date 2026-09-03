@@ -11,29 +11,25 @@ import {
 import { ChevronDown } from 'lucide-react';
 
 export const MembersGrowthChart = ({ trends = [] }) => {
-  const defaultData = [
-    { date: 'May 18', members: 48 },
-    { date: 'May 19', members: 62 },
-    { date: 'May 20', members: 71 },
-    { date: 'May 21', members: 86 },
-    { date: 'May 22', members: 102 },
-    { date: 'May 23', members: 114 },
-    { date: 'May 24', members: 126 }
-  ];
-
-  const chartData =
-    trends.length > 0
-      ? trends.map((t) => ({
-          date: t.date?.split('-').slice(1).join('/') || t.date,
-          members: t.views || t.members || 100
-        }))
-      : defaultData;
+  const rawTrends = Array.isArray(trends)
+    ? trends
+    : trends && typeof trends === 'object'
+      ? Object.entries(trends).map(([date, value]) => ({ date, value }))
+      : [];
+  const chartData = rawTrends
+    .map((trend) => ({
+      date: trend.date || trend.label || trend.period || trend.month || trend.createdAt,
+      members: Number(trend.totalMembers ?? trend.memberCount ?? trend.members ?? trend.count ?? trend.value ?? trend.newMembers ?? 0)
+    }))
+    .filter((point) => point.date && Number.isFinite(point.members));
+  const maxMembers = Math.max(...chartData.map((point) => point.members), 0);
+  const yMax = Math.max(10, Math.ceil(maxMembers / 10) * 10);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-slate-900 text-white px-3 py-2 rounded-xl shadow-lg text-xs">
-          <p className="font-semibold">{label}, 2025</p>
+          <p className="font-semibold">{label}</p>
           <div className="flex items-center gap-1.5 mt-1 text-indigo-300">
             <span className="w-2 h-2 rounded-full bg-indigo-400" />
             <span>Total Members: {payload[0].value}</span>
@@ -45,7 +41,7 @@ export const MembersGrowthChart = ({ trends = [] }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-card">
+    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-card min-w-0">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-base font-bold text-slate-900">Members Growth</h3>
@@ -60,7 +56,10 @@ export const MembersGrowthChart = ({ trends = [] }) => {
       </div>
 
       <div className="h-64 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        {chartData.length === 0 ? (
+          <div className="h-full flex items-center justify-center rounded-xl bg-slate-50 text-xs text-slate-400">No member growth data is available yet.</div>
+        ) : (
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={240}>
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="growthGradient" x1="0" y1="0" x2="0" y2="1">
@@ -79,8 +78,9 @@ export const MembersGrowthChart = ({ trends = [] }) => {
               tickLine={false}
               axisLine={false}
               tick={{ fill: '#94A3B8', fontSize: 11 }}
-              domain={[0, 150]}
-              ticks={[0, 30, 60, 90, 120, 150]}
+              domain={[0, yMax]}
+              allowDecimals={false}
+              tickCount={5}
             />
             <Tooltip content={<CustomTooltip />} />
             <Area
@@ -94,6 +94,7 @@ export const MembersGrowthChart = ({ trends = [] }) => {
             />
           </AreaChart>
         </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

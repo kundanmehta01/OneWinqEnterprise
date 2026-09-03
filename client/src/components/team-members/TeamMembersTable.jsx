@@ -143,9 +143,7 @@ export const TeamMembersTable = ({
     }
   ];
 
-  const tableData =
-    members.length > 0
-      ? members.map((m) => ({
+  const tableData = members.map((m) => ({
           _id: m._id,
           name: m.name,
           email: m.userId?.email || 'member@onewinq.com',
@@ -155,9 +153,13 @@ export const TeamMembersTable = ({
           status: m.status || 'active',
           completion: m.profileCompletionScore || m.profileId?.completionPercentage || 75,
           joinedOn: m.joiningDate || m.createdAt,
-          slug: m.profileId?.slug
-        }))
-      : sampleMembersFallback;
+          slug: m.profileId?.slug,
+          profileId: m.profileId,
+          departmentId: m.departmentId,
+          userId: m.userId,
+          joiningDate: m.joiningDate,
+          createdAt: m.createdAt
+        }));
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden">
@@ -218,10 +220,7 @@ export const TeamMembersTable = ({
                 {
                   label: 'View Public Profile',
                   icon: ExternalLink,
-                  onClick: () => {
-                    if (m.slug) window.open(`/p/${m.slug}`, '_blank');
-                    else onViewProfile?.(m);
-                  }
+                  onClick: () => onViewProfile?.(m)
                 },
                 { divider: true },
                 {

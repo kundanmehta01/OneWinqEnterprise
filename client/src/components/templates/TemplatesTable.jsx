@@ -117,21 +117,18 @@ export const TemplatesTable = ({
     }
   ];
 
-  const tableData =
-    templates.length > 0
-      ? templates.map((t) => ({
+  const tableData = templates.map((t) => ({
           _id: t._id,
           name: t.name,
           description: t.description || 'Custom digital profile layout',
           category: t.category ? t.category.charAt(0).toUpperCase() + t.category.slice(1) : 'General',
           type: t.category === 'company' ? 'Organization' : 'Individual',
-          assignedTo: '12 members',
-          usage: 45,
-          status: t.isActive ? 'active' : 'inactive',
+          assignedTo: t.assignedTo || t.assignedCount || '-',
+          usage: t.usage ?? t.usageCount ?? '-',
+          status: t.isActive === false || t.isArchived ? 'inactive' : 'active',
           createdOn: t.createdAt,
           updatedAt: t.updatedAt
-        }))
-      : sampleFallbackTemplates;
+        }));
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-5">
