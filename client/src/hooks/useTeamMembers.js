@@ -1,47 +1,74 @@
-import { useEffect, useState, useCallback } from 'react'
-import { teamMemberService } from '../services'
+import { useState, useEffect, useCallback } from 'react';
+import { teamMemberService } from '../services/teamMemberService';
 
-export function useTeamMembers(page = 1, limit = 10, filters = {}) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+export const useTeamMembers = (initialParams = {}) => {
+  const [members, setMembers] = useState([]);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10
+  });
+  const [params, setParams] = useState({
+    page: 1,
+    limit: 10,
+    search: '',
+    departmentId: '',
+    roleId: '',
+    status: '',
+    ...initialParams
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
+  const fetchMembers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await teamMemberService.getAll({ page, limit, ...filters })
-      setData(res)
-      setError(null)
+      const cleanParams = {};
+      Object.keys(params).forEach((key) => {
+        if (params[key] !== '' && params[key] !== null && params[key] !== undefined) {
+          cleanParams[key] = params[key];
+        }
+      });
+
+      const res = await teamMemberService.getAll(cleanParams);
+      setMembers(res.members || []);
+      if (res.pagination) {
+        setPagination(res.pagination);
+      }
     } catch (err) {
-      setError(err)
+      setError(err.message || 'Failed to load team members');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [page, limit, filters])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
-
-export function useTeamMember(id) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  }, [params]);
 
   useEffect(() => {
-    if (!id) return
-    const fetch = async () => {
-      try {
-        const res = await teamMemberService.getById(id)
-        setData(res)
-      } catch (err) {
-        setError(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetch()
-  }, [id])
+    fetchMembers();
+  }, [fetchMembers]);
 
-  return { data, loading, error }
-}
+  const updateFilters = (newFilters) => {
+    setParams((prev) => ({ ...prev, ...newFilters, page: 1 }));
+  };
+
+  const changePage = (page) => {
+    setParams((prev) => ({ ...prev, page }));
+  };
+
+  const changeLimit = (limit) => {
+    setParams((prev) => ({ ...prev, limit, page: 1 }));
+  };
+
+  return {
+    members,
+    pagination,
+    params,
+    loading,
+    error,
+    updateFilters,
+    changePage,
+    changeLimit,
+    refetch: fetchMembers
+  };
+};

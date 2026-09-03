@@ -1,5 +1,9 @@
-import axios from 'axios'
+import api from './api';
+import { ENDPOINTS } from '../constants/apiRoutes';
 
 export const dashboardService = {
-  getExecutiveDashboard: () => axios.get('/api/v1/admin/dashboard').then((res) => res.data.data)
-}
+  getExecutiveDashboard: async () => {
+    const res = await api.get(ENDPOINTS.ADMIN.DASHBOARD);
+    return res.data.data;
+  }
+};

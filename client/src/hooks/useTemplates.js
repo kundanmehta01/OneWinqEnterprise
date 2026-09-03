@@ -1,24 +1,35 @@
-import { useEffect, useState, useCallback } from 'react'
-import { templateService } from '../services'
+import { useState, useEffect, useCallback } from 'react';
+import { templateService } from '../services/templateService';
 
-export function useTemplates(page = 1, limit = 10, filters = {}) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+export const useTemplates = (initialParams = {}) => {
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [params, setParams] = useState(initialParams);
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
+  const fetchTemplates = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await templateService.getAll({ page, limit, ...filters })
-      setData(res)
-      setError(null)
+      const data = await templateService.getAll(params);
+      setTemplates(data || []);
     } catch (err) {
-      setError(err)
+      setError(err.message || 'Failed to load templates');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [page, limit, filters])
+  }, [params]);
 
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  return {
+    templates,
+    loading,
+    error,
+    params,
+    setParams,
+    refetch: fetchTemplates
+  };
+};

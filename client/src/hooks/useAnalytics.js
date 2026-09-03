@@ -1,46 +1,35 @@
-import { useEffect, useState, useCallback } from 'react'
-import { profileApprovalService, analyticsService } from '../services'
+import { useState, useEffect, useCallback } from 'react';
+import { analyticsService } from '../services/analyticsService';
 
-export function useProfileApprovals(page = 1, limit = 10, filters = {}) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+export const useAnalytics = (initialRange = '7d') => {
+  const [data, setData] = useState(null);
+  const [range, setRange] = useState(initialRange);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
+  const fetchAnalytics = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await profileApprovalService.getAll({ page, limit, ...filters })
-      setData(res)
-      setError(null)
+      const res = await analyticsService.getAggregatedMetrics({ range });
+      setData(res);
     } catch (err) {
-      setError(err)
+      setError(err.message || 'Failed to load analytics metrics');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [page, limit, filters])
+  }, [range]);
 
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
-export function useAnalytics(dateRange = 'all') {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await analyticsService.getOverview({ range: dateRange })
-      setData(res)
-      setError(null)
-    } catch (err) {
-      setError(err)
-    } finally {
-      setLoading(false)
-    }
-  }, [dateRange])
-
-  useEffect(() => { fetch() }, [fetch])
-  return { data, loading, error, refetch: fetch }
-}
+  return {
+    analytics: data,
+    range,
+    setRange,
+    loading,
+    error,
+    refetch: fetchAnalytics
+  };
+};
