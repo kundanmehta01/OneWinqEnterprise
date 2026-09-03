@@ -14,16 +14,29 @@ export const seedSuperAdmin = async () => {
   const superAdminEmail = 'superadmin@onewinq.com';
   const superAdminPassword = 'OneWinq@Admin2026!';
 
-  let superAdminUser = await User.findOne({ email: superAdminEmail });
+  let superAdminUser = await User.findOne({ email: superAdminEmail }).select('+passwordHash');
+  const passwordHash = await hashPassword(superAdminPassword);
+
   if (!superAdminUser) {
-    const passwordHash = await hashPassword(superAdminPassword);
     superAdminUser = await User.create({
       email: superAdminEmail,
       passwordHash,
       status: 'active',
       emailVerified: true,
-      emailVerifiedAt: new Date()
+      emailVerifiedAt: new Date(),
+      failedLoginAttempts: 0,
+      lockUntil: null
     });
+  } else {
+    // Keep the documented development credentials usable on repeated seed runs.
+    superAdminUser.passwordHash = passwordHash;
+    superAdminUser.status = 'active';
+    superAdminUser.emailVerified = true;
+    superAdminUser.emailVerifiedAt = superAdminUser.emailVerifiedAt || new Date();
+    superAdminUser.failedLoginAttempts = 0;
+    superAdminUser.lockUntil = null;
+    superAdminUser.refreshTokens = [];
+    await superAdminUser.save();
   }
 
   const superAdminRole = await Role.findOne({ name: SYSTEM_ROLES.SUPER_ADMIN });

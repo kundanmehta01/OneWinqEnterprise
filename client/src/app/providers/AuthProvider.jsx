@@ -3,6 +3,10 @@ import { AuthContext } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
 import { storage } from '../../utils/storage';
 
+// DEVELOPMENT ONLY: load the existing Super Admin automatically; never creates a duplicate account.
+// Set VITE_DEV_AUTO_LOGIN=false to return to manual login during local auth testing.
+const DEV_AUTO_LOGIN = import.meta.env.DEV && import.meta.env.VITE_DEV_AUTO_LOGIN !== 'false';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(storage.getUser());
   const [member, setMember] = useState(null);
@@ -13,17 +17,18 @@ export const AuthProvider = ({ children }) => {
 
   const fetchCurrentUser = useCallback(async () => {
     const token = storage.getAccessToken();
-    if (!token) {
-      setUser(null);
-      setMember(null);
-      setRole(null);
-      setIsSuperAdmin(false);
-      setPermissions([]);
-      setLoading(false);
-      return;
-    }
 
     try {
+      // DEVELOPMENT ONLY: /auth/me resolves the existing seeded admin on the server.
+      if (!token && !DEV_AUTO_LOGIN) {
+        setUser(null);
+        setMember(null);
+        setRole(null);
+        setIsSuperAdmin(false);
+        setPermissions([]);
+        return;
+      }
+
       const data = await authService.getMe();
       setUser(data.user);
       setMember(data.member);

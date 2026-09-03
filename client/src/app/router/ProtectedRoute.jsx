@@ -5,9 +5,17 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ShieldAlert } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 
+// TEMPORARY DEVELOPMENT BYPASS: set to false when invitation-based admin auth is ready.
+const TEMP_ADMIN_AUTH_BYPASS = false;
+
 export const ProtectedRoute = ({ children, requiredPermission, requiredAnyPermission }) => {
   const { user, loading, hasPermission, hasAnyPermission } = useAuth();
   const location = useLocation();
+
+  // TEMPORARY DEVELOPMENT BYPASS: keep the full auth and permission logic below intact.
+  if (TEMP_ADMIN_AUTH_BYPASS) {
+    return children;
+  }
 
   if (loading) {
     return (

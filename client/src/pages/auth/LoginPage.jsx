@@ -22,7 +22,7 @@ export const LoginPage = () => {
       const user = await login({ email, password });
       // Redirect based on role
       if (user?.role?.name === 'Employee') {
-        navigate('/dashboard', { replace: true });
+        navigate('/me/dashboard', { replace: true });
       } else {
         navigate('/admin/dashboard', { replace: true });
       }
