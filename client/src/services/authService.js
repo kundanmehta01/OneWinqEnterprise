@@ -32,34 +32,13 @@ export const authService = {
     return res.data;
   },
 
-  register: async ({ name, email, password, companyName }) => {
-    try {
-      const res = await api.post('/auth/register', { name, email, password, companyName });
-      return res.data;
-    } catch (err) {
-      if (err.response?.status === 404) {
-        return {
-          success: true,
-          message: 'Registration initiated. Verification OTP sent.',
-          data: { email, requireOtp: true }
-        };
-      }
-      throw err;
-    }
-  },
-
-  verifyOtp: async ({ email, otp }) => {
-    try {
-      const res = await api.post('/auth/verify-otp', { email, otp });
-      return res.data;
-    } catch (err) {
-      if (err.response?.status === 404) {
-        return {
-          success: true,
-          message: 'OTP verified successfully.'
-        };
-      }
-      throw err;
-    }
-  }
+  /**
+   * NOTE: There is NO /auth/register endpoint on this backend.
+   * OneWinq uses an invite-only onboarding model:
+   *   1. Admin sends invitation  → POST /api/v1/admin/invitations
+   *   2. Invitee verifies token  → GET  /api/v1/invitations/verify?token=...
+   *   3. Invitee sets password   → POST /api/v1/invitations/accept  { token, password, name? }
+   *
+   * Use invitationService.acceptInvitation() for step 3.
+   */
 };

@@ -57,7 +57,7 @@ export const AcceptInvitationPage = () => {
       await invitationService.acceptInvitation({
         token,
         password,
-        confirmPassword: confirm
+        name: invitation?.name
       });
       setSuccess(true);
       setTimeout(() => navigate('/login'), 3000);

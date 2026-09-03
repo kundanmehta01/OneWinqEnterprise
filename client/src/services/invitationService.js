@@ -35,11 +35,16 @@ export const invitationService = {
     return res.data.data;
   },
 
-  acceptInvitation: async ({ token, password, confirmPassword }) => {
+  /**
+   * Accept an invitation and set account password.
+   * Backend schema (acceptInvitationSchema): { token, password, name? }
+   * NOTE: confirmPassword is NOT sent to the backend — validation is client-side only.
+   */
+  acceptInvitation: async ({ token, password, name }) => {
     const res = await api.post(ENDPOINTS.PUBLIC.INVITATIONS_ACCEPT, {
       token,
       password,
-      confirmPassword
+      ...(name && { name })
     });
     return res.data.data;
   }

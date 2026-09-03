@@ -1,243 +1,96 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { authService } from '../../services/authService';
-import { Eye, EyeOff, Zap, ArrowRight, Loader2, Building, Mail, User, Lock, CheckCircle } from 'lucide-react';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Zap, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
 
+/**
+ * RegisterPage — Invite-Only Onboarding Notice
+ *
+ * OneWinq Enterprise does NOT have open self-registration.
+ * Users join by invitation only:
+ *   1. Admin sends an email invitation via /admin/invitations
+ *   2. Invitee clicks the link in their email → /accept-invitation?token=...
+ *   3. Invitee sets their password and activates their account
+ *
+ * This page explains the flow and directs visitors appropriately.
+ */
 export const RegisterPage = () => {
-  const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    companyName: '',
-    password: '',
-    confirmPassword: '',
-    agreeTerms: false
-  });
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    if (!form.agreeTerms) {
-      setError('You must agree to the Terms of Service and Privacy Policy.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      await authService.register({
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        companyName: form.companyName
-      });
-      // Navigate to OTP verification page
-      navigate(`/verify-otp?email=${encodeURIComponent(form.email)}&name=${encodeURIComponent(form.name)}`);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4">
       {/* Background radial pattern */}
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#6366F1_1px,transparent_1px)] [background-size:28px_28px]" />
 
-      <div className="relative w-full max-w-lg">
-        {/* Glass Card */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl">
-          {/* Logo & Branding */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-900/50 mb-3">
-              <Zap className="w-6 h-6 text-white fill-white" />
-            </div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              Create Enterprise Account
-            </h1>
-            <p className="text-xs text-white/50 mt-1">
-              Set up your organization on OneWinq digital platform
-            </p>
+      <div className="relative w-full max-w-md">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl text-center">
+          {/* Logo */}
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-900/50 mb-6">
+            <Zap className="w-7 h-7 text-white fill-white" />
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-3.5">
-            {/* Full Name */}
-            <div>
-              <label className="block text-[11px] font-semibold text-white/70 uppercase tracking-wider mb-1">
-                Full Name
-              </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="e.g. Alex Morgan"
-                  required
-                  className="w-full rounded-xl bg-white/10 border border-white/10 pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                />
-              </div>
-            </div>
+          {/* Heading */}
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">
+            Invite-Only Platform
+          </h1>
+          <p className="text-xs text-white/50 mt-2 leading-relaxed max-w-xs mx-auto">
+            OneWinq Enterprise is an invite-only workspace. New members join via an email invitation from their organization&apos;s administrator.
+          </p>
 
-            {/* Work Email */}
-            <div>
-              <label className="block text-[11px] font-semibold text-white/70 uppercase tracking-wider mb-1">
-                Work Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="alex@company.com"
-                  required
-                  autoComplete="email"
-                  className="w-full rounded-xl bg-white/10 border border-white/10 pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                />
+          {/* Steps */}
+          <div className="mt-8 space-y-3 text-left">
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/5 border border-white/10">
+              <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center flex-shrink-0 text-[11px] font-extrabold text-indigo-300">
+                1
               </div>
-            </div>
-
-            {/* Organization / Company */}
-            <div>
-              <label className="block text-[11px] font-semibold text-white/70 uppercase tracking-wider mb-1">
-                Company / Organization
-              </label>
-              <div className="relative">
-                <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                <input
-                  type="text"
-                  name="companyName"
-                  value={form.companyName}
-                  onChange={handleChange}
-                  placeholder="e.g. Acme Technologies Ltd."
-                  required
-                  className="w-full rounded-xl bg-white/10 border border-white/10 pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                />
-              </div>
-            </div>
-
-            {/* Password Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-white/70 uppercase tracking-wider mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    placeholder="Min 8 chars"
-                    required
-                    className="w-full rounded-xl bg-white/10 border border-white/10 pl-10 pr-10 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
+                <h4 className="text-xs font-bold text-white">Admin Sends Invitation</h4>
+                <p className="text-[11px] text-white/40 mt-0.5">Your organization admin invites you via the OneWinq dashboard</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/5 border border-white/10">
+              <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center flex-shrink-0 text-[11px] font-extrabold text-indigo-300">
+                2
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <Mail className="w-3 h-3 text-indigo-300" />
+                  <h4 className="text-xs font-bold text-white">Check Your Email</h4>
                 </div>
+                <p className="text-[11px] text-white/40 mt-0.5">Click the secure link in the invitation email you received</p>
               </div>
+            </div>
 
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/5 border border-white/10">
+              <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center flex-shrink-0 text-[11px] font-extrabold text-indigo-300">
+                3
+              </div>
               <div>
-                <label className="block text-[11px] font-semibold text-white/70 uppercase tracking-wider mb-1">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Re-enter password"
-                  required
-                  className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                />
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3 h-3 text-indigo-300" />
+                  <h4 className="text-xs font-bold text-white">Activate Your Account</h4>
+                </div>
+                <p className="text-[11px] text-white/40 mt-0.5">Set your password and start building your digital profile</p>
               </div>
             </div>
+          </div>
 
-            {/* Terms checkbox */}
-            <div className="flex items-start gap-2 pt-1">
-              <input
-                type="checkbox"
-                id="agreeTerms"
-                name="agreeTerms"
-                checked={form.agreeTerms}
-                onChange={handleChange}
-                className="mt-0.5 rounded border-white/20 text-indigo-600 focus:ring-indigo-500 bg-white/10"
-              />
-              <label htmlFor="agreeTerms" className="text-[11px] text-white/60 leading-tight">
-                I agree to the{' '}
-                <a href="#" className="text-indigo-400 hover:text-indigo-300 underline">
-                  Terms of Service
-                </a>{' '}
-                and acknowledge the{' '}
-                <a href="#" className="text-indigo-400 hover:text-indigo-300 underline">
-                  Privacy Policy
-                </a>.
-              </label>
-            </div>
-
-            {/* Error banner */}
-            {error && (
-              <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-xs text-rose-300 font-medium">
-                {error}
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-3.5 transition shadow-lg shadow-indigo-900/50 disabled:opacity-60 cursor-pointer mt-2"
+          {/* CTA */}
+          <div className="mt-6 space-y-3">
+            <p className="text-[11px] text-white/40">
+              Received an invitation email?
+            </p>
+            <a
+              href="/accept-invitation"
+              className="flex items-center justify-center gap-2 w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-3 transition shadow-lg shadow-indigo-900/40"
             >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
+              <span>Enter My Invitation Token</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </a>
+          </div>
 
-          {/* Footer - Sign in link */}
-          <div className="text-center mt-5 pt-4 border-t border-white/10">
-            <p className="text-xs text-white/50">
-              Already have an enterprise account?{' '}
+          {/* Sign In Link */}
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <p className="text-xs text-white/40">
+              Already have an account?{' '}
               <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-bold transition">
                 Sign In
               </Link>
@@ -245,7 +98,6 @@ export const RegisterPage = () => {
           </div>
         </div>
 
-        {/* Watermark */}
         <p className="text-center text-[11px] text-white/20 mt-4">
           OneWinq Enterprise © 2026 · Secure Identity Infrastructure
         </p>
@@ -253,3 +105,5 @@ export const RegisterPage = () => {
     </div>
   );
 };
+
+export default RegisterPage;
