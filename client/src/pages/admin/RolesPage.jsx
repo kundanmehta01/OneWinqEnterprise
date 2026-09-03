@@ -43,10 +43,10 @@ export const RolesPage = () => {
       />
 
       <RolesStats
-        totalRoles={roles.length > 0 ? roles.length : 6}
-        activeRoles={5}
-        inactiveRoles={1}
-        customRoles={3}
+        totalRoles={roles.length}
+        activeRoles={roles.filter((r) => r.isActive !== false).length}
+        inactiveRoles={roles.filter((r) => r.isActive === false).length}
+        customRoles={roles.filter((r) => !r.isSystem).length}
       />
 
       {/* 2-Column Split: Roles Directory Table + Permission Matrix */}
@@ -64,7 +64,7 @@ export const RolesPage = () => {
           <Pagination
             currentPage={1}
             totalPages={1}
-            totalItems={roles.length > 0 ? roles.length : 6}
+            totalItems={roles.length}
             itemsPerPage={10}
             onPageChange={() => {}}
             label="roles"

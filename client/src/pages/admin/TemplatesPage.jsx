@@ -48,11 +48,11 @@ export const TemplatesPage = () => {
       />
 
       <TemplatesStats
-        totalTemplates={templates.length > 0 ? templates.length : 14}
-        activeTemplates={10}
-        inactiveTemplates={3}
-        assignedTemplates={11}
-        totalUsage={326}
+        totalTemplates={templates.length}
+        activeTemplates={templates.filter((t) => t.isActive !== false && !t.isArchived).length}
+        inactiveTemplates={templates.filter((t) => t.isActive === false || t.isArchived).length}
+        assignedTemplates={templates.filter((t) => t.isDefault).length}
+        totalUsage={templates.reduce((acc, t) => acc + (t.version || 1), 0)}
       />
 
       {/* 2-Column Split: Table + Live Preview & Details */}
@@ -70,8 +70,8 @@ export const TemplatesPage = () => {
 
           <Pagination
             currentPage={1}
-            totalPages={2}
-            totalItems={templates.length > 0 ? templates.length : 14}
+            totalPages={1}
+            totalItems={templates.length}
             itemsPerPage={10}
             onPageChange={() => {}}
             label="templates"

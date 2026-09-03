@@ -19,7 +19,6 @@ export const AuthProvider = ({ children }) => {
     const token = storage.getAccessToken();
 
     try {
-      // DEVELOPMENT ONLY: /auth/me resolves the existing seeded admin on the server.
       if (!token && !DEV_AUTO_LOGIN) {
         setUser(null);
         setMember(null);
@@ -29,7 +28,33 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      const data = await authService.getMe();
+      let data;
+      try {
+        data = await authService.getMe();
+      } catch (meErr) {
+        // If unauthenticated or token expired, and auto-login is active in development,
+        // authenticate using the existing seeded Super Admin credentials from the backend
+        if (DEV_AUTO_LOGIN) {
+          try {
+            const loginResult = await authService.login({
+              email: 'superadmin@onewinq.com',
+              password: 'OneWinq@Admin2026!'
+            });
+            storage.setAccessToken(loginResult.accessToken);
+            if (loginResult.refreshToken) {
+              storage.setRefreshToken(loginResult.refreshToken);
+            }
+            storage.setUser(loginResult.user);
+            data = await authService.getMe();
+          } catch (loginErr) {
+            console.warn('Auto-login with seeded super admin failed:', loginErr);
+            throw meErr;
+          }
+        } else {
+          throw meErr;
+        }
+      }
+
       setUser(data.user);
       setMember(data.member);
       setRole(data.role);

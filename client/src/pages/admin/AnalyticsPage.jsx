@@ -18,6 +18,7 @@ export const AnalyticsPage = () => {
   const kpis = analytics?.kpis || {};
   const trends = analytics?.trends || [];
   const topProfiles = analytics?.topViewedProfiles || [];
+  const templateUsage = analytics?.templateUsage || [];
 
   const handleExport = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(analytics || {}, null, 2));
@@ -57,7 +58,7 @@ export const AnalyticsPage = () => {
           <EngagementFunnelCard />
         </div>
         <div className="lg:col-span-4">
-          <TopTemplatesCard />
+          <TopTemplatesCard templateUsage={templateUsage} />
         </div>
         <div className="lg:col-span-4">
           <DeviceDonutCard />

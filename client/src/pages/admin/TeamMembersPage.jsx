@@ -50,11 +50,11 @@ export const TeamMembersPage = () => {
       />
 
       <TeamMembersStats
-        totalMembers={pagination.totalItems > 0 ? pagination.totalItems : 126}
-        activeMembers={118}
-        departments={departments.length > 0 ? departments.length : 9}
-        pendingInvites={8}
-        adminsCount={6}
+        totalMembers={pagination.totalItems || members.length}
+        activeMembers={members.filter((m) => m.status === 'active').length}
+        departments={departments.length}
+        pendingInvites={0}
+        adminsCount={members.filter((m) => m.roleId?.name?.toLowerCase().includes('admin')).length}
       />
 
       <div className="bg-transparent space-y-4">
@@ -77,7 +77,7 @@ export const TeamMembersPage = () => {
         <Pagination
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
-          totalItems={pagination.totalItems > 0 ? pagination.totalItems : 126}
+          totalItems={pagination.totalItems || members.length}
           itemsPerPage={pagination.itemsPerPage}
           onPageChange={changePage}
           onLimitChange={changeLimit}

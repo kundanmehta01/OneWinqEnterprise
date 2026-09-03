@@ -4,6 +4,7 @@ import {
   Users,
   Network,
   ShieldCheck,
+  KeyRound,
   Send,
   CreditCard,
   CheckCircle2,
@@ -49,9 +50,15 @@ export const ADMIN_NAV_SECTIONS = [
         permission: PERMISSIONS.DEPARTMENT_READ
       },
       {
-        label: 'Roles & Permissions',
+        label: 'Roles',
         path: '/admin/roles',
         icon: ShieldCheck,
+        permission: PERMISSIONS.ROLE_READ
+      },
+      {
+        label: 'Permissions',
+        path: '/admin/permissions',
+        icon: KeyRound,
         permission: PERMISSIONS.ROLE_READ
       },
       {

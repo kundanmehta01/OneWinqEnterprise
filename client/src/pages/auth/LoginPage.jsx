@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Eye, EyeOff, Zap, ArrowRight, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Zap, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 
 export const LoginPage = () => {
   const { login } = useAuth();
@@ -12,6 +12,12 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const fillAdminCredentials = () => {
+    setEmail('superadmin@onewinq.com');
+    setPassword('OneWinq@Admin2026!');
+    setError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,6 +113,26 @@ export const LoginPage = () => {
               >
                 Forgot password?
               </Link>
+            </div>
+
+            {/* Dev Admin Quick Fill Box */}
+            <div className="rounded-2xl bg-indigo-950/60 border border-indigo-500/30 p-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 text-left">
+                  <p className="text-[11px] font-bold text-white truncate">Seeded Super Admin</p>
+                  <p className="text-[10px] text-indigo-200/70 font-mono truncate">superadmin@onewinq.com</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={fillAdminCredentials}
+                className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-[11px] font-bold text-white transition flex-shrink-0 cursor-pointer shadow-xs"
+              >
+                Auto Fill
+              </button>
             </div>
 
             {/* Submit */}

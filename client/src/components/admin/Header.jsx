@@ -100,27 +100,26 @@ export const Header = ({ onMenuToggle, onOpenSearch }) => {
         {/* Notification Bell */}
         <button
           type="button"
-          onClick={() => navigate('/me/notifications')}
+          onClick={() => navigate('/admin/notifications')}
           className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
           title="Notifications"
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white shadow-xs">
-            {unreadCount > 0 ? unreadCount : '8'}
-          </span>
+          {unreadCount > 0 && (
+            <span className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white shadow-xs">
+              {unreadCount}
+            </span>
+          )}
         </button>
 
-        {/* Message / Mail icon */}
+        {/* Invitations icon */}
         <button
           type="button"
           onClick={() => navigate('/admin/invitations')}
           className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
-          title="Invitations & Messages"
+          title="Team Invitations"
         >
           <Mail className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white shadow-xs">
-            3
-          </span>
         </button>
 
         <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />

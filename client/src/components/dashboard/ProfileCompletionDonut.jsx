@@ -2,15 +2,16 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export const ProfileCompletionDonut = ({ overview = {} }) => {
-  const completed = overview.activeMembers ?? 118;
-  const inProgress = 45;
-  const pending = overview.pendingApprovalsCount ?? 17;
-  const total = completed + inProgress + pending;
+  const total = overview.totalMembers ?? 0;
+  const completed = overview.activeMembers ?? 0;
+  const pending = overview.pendingApprovalsCount ?? 0;
+  const inProgress = Math.max(0, total - completed - pending);
+  const displayTotal = total > 0 ? total : 1;
 
   const data = [
     { name: 'Completed', value: completed, color: '#6366F1' },
     { name: 'In Progress', value: inProgress, color: '#F59E0B' },
-    { name: 'Pending Approval', value: pending, color: '#38BDF8' }
+    { name: 'Pending Review', value: pending, color: '#38BDF8' }
   ];
 
   return (
@@ -23,7 +24,7 @@ export const ProfileCompletionDonut = ({ overview = {} }) => {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Tooltip
-                formatter={(val, name) => [`${val} (${Math.round((val / total) * 100)}%)`, name]}
+                formatter={(val, name) => [`${val} (${Math.round((val / displayTotal) * 100)}%)`, name]}
               />
               <Pie
                 data={data}
@@ -50,7 +51,7 @@ export const ProfileCompletionDonut = ({ overview = {} }) => {
         {/* Breakdown Legend */}
         <div className="space-y-3.5 flex-1 w-full sm:w-auto">
           {data.map((item) => {
-            const pct = Math.round((item.value / total) * 100);
+            const pct = Math.round((item.value / displayTotal) * 100);
             return (
               <div key={item.name} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
