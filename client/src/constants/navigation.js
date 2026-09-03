@@ -9,7 +9,10 @@ import {
   CheckCircle2,
   BarChart3,
   FileText,
-  Settings
+  Settings,
+  Image,
+  UserCheck,
+  Bell
 } from 'lucide-react';
 import { PERMISSIONS } from './permissions';
 
@@ -56,12 +59,24 @@ export const ADMIN_NAV_SECTIONS = [
         path: '/admin/invitations',
         icon: Send,
         permission: PERMISSIONS.INVITATION_READ
+      },
+      {
+        label: 'Media Library',
+        path: '/admin/media',
+        icon: Image,
+        permission: PERMISSIONS.MEDIA_READ
       }
     ]
   },
   {
     title: 'PROFILE',
     items: [
+      {
+        label: 'Employee Profiles',
+        path: '/admin/employee-profiles',
+        icon: UserCheck,
+        permission: PERMISSIONS.TEAM_READ
+      },
       {
         label: 'Templates',
         path: '/admin/templates',
@@ -96,6 +111,11 @@ export const ADMIN_NAV_SECTIONS = [
   {
     title: 'SETTINGS',
     items: [
+      {
+        label: 'Notifications',
+        path: '/admin/notifications',
+        icon: Bell
+      },
       {
         label: 'General Settings',
         path: '/admin/settings',

@@ -120,7 +120,6 @@ export const PublicProfilePage = () => {
               {/* QR + Download Actions */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
-                  onClick={() => setShowQr(!showQr)}
                   title="View QR Code"
                   className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                   onClick={() => {

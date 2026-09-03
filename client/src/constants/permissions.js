@@ -69,5 +69,6 @@ export const MODULE_NAMES = {
   PROFILE_APPROVALS: 'Profile Approval',
   ANALYTICS: 'Analytics',
   AUDIT_LOGS: 'Audit Logs',
-  SETTINGS: 'Settings'
+  SETTINGS: 'Settings',
+  MEDIA: 'Media Library'
 };

@@ -126,8 +126,24 @@ export const LoginPage = () => {
             </button>
           </form>
 
+          {/* Sign up & Invitation links */}
+          <div className="mt-6 pt-5 border-t border-white/10 space-y-2 text-center">
+            <p className="text-xs text-white/60">
+              Don&apos;t have an account?{' '}
+              <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-bold transition">
+                Create Account
+              </Link>
+            </p>
+            <p className="text-[11px] text-white/40">
+              Received a team invite?{' '}
+              <Link to="/accept-invitation" className="text-white/60 hover:text-white font-medium underline transition">
+                Accept Invitation
+              </Link>
+            </p>
+          </div>
+
           {/* Footer */}
-          <p className="text-center text-[11px] text-white/30 mt-6">
+          <p className="text-center text-[11px] text-white/30 mt-5">
             By signing in, you agree to OneWinq&apos;s{' '}
             <a href="#" className="text-indigo-400 hover:text-indigo-300">
               Terms of Service

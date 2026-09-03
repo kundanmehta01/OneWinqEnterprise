@@ -8,6 +8,8 @@ import { UserLayout } from '../../layouts/UserLayout';
 
 // Auth Pages
 import { LoginPage } from '../../pages/auth/LoginPage';
+import { RegisterPage } from '../../pages/auth/RegisterPage';
+import { VerifyOTPPage } from '../../pages/auth/VerifyOTPPage';
 import { ForgotPasswordPage } from '../../pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '../../pages/auth/ResetPasswordPage';
 import { AcceptInvitationPage } from '../../pages/auth/AcceptInvitationPage';
@@ -17,6 +19,7 @@ import { DashboardPage } from '../../pages/admin/DashboardPage';
 import { TeamMembersPage } from '../../pages/admin/TeamMembersPage';
 import { TemplatesPage } from '../../pages/admin/TemplatesPage';
 import { RolesPage } from '../../pages/admin/RolesPage';
+import { PermissionsPage } from '../../pages/admin/Permissions';
 import { AnalyticsPage } from '../../pages/admin/AnalyticsPage';
 import { DepartmentsPage } from '../../pages/admin/DepartmentsPage';
 import { ProfileApprovalsPage } from '../../pages/admin/ProfileApprovalsPage';
@@ -24,6 +27,9 @@ import { InvitationsPage } from '../../pages/admin/InvitationsPage';
 import { CompanyProfilePage } from '../../pages/admin/CompanyProfilePage';
 import { AuditLogsPage } from '../../pages/admin/AuditLogsPage';
 import { SettingsPage } from '../../pages/admin/SettingsPage';
+import { NotificationsPage } from '../../pages/admin/NotificationsPage';
+import { EmployeeProfilesPage } from '../../pages/admin/EmployeeProfilesPage';
+import { MediaPage } from '../../pages/admin/MediaPage';
 
 // User Pages
 import { UserDashboardPage } from '../../pages/user/UserDashboardPage';
@@ -43,11 +49,15 @@ export const AppRoutes = () => {
 
       {/* ===== AUTH ROUTES (no auth required) ===== */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-otp" element={<VerifyOTPPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
       {/* Support /auth/* prefix as well */}
       <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/register" element={<RegisterPage />} />
+      <Route path="/auth/verify-otp" element={<VerifyOTPPage />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
       <Route path="/auth/accept-invitation" element={<AcceptInvitationPage />} />
@@ -91,6 +101,15 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute requiredAnyPermission={['role.read', 'role.create']}>
               <RolesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="permissions"
+          element={
+            <ProtectedRoute requiredPermission="role.read">
+              <PermissionsPage />
             </ProtectedRoute>
           }
         />
@@ -157,6 +176,35 @@ export const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="employee-profiles"
+          element={
+            <ProtectedRoute requiredAnyPermission={['team.read', 'profile_approval.read']}>
+              <EmployeeProfilesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="media"
+          element={
+            <ProtectedRoute requiredPermission="media.read">
+              <MediaPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="approvals" element={<Navigate to="/admin/profile-approvals" replace />} />
 
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>
