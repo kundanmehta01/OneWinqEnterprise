@@ -1,16 +1,26 @@
 import { env } from '../../config/env.config.js';
 import { LocalStorageProvider } from './localStorage.provider.js';
+import { CloudinaryStorageProvider } from './cloudinaryStorage.provider.js';
 import { logger } from '../../config/logger.config.js';
 
 class StorageService {
   constructor() {
     this.providerType = env.STORAGE_PROVIDER;
-    if (this.providerType === 'local') {
-      this.provider = new LocalStorageProvider();
-    } else {
-      // S3 provider or fallback
-      this.provider = new LocalStorageProvider();
-      logger.info(`Storage provider set to '${this.providerType}'. Defaulting to LocalStorageProvider.`);
+    
+    switch (this.providerType) {
+      case 'cloudinary':
+        this.provider = new CloudinaryStorageProvider();
+        logger.info('[StorageService] Active storage provider: Cloudinary');
+        break;
+      case 'local':
+        this.provider = new LocalStorageProvider();
+        logger.info('[StorageService] Active storage provider: Local Disk Storage');
+        break;
+      case 's3':
+      default:
+        this.provider = new LocalStorageProvider();
+        logger.info(`[StorageService] Storage provider set to '${this.providerType}'. Defaulting to LocalStorageProvider.`);
+        break;
     }
   }
 

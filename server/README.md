@@ -31,7 +31,7 @@ The **OneWinq Backend** provides the foundational services and APIs for the enti
   - Privacy-preserving public profile view telemetry.
 - **Pluggable Integrations**:
   - `EmailService`: Nodemailer SMTP provider with console/mock fallback.
-  - `StorageService`: Local disk provider with S3/Cloudflare R2 interface abstraction.
+  - `StorageService`: Cloudinary, Local Disk, and S3 pluggable storage providers.
 
 ---
 

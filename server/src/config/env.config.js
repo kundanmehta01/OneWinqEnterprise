@@ -41,12 +41,16 @@ const envSchema = z.object({
   EMAIL_FROM_ADDRESS: z.string().default('no-reply@onewinq.com'),
 
   // Storage
-  STORAGE_PROVIDER: z.enum(['local', 's3']).default('local'),
+  STORAGE_PROVIDER: z.enum(['local', 's3', 'cloudinary']).default('local'),
   STORAGE_LOCAL_UPLOAD_DIR: z.string().default('./uploads'),
   AWS_S3_BUCKET: z.string().optional().default(''),
   AWS_S3_REGION: z.string().optional().default('us-east-1'),
   AWS_ACCESS_KEY_ID: z.string().optional().default(''),
   AWS_SECRET_ACCESS_KEY: z.string().optional().default(''),
+  CLOUDINARY_CLOUD_NAME: z.string().optional().default(''),
+  CLOUDINARY_API_KEY: z.string().optional().default(''),
+  CLOUDINARY_API_SECRET: z.string().optional().default(''),
+  CLOUDINARY_FOLDER: z.string().optional().default('onewinq'),
 
   // Logging
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']).default('info'),
