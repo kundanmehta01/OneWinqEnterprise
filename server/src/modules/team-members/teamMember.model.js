@@ -39,7 +39,7 @@ const teamMemberSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'inactive', 'invited', 'archived'],
+      enum: ['active', 'inactive', 'invited', 'deleted', 'archived'],
       default: 'active',
       index: true
     },
@@ -57,6 +57,25 @@ const teamMemberSchema = new mongoose.Schema(
       default: 0,
       min: 0,
       max: 100
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    deletedAt: {
+      type: Date,
+      default: null
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    deletionReason: {
+      type: String,
+      trim: true,
+      default: ''
     },
     isArchived: {
       type: Boolean,

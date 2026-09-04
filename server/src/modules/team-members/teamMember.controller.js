@@ -59,7 +59,20 @@ export class TeamMemberController {
     }
   }
 
-  async archiveTeamMember(req, res, next) {
+  async getDeletedTeamMembers(req, res, next) {
+    try {
+      const result = await teamMemberService.getDeletedTeamMembers(req.query);
+      return ApiResponse.paginated(res, {
+        message: 'Past / deleted team members retrieved successfully',
+        data: result.members,
+        pagination: result.pagination
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteTeamMember(req, res, next) {
     try {
       const actorContext = {
         actorId: req.user._id,
@@ -67,11 +80,16 @@ export class TeamMemberController {
         userAgent: req.auditContext?.userAgent,
         requestId: req.id
       };
-      const result = await teamMemberService.archiveTeamMember(req.params.id, actorContext);
+      const reason = req.body?.reason || req.query?.reason || '';
+      const result = await teamMemberService.deleteTeamMember(req.params.id, actorContext, reason);
       return ApiResponse.success(res, result);
     } catch (error) {
       next(error);
     }
+  }
+
+  async archiveTeamMember(req, res, next) {
+    return this.deleteTeamMember(req, res, next);
   }
 
   async restoreTeamMember(req, res, next) {

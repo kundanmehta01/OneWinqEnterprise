@@ -17,8 +17,9 @@ class TeamMemberService {
     const { page, limit, skip, sort } = parsePagination(query, 20);
     const filter = {};
 
-    if (!query.includeArchived) {
-      filter.isArchived = false;
+    if (!query.includeDeleted && !query.includeArchived) {
+      filter.isDeleted = { $ne: true };
+      filter.isArchived = { $ne: true };
     }
     if (query.departmentId) {
       filter.departmentId = query.departmentId;
@@ -237,31 +238,97 @@ class TeamMemberService {
     return member;
   }
 
-  async archiveTeamMember(id, actorContext = {}) {
+  async getDeletedTeamMembers(query = {}) {
+    const { page, limit, skip, sort } = parsePagination(query, 20);
+    const filter = {
+      $or: [
+        { isDeleted: true },
+        { status: 'deleted' },
+        { isArchived: true },
+        { status: 'archived' }
+      ]
+    };
+
+    if (query.departmentId) {
+      filter.departmentId = query.departmentId;
+    }
+
+    if (query.search) {
+      filter.$and = [
+        {
+          $or: [
+            { name: { $regex: query.search, $options: 'i' } },
+            { designation: { $regex: query.search, $options: 'i' } },
+            { employeeId: { $regex: query.search, $options: 'i' } }
+          ]
+        }
+      ];
+    }
+
+    const [members, totalItems] = await Promise.all([
+      TeamMember.find(filter)
+        .populate('userId', 'email status lastLoginAt')
+        .populate('departmentId', 'name slug')
+        .populate('roleId', 'name isSystem')
+        .populate('profileId', 'slug visibility completionPercentage approvalStatus')
+        .populate('deletedBy', 'email')
+        .populate('archivedBy', 'email')
+        .sort(sort || { deletedAt: -1, updatedAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      TeamMember.countDocuments(filter)
+    ]);
+
+    return {
+      members,
+      pagination: formatPaginationMeta(totalItems, page, limit)
+    };
+  }
+
+  async deleteTeamMember(id, actorContext = {}, reason = '') {
     const member = await TeamMember.findById(id);
     if (!member) {
       throw new NotFoundError('Team member not found', ERROR_CODES.RESOURCE_NOT_FOUND);
     }
 
+    const now = new Date();
+    member.isDeleted = true;
+    member.status = 'deleted';
+    member.deletedAt = now;
+    member.deletedBy = actorContext.actorId || null;
+    member.deletionReason = reason || '';
+
+    // Backwards-compatible fields
     member.isArchived = true;
-    member.status = 'archived';
-    member.archivedAt = new Date();
-    member.archivedBy = actorContext.actorId;
+    member.archivedAt = now;
+    member.archivedBy = actorContext.actorId || null;
+
     await member.save();
 
-    // Deactivate user account
+    // Deactivate user account so they cannot log in
     if (member.userId) {
       await User.findByIdAndUpdate(member.userId, { status: 'inactive' });
     }
 
-    eventBus.emitEvent(APP_EVENTS.MEMBER_ARCHIVED, {
+    // Set employee profile to private so public digital card is hidden
+    if (member.profileId) {
+      await EmployeeProfile.findByIdAndUpdate(member.profileId, { visibility: 'private' });
+    }
+
+    eventBus.emitEvent(APP_EVENTS.MEMBER_DELETED, {
       actorId: actorContext.actorId,
       memberId: member._id,
       name: member.name,
+      reason,
       context: actorContext
     });
 
-    return { message: `Team member '${member.name}' has been archived.` };
+    return { message: `Team member '${member.name}' has been deleted successfully.` };
+  }
+
+  async archiveTeamMember(id, actorContext = {}) {
+    return await this.deleteTeamMember(id, actorContext);
   }
 
   async restoreTeamMember(id, actorContext = {}) {
@@ -270,14 +337,24 @@ class TeamMemberService {
       throw new NotFoundError('Team member not found', ERROR_CODES.RESOURCE_NOT_FOUND);
     }
 
-    member.isArchived = false;
+    member.isDeleted = false;
     member.status = 'active';
+    member.deletedAt = null;
+    member.deletedBy = null;
+    member.deletionReason = '';
+
+    member.isArchived = false;
     member.archivedAt = null;
     member.archivedBy = null;
+
     await member.save();
 
     if (member.userId) {
       await User.findByIdAndUpdate(member.userId, { status: 'active' });
+    }
+
+    if (member.profileId) {
+      await EmployeeProfile.findByIdAndUpdate(member.profileId, { visibility: 'public' });
     }
 
     eventBus.emitEvent(APP_EVENTS.MEMBER_RESTORED, {

@@ -11,6 +11,7 @@ export const registerAuditListeners = () => {
     [APP_EVENTS.MEMBER_JOINED]: { module: 'team', resourceType: 'TeamMember' },
     [APP_EVENTS.MEMBER_UPDATED]: { module: 'team', resourceType: 'TeamMember' },
     [APP_EVENTS.MEMBER_ARCHIVED]: { module: 'team', resourceType: 'TeamMember' },
+    [APP_EVENTS.MEMBER_DELETED]: { module: 'team', resourceType: 'TeamMember' },
     [APP_EVENTS.MEMBER_RESTORED]: { module: 'team', resourceType: 'TeamMember' },
     [APP_EVENTS.ROLE_CREATED]: { module: 'roles', resourceType: 'Role' },
     [APP_EVENTS.ROLE_UPDATED]: { module: 'roles', resourceType: 'Role' },

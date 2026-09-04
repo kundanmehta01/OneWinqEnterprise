@@ -20,6 +20,19 @@ router.get(
   teamMemberController.getAllTeamMembers.bind(teamMemberController)
 );
 
+// Dedicated route to view past / deleted members (MUST be before /:id)
+router.get(
+  '/deleted',
+  requirePermission(PERMISSIONS.TEAM_READ),
+  teamMemberController.getDeletedTeamMembers.bind(teamMemberController)
+);
+
+router.get(
+  '/past',
+  requirePermission(PERMISSIONS.TEAM_READ),
+  teamMemberController.getDeletedTeamMembers.bind(teamMemberController)
+);
+
 router.get(
   '/:id',
   requirePermission(PERMISSIONS.TEAM_READ),
@@ -45,7 +58,7 @@ router.delete(
   '/:id',
   requirePermission(PERMISSIONS.TEAM_DELETE),
   validate({ params: teamMemberIdParamSchema }),
-  teamMemberController.archiveTeamMember.bind(teamMemberController)
+  teamMemberController.deleteTeamMember.bind(teamMemberController)
 );
 
 router.post(
