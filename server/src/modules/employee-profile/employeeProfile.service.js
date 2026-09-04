@@ -73,9 +73,26 @@ class EmployeeProfileService {
       profile.visibility = updateData.visibility;
     }
 
-    // Update draft data fields
     const draft = profile.draft ? profile.draft.toObject() : {};
-    const directFields = ['headline', 'bio', 'phone', 'workEmail', 'avatarUrl', 'coverUrl', 'location', 'experience', 'skills', 'projects', 'achievements', 'socialLinks', 'customSections'];
+    const directFields = [
+      'headline',
+      'bio',
+      'phone',
+      'workEmail',
+      'avatarUrl',
+      'coverUrl',
+      'collaborationNote',
+      'overviewStats',
+      'location',
+      'experience',
+      'journey',
+      'skills',
+      'projects',
+      'impactMetrics',
+      'achievements',
+      'socialLinks',
+      'customSections'
+    ];
 
     for (const field of directFields) {
       if (updateData[field] !== undefined) {

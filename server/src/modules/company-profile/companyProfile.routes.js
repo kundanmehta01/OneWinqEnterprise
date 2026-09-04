@@ -8,6 +8,12 @@ import { PERMISSIONS } from '../../constants/permissions.constant.js';
 
 const router = Router();
 
+// Publicly accessible company profile (Company Identity Flow)
+router.get(
+  '/public',
+  companyProfileController.getPublicProfile.bind(companyProfileController)
+);
+
 router.use(authenticate);
 
 router.get(

@@ -36,93 +36,163 @@ export const seedOrganization = async () => {
   await CompanyProfile.findOneAndUpdate(
     { slug: 'onewinq' },
     {
-      name: 'OneWinq',
+      name: 'OneWinq Technologies Pvt. Ltd.',
       slug: 'onewinq',
-      tagline: 'The Enterprise Digital Identity & People Platform',
+      tagline: 'One Identity, Infinite Possibilities.',
       description:
-        'OneWinq unifies company branding, employee digital identities, and verified credentials into a seamless, modern platform.',
-      industry: 'Enterprise Software / SaaS',
-      website: 'https://onewinq.com',
+        'Company Identity First. Role Identity Always. Represents the company as a brand and its complete digital presence.',
+      industry: 'Technology / SaaS / AI',
+      website: 'https://onewinq.in',
+      overviewStats: {
+        foundedYear: '2024',
+        locationShort: 'Indore',
+        teamSize: '25+'
+      },
       location: {
-        address: '500 Tech Parkway, Suite 800',
-        city: 'San Francisco',
-        state: 'CA',
-        country: 'United States',
-        zipCode: '94105'
+        address: 'Scheme No. 78',
+        city: 'Indore',
+        state: 'Madhya Pradesh',
+        country: 'India',
+        zipCode: '452010'
       },
       contact: {
-        email: 'contact@onewinq.com',
-        phone: '+1 (555) 019-2834',
-        supportEmail: 'support@onewinq.com'
+        email: 'hello@onewinq.in',
+        phone: '+91 731 123 4507',
+        supportEmail: 'support@onewinq.in',
+        workingHours: 'Mon - Sat (10 AM - 7 PM)',
+        directionsUrl: 'https://maps.google.com/?q=Indore+Madhya+Pradesh'
       },
       about: {
+        vision: "To become the world's most trusted identity and networking platform for people and businesses.",
+        mission: 'To empower every individual and organization with a digital identity that creates value, trust and growth.',
+        story: 'OneWinq was founded with a vision to unify identity, network and business in one seamless platform.',
         aboutCompany:
-          'OneWinq is on a mission to modernize how modern enterprises represent their brand and empower their workforce with verified, elegant digital identity tools.',
-        mission: 'Empowering companies and their people with seamless digital presence and trusted identity infrastructure.',
-        vision: 'To be the standard digital identity fabric for progressive enterprises worldwide.',
+          'OneWinq Technologies is on a mission to revolutionize digital presence by bridging company branding with individual role identity.',
         values: [
-          { title: 'Customer Obsession', description: 'We build every feature with relentless care for user experience.', icon: 'heart' },
-          { title: 'Security First', description: 'Enterprise privacy and zero-trust security are in our DNA.', icon: 'shield' },
-          { title: 'Radical Transparency', description: 'Clear communication, open standards, and verified information.', icon: 'eye' }
+          { title: 'Trust & Verification', description: 'Every card and credential is cryptographically verified.', icon: 'shield-check' },
+          { title: 'Innovation in Identity', description: 'Merging NFC, dynamic QR codes, and AI-powered networking.', icon: 'sparkles' },
+          { title: 'People-First Growth', description: 'Empowering teams with seamless role and brand recognition.', icon: 'users' }
         ]
       },
-      branding: {
-        logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&h=200&fit=crop',
-        coverUrl: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1200&h=400&fit=crop',
-        primaryColor: '#2563eb',
-        secondaryColor: '#0f172a',
-        accentColor: '#38bdf8',
-        fontHeading: 'Inter',
-        fontBody: 'Inter',
-        themeMode: 'system'
-      },
-      dynamicSections: [
+      productsServices: [
         {
-          sectionId: 'sec-overview',
-          title: 'Platform Overview',
-          type: 'overview',
-          content: {
-            headline: 'Unified Digital Identity For Every Team Member',
-            highlights: ['Smart QR Code Badges', 'Verified Role Credentials', 'Dynamic Digital Profiles']
-          },
+          title: 'OneWinq ID Card',
+          description: 'Digital identity card for individuals and businesses.',
+          category: 'Digital Identity',
+          badge: 'Flagship',
+          icon: 'id-card',
           order: 1,
           isVisible: true
         },
         {
-          sectionId: 'sec-services',
-          title: 'Products & Solutions',
-          type: 'services',
-          content: {
-            items: [
-              { name: 'OneWinq Digital Cards', desc: 'Instant NFC and QR-enabled employee smart cards.' },
-              { name: 'Enterprise Identity Hub', desc: 'Centralized directory and access governance.' },
-              { name: 'Verified Credentials', desc: 'Cryptographically secured identity proofs.' }
-            ]
-          },
+          title: 'NFC Card',
+          description: 'Smart NFC business card solution for frictionless tap-and-connect.',
+          category: 'Smart Hardware',
+          badge: 'Hardware',
+          icon: 'nfc',
           order: 2,
           isVisible: true
         },
         {
-          sectionId: 'sec-contact',
-          title: 'Get In Touch',
-          type: 'contact',
-          content: {
-            officeHours: 'Monday - Friday, 9:00 AM - 6:00 PM PST',
-            inquiriesEmail: 'enterprise@onewinq.com'
-          },
+          title: 'AI Chat Assistant',
+          description: 'AI powered business assistant for automated networking and lead capture.',
+          category: 'AI & Automation',
+          badge: 'AI Powered',
+          icon: 'bot',
+          order: 3,
+          isVisible: true
+        },
+        {
+          title: 'Website Template',
+          description: 'Professional website templates tailored for enterprise presence.',
+          category: 'Web Solutions',
+          badge: 'Templates',
+          icon: 'layout',
+          order: 4,
+          isVisible: true
+        }
+      ],
+      projects: [
+        {
+          title: 'OneWinq Platform',
+          description: 'Complete identity & network management platform for modern enterprises.',
+          category: 'Identity Platform',
+          status: 'ongoing',
+          order: 1,
+          isVisible: true
+        },
+        {
+          title: 'AI Assistant System',
+          description: 'AI based business assistant for automated customer engagement.',
+          category: 'AI & Machine Learning',
+          status: 'completed',
+          order: 2,
+          isVisible: true
+        },
+        {
+          title: 'NFC Card Solution',
+          description: 'Smart card solution engineered for professionals and enterprise teams.',
+          category: 'Hardware & IoT',
+          status: 'completed',
           order: 3,
           isVisible: true
         }
       ],
-      navigation: [
-        { navId: 'nav-overview', label: 'Overview', targetSectionId: 'sec-overview', icon: 'home', order: 1, isVisible: true },
-        { navId: 'nav-services', label: 'Products', targetSectionId: 'sec-services', icon: 'layers', order: 2, isVisible: true },
-        { navId: 'nav-contact', label: 'Contact', targetSectionId: 'sec-contact', icon: 'mail', order: 3, isVisible: true }
+      achievements: [
+        {
+          title: 'Best Startup Award 2024',
+          subtitle: 'Technology Excellence',
+          description: 'Awarded for groundbreaking work in digital identity and networking innovation.',
+          badge: 'Winner',
+          year: '2024',
+          metric: 'Top Innovator',
+          order: 1,
+          isVisible: true
+        },
+        {
+          title: 'ISO 27001 Certified',
+          subtitle: 'Information Security Management',
+          description: 'Certified enterprise security standards across data governance and privacy.',
+          badge: 'Security',
+          year: '2024',
+          order: 2,
+          isVisible: true
+        },
+        {
+          title: '500+ Businesses',
+          subtitle: 'Connected on OneWinq',
+          description: 'Trusted by hundreds of leading businesses for modern employee identity.',
+          badge: 'Adoption',
+          metric: '500+ Active',
+          order: 3,
+          isVisible: true
+        },
+        {
+          title: '25+ Team Members',
+          subtitle: 'Working Across India',
+          description: 'A passionate team building world-class identity infrastructure.',
+          badge: 'Team',
+          metric: '25+ Talent',
+          order: 4,
+          isVisible: true
+        }
       ],
+      branding: {
+        logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&h=200&fit=crop',
+        coverUrl: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1200&h=400&fit=crop',
+        primaryColor: '#6366f1',
+        secondaryColor: '#090d16',
+        accentColor: '#818cf8',
+        fontHeading: 'Inter',
+        fontBody: 'Inter',
+        themeMode: 'dark'
+      },
       socialLinks: [
         { platform: 'LinkedIn', url: 'https://linkedin.com/company/onewinq', order: 1, isVisible: true },
-        { platform: 'X', url: 'https://x.com/onewinq', order: 2, isVisible: true },
-        { platform: 'GitHub', url: 'https://github.com/onewinq', order: 3, isVisible: true }
+        { platform: 'Facebook', url: 'https://facebook.com/onewinq', order: 2, isVisible: true },
+        { platform: 'Instagram', url: 'https://instagram.com/onewinq', order: 3, isVisible: true },
+        { platform: 'YouTube', url: 'https://youtube.com/@onewinq', order: 4, isVisible: true },
+        { platform: 'Twitter', url: 'https://twitter.com/onewinq', order: 5, isVisible: true }
       ],
       isPublic: true
     },
