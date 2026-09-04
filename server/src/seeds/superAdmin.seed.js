@@ -9,8 +9,14 @@ import { SYSTEM_ROLES } from '../constants/roles.constant.js';
 import { logger } from '../config/logger.config.js';
 
 export const seedSuperAdmin = async () => {
-  logger.info('Seeding super administrator...');
+  logger.info('Seeding company super administrator and CEO founder account...');
 
+  const superAdminRole = await Role.findOne({ name: SYSTEM_ROLES.SUPER_ADMIN });
+  const adminRole = (await Role.findOne({ name: SYSTEM_ROLES.ADMIN })) || superAdminRole;
+  const execDept = await Department.findOne({ slug: 'executive-leadership' });
+  const founderTemplate = (await Template.findOne({ category: 'founder' })) || (await Template.findOne({ isDefault: true }));
+
+  // 1. Company Master Super Admin Account (Root Organization Account)
   const superAdminEmail = 'superadmin@onewinq.com';
   const superAdminPassword = 'OneWinq@Admin2026!';
 
@@ -26,25 +32,39 @@ export const seedSuperAdmin = async () => {
     });
   }
 
-  const superAdminRole = await Role.findOne({ name: SYSTEM_ROLES.SUPER_ADMIN });
-  const execDept = await Department.findOne({ slug: 'executive-leadership' });
-  const founderTemplate = (await Template.findOne({ category: 'founder' })) || (await Template.findOne({ isDefault: true }));
+  // 2. Founder & CEO Personal Account (Rajat Chaturvedi)
+  const ceoEmail = 'rajat@onewinq.in';
+  const ceoPassword = 'OneWinq@Admin2026!';
 
-  let member = await TeamMember.findOne({ userId: superAdminUser._id });
+  let ceoUser = await User.findOne({ email: ceoEmail });
+  if (!ceoUser) {
+    const passwordHash = await hashPassword(ceoPassword);
+    ceoUser = await User.create({
+      email: ceoEmail,
+      passwordHash,
+      status: 'active',
+      emailVerified: true,
+      emailVerifiedAt: new Date()
+    });
+  }
+
+  let member = await TeamMember.findOne({ employeeId: 'EMP-001' });
   if (!member) {
     member = await TeamMember.create({
-      userId: superAdminUser._id,
+      userId: ceoUser._id,
       employeeId: 'EMP-001',
       name: 'Rajat Chaturvedi',
       designation: 'Founder & CEO',
       departmentId: execDept?._id || null,
-      roleId: superAdminRole._id,
+      roleId: adminRole._id,
       status: 'active',
       joiningDate: new Date('2024-01-01')
     });
   } else {
+    member.userId = ceoUser._id;
     member.name = 'Rajat Chaturvedi';
     member.designation = 'Founder & CEO';
+    member.roleId = adminRole._id;
     await member.save();
   }
 
@@ -187,10 +207,10 @@ export const seedSuperAdmin = async () => {
   };
 
   await EmployeeProfile.findOneAndUpdate(
-    { memberId: member._id },
+    { $or: [{ slug: 'rajat-chaturvedi' }, { memberId: member._id }] },
     {
       memberId: member._id,
-      userId: superAdminUser._id,
+      userId: ceoUser._id,
       slug: 'rajat-chaturvedi',
       templateId: founderTemplate._id,
       templateVersion: founderTemplate.version,
@@ -207,5 +227,6 @@ export const seedSuperAdmin = async () => {
   member.profileCompletionScore = updatedProfile.calculateCompletionScore();
   await member.save();
 
-  logger.info('✅ Seeded Super Administrator (Founder: Rajat Chaturvedi) successfully.');
+  logger.info(`✅ Seeded Company Master Super Admin: ${superAdminEmail} (Password: ${superAdminPassword})`);
+  logger.info(`✅ Seeded Founder & CEO Account: ${ceoEmail} (Password: ${ceoPassword}) -> Profile: /p/rajat-chaturvedi`);
 };
