@@ -81,6 +81,31 @@ const customSectionSchema = z.object({
   isVisible: z.boolean().default(true)
 });
 
+const profileMediaSchema = z.object({
+  _id: z.string().optional(),
+  title: z.string().min(1),
+  url: z.string().url(),
+  type: z.enum(['all', 'photo', 'video', 'event']).default('photo'),
+  thumbnailUrl: z.string().optional().or(z.literal('')),
+  date: z.string().datetime().optional().nullable().or(z.date().optional()),
+  order: z.number().int().default(0),
+  isVisible: z.boolean().default(true)
+});
+
+const profileBlogSchema = z.object({
+  _id: z.string().optional(),
+  title: z.string().min(1),
+  excerpt: z.string().optional(),
+  content: z.string().optional(),
+  url: z.string().url().optional().or(z.literal('')),
+  coverImage: z.string().url().optional().or(z.literal('')),
+  publishedDate: z.string().datetime().optional().nullable().or(z.date().optional()),
+  readTime: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  order: z.number().int().default(0),
+  isVisible: z.boolean().default(true)
+});
+
 export const updateDraftProfileSchema = z.object({
   headline: z.string().max(255).optional(),
   bio: z.string().max(2000).optional(),
@@ -109,6 +134,8 @@ export const updateDraftProfileSchema = z.object({
   projects: z.array(projectSchema).optional(),
   impactMetrics: z.array(impactMetricSchema).optional(),
   achievements: z.array(achievementSchema).optional(),
+  mediaGallery: z.array(profileMediaSchema).optional(),
+  blogs: z.array(profileBlogSchema).optional(),
   socialLinks: z.array(socialLinkSchema).optional(),
   customSections: z.array(customSectionSchema).optional(),
   themeOverrides: z.object({

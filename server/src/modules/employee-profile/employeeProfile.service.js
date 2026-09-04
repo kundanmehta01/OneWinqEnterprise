@@ -90,6 +90,8 @@ class EmployeeProfileService {
       'projects',
       'impactMetrics',
       'achievements',
+      'mediaGallery',
+      'blogs',
       'socialLinks',
       'customSections'
     ];

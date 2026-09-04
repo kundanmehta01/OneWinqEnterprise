@@ -75,6 +75,17 @@ export const updateCompanyProfileSchema = z.object({
     order: z.number().int().default(0),
     isVisible: z.boolean().default(true)
   })).optional(),
+  mediaGallery: z.array(z.object({
+    _id: z.string().optional(),
+    title: z.string().min(1),
+    type: z.enum(['all', 'photo', 'video', 'news', 'event']).default('photo'),
+    url: z.string().url(),
+    thumbnailUrl: z.string().optional().or(z.literal('')),
+    date: z.string().datetime().optional().nullable().or(z.date().optional()),
+    description: z.string().optional(),
+    order: z.number().int().default(0),
+    isVisible: z.boolean().default(true)
+  })).optional(),
   branding: z.object({
     logoUrl: z.string().optional(),
     coverUrl: z.string().optional(),

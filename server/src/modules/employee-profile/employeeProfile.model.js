@@ -107,6 +107,39 @@ const customSectionSchema = new mongoose.Schema(
   { _id: true }
 );
 
+const profileMediaItemSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    url: { type: String, required: true },
+    type: {
+      type: String,
+      enum: ['all', 'photo', 'video', 'event'],
+      default: 'photo'
+    },
+    thumbnailUrl: { type: String, default: '' },
+    date: { type: Date, default: Date.now },
+    order: { type: Number, default: 0 },
+    isVisible: { type: Boolean, default: true }
+  },
+  { _id: true }
+);
+
+const profileBlogItemSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    excerpt: { type: String, default: '' },
+    content: { type: String, default: '' },
+    url: { type: String, default: '' },
+    coverImage: { type: String, default: '' },
+    publishedDate: { type: Date, default: Date.now },
+    readTime: { type: String, default: '5 min read' },
+    tags: [String],
+    order: { type: Number, default: 0 },
+    isVisible: { type: Boolean, default: true }
+  },
+  { _id: true }
+);
+
 const profileDataSchema = new mongoose.Schema(
   {
     headline: { type: String, default: '' },
@@ -141,6 +174,8 @@ const profileDataSchema = new mongoose.Schema(
     projects: [projectItemSchema],
     impactMetrics: [impactMetricItemSchema],
     achievements: [achievementItemSchema],
+    mediaGallery: [profileMediaItemSchema],
+    blogs: [profileBlogItemSchema],
     socialLinks: [profileSocialLinkSchema],
     customSections: [customSectionSchema]
   },

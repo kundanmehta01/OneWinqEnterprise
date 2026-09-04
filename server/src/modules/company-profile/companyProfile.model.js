@@ -57,6 +57,24 @@ const companyAchievementItemSchema = new mongoose.Schema(
   { _id: true }
 );
 
+const companyMediaItemSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    type: {
+      type: String,
+      enum: ['all', 'photo', 'video', 'news', 'event'],
+      default: 'photo'
+    },
+    url: { type: String, required: true },
+    thumbnailUrl: { type: String, default: '' },
+    date: { type: Date, default: Date.now },
+    description: { type: String, default: '' },
+    order: { type: Number, default: 0 },
+    isVisible: { type: Boolean, default: true }
+  },
+  { _id: true }
+);
+
 const dynamicSectionSchema = new mongoose.Schema(
   {
     sectionId: { type: String, required: true },
@@ -159,6 +177,7 @@ const companyProfileSchema = new mongoose.Schema(
     productsServices: [productServiceItemSchema],
     projects: [companyProjectItemSchema],
     achievements: [companyAchievementItemSchema],
+    mediaGallery: [companyMediaItemSchema],
     branding: {
       logoUrl: { type: String, default: '' },
       coverUrl: { type: String, default: '' },

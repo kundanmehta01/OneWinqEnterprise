@@ -71,6 +71,8 @@ class PublicProfileService {
       projects: (pub.projects || []).sort((a, b) => (a.order || 0) - (b.order || 0)),
       impactMetrics: (pub.impactMetrics || []).sort((a, b) => (a.order || 0) - (b.order || 0)),
       achievements: (pub.achievements || []).sort((a, b) => (a.order || 0) - (b.order || 0)),
+      mediaGallery: (pub.mediaGallery || []).filter((m) => m.isVisible !== false).sort((a, b) => (a.order || 0) - (b.order || 0)),
+      blogs: (pub.blogs || []).filter((b) => b.isVisible !== false).sort((a, b) => (a.order || 0) - (b.order || 0)),
       socialLinks: (pub.socialLinks || []).filter((l) => l.isVisible).sort((a, b) => (a.order || 0) - (b.order || 0)),
       customSections: (pub.customSections || []).filter((s) => s.isVisible).sort((a, b) => (a.order || 0) - (b.order || 0)),
       template: {

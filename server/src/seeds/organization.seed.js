@@ -177,6 +177,44 @@ export const seedOrganization = async () => {
           isVisible: true
         }
       ],
+      mediaGallery: [
+        {
+          title: 'OneWinq Annual Tech Summit 2024',
+          type: 'photo',
+          url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&fit=crop',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&fit=crop',
+          date: new Date('2024-06-15'),
+          order: 1,
+          isVisible: true
+        },
+        {
+          title: 'Product Keynote & NFC Launch',
+          type: 'video',
+          url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&fit=crop',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&fit=crop',
+          date: new Date('2024-05-10'),
+          order: 2,
+          isVisible: true
+        },
+        {
+          title: 'OneWinq Featured in National Tech News',
+          type: 'news',
+          url: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&fit=crop',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=400&fit=crop',
+          date: new Date('2024-04-20'),
+          order: 3,
+          isVisible: true
+        },
+        {
+          title: 'Engineering Innovation Workshop',
+          type: 'photo',
+          url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&fit=crop',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&fit=crop',
+          date: new Date('2024-03-05'),
+          order: 4,
+          isVisible: true
+        }
+      ],
       branding: {
         logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&h=200&fit=crop',
         coverUrl: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1200&h=400&fit=crop',

@@ -200,6 +200,81 @@ export const seedSuperAdmin = async () => {
         order: 4
       }
     ],
+    mediaGallery: [
+      {
+        title: 'Global Tech Keynote Presentation',
+        type: 'event',
+        url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&fit=crop',
+        date: new Date('2024-05-15'),
+        order: 1,
+        isVisible: true
+      },
+      {
+        title: 'Panel on Future of Identity & Trust',
+        type: 'video',
+        url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&fit=crop',
+        date: new Date('2024-04-10'),
+        order: 2,
+        isVisible: true
+      },
+      {
+        title: 'Startup Ecosystem Fireside Chat',
+        type: 'photo',
+        url: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&fit=crop',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400&fit=crop',
+        date: new Date('2024-03-22'),
+        order: 3,
+        isVisible: true
+      }
+    ],
+    blogs: [
+      {
+        title: 'The Future of Digital Identity',
+        excerpt: 'Exploring decentralized credentials, NFC connectivity, and frictionless trust for enterprises.',
+        coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&fit=crop',
+        publishedDate: new Date('2024-05-10'),
+        readTime: '4 min read',
+        tags: ['Digital Identity', 'SaaS', 'Future Tech'],
+        url: 'https://onewinq.in/blog/future-of-digital-identity',
+        order: 1,
+        isVisible: true
+      },
+      {
+        title: 'Building Products That Matter',
+        excerpt: 'How customer-centric engineering and design systems drive product-market fit.',
+        coverImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&fit=crop',
+        publishedDate: new Date('2024-04-20'),
+        readTime: '6 min read',
+        tags: ['Product Strategy', 'Engineering', 'Startups'],
+        url: 'https://onewinq.in/blog/building-products-that-matter',
+        order: 2,
+        isVisible: true
+      },
+      {
+        title: 'Leadership in Tech World',
+        excerpt: 'Core principles of empowering high-autonomy teams in fast-growing startups.',
+        coverImage: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&fit=crop',
+        publishedDate: new Date('2024-03-15'),
+        readTime: '5 min read',
+        tags: ['Leadership', 'Culture', 'Management'],
+        url: 'https://onewinq.in/blog/leadership-in-tech-world',
+        order: 3,
+        isVisible: true
+      },
+      {
+        title: 'AI & The Next Big Shift',
+        excerpt: 'The convergence of artificial intelligence with digital identity fabrics.',
+        coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&fit=crop',
+        publishedDate: new Date('2024-02-10'),
+        readTime: '7 min read',
+        tags: ['AI', 'Automation', 'Technology'],
+        url: 'https://onewinq.in/blog/ai-and-next-big-shift',
+        order: 4,
+        isVisible: true
+      }
+    ],
     socialLinks: [
       { platform: 'LinkedIn', url: 'https://linkedin.com/in/rajatchaturvedi', isVisible: true, order: 1 },
       { platform: 'Twitter', url: 'https://twitter.com/rajat_onewinq', isVisible: true, order: 2 }
