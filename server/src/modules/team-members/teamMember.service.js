@@ -11,6 +11,8 @@ import { NotFoundError, ConflictError, BadRequestError } from '../../errors/inde
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
 import { eventBus } from '../../events/appEventBus.js';
 import { APP_EVENTS } from '../../constants/events.constant.js';
+import { emailService } from '../../integrations/email/email.service.js';
+import { logger } from '../../config/logger.config.js';
 
 class TeamMemberService {
   async getAllTeamMembers(query = {}) {
@@ -176,6 +178,15 @@ class TeamMemberService {
       email: user.email,
       name: member.name,
       context: actorContext
+    });
+
+    // Send Welcome Email with credentials asynchronously (non-blocking)
+    emailService.sendWelcomeCredentialsEmail({
+      to: user.email,
+      name: member.name,
+      initialPassword
+    }).catch((err) => {
+      logger.warn(`[TeamMemberService] Failed to send welcome credentials email to ${user.email}: ${err.message}`);
     });
 
     const userObj = user.toObject();
