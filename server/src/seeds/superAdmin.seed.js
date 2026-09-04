@@ -4,7 +4,7 @@ import { Role } from '../modules/roles/role.model.js';
 import { Department } from '../modules/departments/department.model.js';
 import { EmployeeProfile } from '../modules/employee-profile/employeeProfile.model.js';
 import { Template } from '../modules/templates/template.model.js';
-import { hashPassword } from '../../utils/hash.util.js';
+import { hashPassword } from '../utils/hash.util.js';
 import { SYSTEM_ROLES } from '../constants/roles.constant.js';
 import { logger } from '../config/logger.config.js';
 
