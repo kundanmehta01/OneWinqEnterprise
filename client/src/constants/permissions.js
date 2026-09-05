@@ -52,10 +52,6 @@ export const PERMISSIONS = {
   SETTINGS_READ: 'settings.read',
   SETTINGS_UPDATE: 'settings.update',
 
-  // Media
-  MEDIA_UPLOAD: 'media.upload',
-  MEDIA_DELETE: 'media.delete',
-  MEDIA_READ: 'media.read'
 };
 
 export const MODULE_NAMES = {
@@ -70,5 +66,4 @@ export const MODULE_NAMES = {
   ANALYTICS: 'Analytics',
   AUDIT_LOGS: 'Audit Logs',
   SETTINGS: 'Settings',
-  MEDIA: 'Media Library'
 };

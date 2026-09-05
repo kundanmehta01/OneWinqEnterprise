@@ -23,7 +23,6 @@ export const ROUTES = {
     AUDIT_LOGS: '/admin/audit-logs',
     NOTIFICATIONS: '/admin/notifications',
     SETTINGS: '/admin/settings',
-    MEDIA: '/admin/media'
   },
 
   USER: {

@@ -29,7 +29,6 @@ import { AuditLogsPage } from '../../pages/admin/AuditLogsPage';
 import { SettingsPage } from '../../pages/admin/SettingsPage';
 import { NotificationsPage } from '../../pages/admin/NotificationsPage';
 import { EmployeeProfilesPage } from '../../pages/admin/EmployeeProfilesPage';
-import { MediaPage } from '../../pages/admin/MediaPage';
 
 // User Pages
 import { UserDashboardPage } from '../../pages/user/UserDashboardPage';
@@ -191,15 +190,6 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <NotificationsPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="media"
-          element={
-            <ProtectedRoute requiredPermission="media.read">
-              <MediaPage />
             </ProtectedRoute>
           }
         />

@@ -3,9 +3,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export const ProfileCompletionDonut = ({ overview = {} }) => {
   const total = overview.totalMembers ?? 0;
-  const completed = overview.activeMembers ?? 0;
-  const pending = overview.pendingApprovalsCount ?? 0;
-  const inProgress = Math.max(0, total - completed - pending);
+  const completed = overview.completedProfiles ?? overview.activeMembers ?? 0;
+  const pending = overview.pendingReviewProfiles ?? overview.pendingApprovalsCount ?? 0;
+  const inProgress = overview.inProgressProfiles ?? Math.max(0, total - completed - pending);
+  const percentage = overview.completionPercentage ?? (total ? Math.round((completed / total) * 100) : 0);
   const displayTotal = total > 0 ? total : 1;
 
   const data = [
@@ -43,8 +44,8 @@ export const ProfileCompletionDonut = ({ overview = {} }) => {
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-2xl font-black text-slate-900 tracking-tight">{completed}</span>
-            <span className="text-[11px] font-semibold text-slate-400">Completed</span>
+            <span className="text-2xl font-black text-slate-900 tracking-tight">{percentage}%</span>
+            <span className="text-[11px] font-semibold text-slate-400">Complete</span>
           </div>
         </div>
 

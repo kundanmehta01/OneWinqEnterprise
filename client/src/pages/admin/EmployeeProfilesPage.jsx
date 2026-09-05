@@ -19,6 +19,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { publicProfileService } from '../../services/publicProfileService';
+import { EmployeeQrCode } from '../../components/employee-profile/EmployeeQrCode';
 
 export const EmployeeProfilesPage = () => {
   const { members, loading, pagination, params, updateFilters, changePage } = useTeamMembers();
@@ -234,6 +236,9 @@ export const EmployeeProfilesPage = () => {
                         style={{ width: `${completion}%` }}
                       />
                     </div>
+                    {approvalStatus === 'approved' && (
+                      <EmployeeQrCode url={publicProfileService.getQrCodeUrl(slug)} />
+                    )}
                   </div>
                 </div>
 

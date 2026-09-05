@@ -83,12 +83,23 @@ export const PublicProfilePage = () => {
   }
 
   const p = profile || {};
-  const name = p.memberId?.name || 'Team Member';
-  const email = p.memberId?.email || '';
-  const phone = p.memberId?.phone || '';
-  const designation = p.memberId?.designation || '';
+  const name = p.name || p.memberId?.name || 'Team Member';
+  const email = p.workEmail || p.memberId?.email || '';
+  const phone = p.phone || p.memberId?.phone || '';
+  const designation = p.designation || p.memberId?.designation || '';
   const primaryColor = p.templateId?.layoutConfig?.colorPalette?.primary || '#6366F1';
-  const qrUrl = publicProfileService.getQrCodeUrl(slug);
+  const qrUrl = p.qrCode || publicProfileService.getQrCodeUrl(slug);
+  const socialLinks = Array.isArray(p.socialLinks)
+    ? Object.fromEntries(p.socialLinks.map((link) => [link.platform, link.url]))
+    : p.socialLinks || {};
+  const founderSections = [
+    ['Founder Overview', p.headline],
+    ['About Founder', p.bio],
+    ['Founder Journey', p.experience?.map((item) => `${item.title || ''}${item.company ? ` at ${item.company}` : ''}`).filter(Boolean).join(' • ')],
+    ['Work & Impact', p.projects?.map((item) => item.title || item.name).filter(Boolean).join(' • ')],
+    ['Achievements', p.achievements?.map((item) => item.title || item.name).filter(Boolean).join(' • ')],
+    ['Blogs & Thoughts', p.customSections?.find((section) => /blog|thought/i.test(section.title))?.content?.text]
+  ].filter(([, value]) => value);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -110,8 +121,8 @@ export const PublicProfilePage = () => {
                 className="w-20 h-20 rounded-2xl border-4 border-white shadow-md flex items-center justify-center text-white text-3xl font-extrabold flex-shrink-0"
                 style={{ backgroundColor: primaryColor }}
               >
-                {p.memberId?.avatarUrl ? (
-                  <img src={p.memberId.avatarUrl} alt={name} className="w-full h-full rounded-2xl object-cover" />
+                {p.avatarUrl || p.memberId?.avatarUrl ? (
+                    <img src={p.avatarUrl || p.memberId.avatarUrl} alt={name} className="w-full h-full rounded-2xl object-cover" />
                 ) : (
                   name.charAt(0)
                 )}
@@ -148,14 +159,14 @@ export const PublicProfilePage = () => {
             {p.headline && <p className="text-sm text-slate-600 mt-1">{p.headline}</p>}
 
             <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-slate-400">
-              {p.memberId?.departmentId?.name && (
+              {(p.department || p.memberId?.departmentId?.name) && (
                 <span className="flex items-center gap-1">
-                  <Briefcase className="w-3 h-3" /> {p.memberId.departmentId.name}
+                  <Briefcase className="w-3 h-3" /> {p.department || p.memberId.departmentId.name}
                 </span>
               )}
-              {p.memberId?.location && (
+              {p.location && (
                 <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" /> {p.memberId.location}
+                  <MapPin className="w-3 h-3" /> {typeof p.location === 'string' ? p.location : [p.location.city, p.location.country].filter(Boolean).join(', ')}
                 </span>
               )}
             </div>
@@ -220,6 +231,20 @@ export const PublicProfilePage = () => {
             </div>
           )}
 
+          {founderSections.length > 0 && (
+            <div className="px-6 sm:px-8 py-5 border-b border-slate-100">
+              <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Founder Profile</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {founderSections.map(([title, value]) => (
+                  <div key={title}>
+                    <h3 className="text-xs font-bold text-slate-800">{title}</h3>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Contact Links */}
           <div className="px-6 sm:px-8 py-5">
             <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Contact & Links</h2>
@@ -243,9 +268,9 @@ export const PublicProfilePage = () => {
                   {phone}
                 </a>
               )}
-              {p.socialLinks?.linkedin && (
+              {socialLinks.linkedin && (
                 <a
-                  href={p.socialLinks.linkedin}
+                  href={socialLinks.linkedin}
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => publicProfileService.recordEvent({ eventType: 'LINK_CLICK', targetType: 'EMPLOYEE', targetId: p._id, slug, metadata: { linkType: 'linkedin' } })}
@@ -255,9 +280,9 @@ export const PublicProfilePage = () => {
                   LinkedIn
                 </a>
               )}
-              {p.socialLinks?.github && (
+              {socialLinks.github && (
                 <a
-                  href={p.socialLinks.github}
+                  href={socialLinks.github}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition text-sm font-medium text-slate-700"
@@ -266,9 +291,9 @@ export const PublicProfilePage = () => {
                   GitHub
                 </a>
               )}
-              {p.socialLinks?.website && (
+              {socialLinks.website && (
                 <a
-                  href={p.socialLinks.website}
+                  href={socialLinks.website}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30 transition text-sm font-medium text-slate-700"

@@ -46,7 +46,6 @@ export const RolesTable = ({
       permissions: [
         'company_profile.read', 'company_profile.update',
         'template.read', 'template.create', 'template.update', 'template.delete',
-        'media.read', 'media.upload', 'media.delete'
       ]
     },
     {

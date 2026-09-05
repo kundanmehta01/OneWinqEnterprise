@@ -5,9 +5,10 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { EmptyState } from '../../components/common/EmptyState';
-import { Plus, Network, Users, Edit2, Archive, ArrowUpDown } from 'lucide-react';
+import { Plus, Network, Users, Edit2, Trash2 } from 'lucide-react';
 import { departmentService } from '../../services/departmentService';
 import { useNotification } from '../../hooks/useNotification';
+import { DeleteDepartmentModal } from '../../components/departments/DeleteDepartmentModal';
 
 export const DepartmentsPage = () => {
   const { departments, loading, refetch } = useDepartments();
@@ -15,15 +16,21 @@ export const DepartmentsPage = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDept, setEditingDept] = useState(null);
+  const [deletingDept, setDeletingDept] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const handleArchive = async (id) => {
-    if (!window.confirm('Are you sure you want to archive this department?')) return;
+  const handleDelete = async () => {
+    if (!deletingDept) return;
+    setDeleteLoading(true);
     try {
-      await departmentService.archive(id);
-      success('Department archived successfully');
+      await departmentService.delete(deletingDept._id);
+      success('Department deleted successfully');
+      setDeletingDept(null);
       refetch();
     } catch (err) {
-      notifyError(err.message || 'Failed to archive department');
+      notifyError(err.message || 'Failed to delete department');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -106,11 +113,11 @@ export const DepartmentsPage = () => {
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleArchive(dept._id)}
+                    onClick={() => setDeletingDept(dept)}
                     className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                    title="Archive"
+                    title="Delete"
                   >
-                    <Archive className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -124,6 +131,13 @@ export const DepartmentsPage = () => {
         onClose={() => setModalOpen(false)}
         department={editingDept}
         onSuccess={refetch}
+      />
+      <DeleteDepartmentModal
+        isOpen={Boolean(deletingDept)}
+        onClose={() => !deleteLoading && setDeletingDept(null)}
+        onConfirm={handleDelete}
+        departmentName={deletingDept?.name}
+        loading={deleteLoading}
       />
     </div>
   );

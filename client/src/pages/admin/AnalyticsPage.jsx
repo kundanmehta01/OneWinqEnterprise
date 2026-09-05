@@ -12,7 +12,7 @@ import { DeviceDonutCard } from '../../components/analytics/DeviceDonutCard';
 import { Info, Clock } from 'lucide-react';
 
 export const AnalyticsPage = () => {
-  const { analytics, range, setRange, loading } = useAnalytics();
+  const { analytics, range, setRange, loading, error } = useAnalytics();
   const [activeTab, setActiveTab] = useState('overview');
 
   const kpis = analytics?.kpis || {};
@@ -42,7 +42,7 @@ export const AnalyticsPage = () => {
       {/* Row 2: Profile Views Trend + Top Viewed Profiles + Traffic Source Donut */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-5">
-          <ProfileViewsChart trends={trends} />
+          <ProfileViewsChart trends={trends} loading={loading} error={error} />
         </div>
         <div className="lg:col-span-4">
           <TopViewedProfilesCard topProfiles={topProfiles} />

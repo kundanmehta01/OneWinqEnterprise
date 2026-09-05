@@ -48,6 +48,17 @@ export const PublicCompanyPage = () => {
 
   const cp = companyProfile || {};
   const primaryColor = cp.branding?.primaryColor || '#6366F1';
+  const sections = cp.dynamicSections || [];
+  const sectionTitles = {
+    overview: 'Company Overview',
+    about: 'About Company',
+    services: 'Products & Services',
+    team: 'Team',
+    projects: 'Projects / Work',
+    achievements: 'Achievements',
+    updates: 'Media / Updates',
+    contact: 'Contact / Connect'
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -108,18 +119,46 @@ export const PublicCompanyPage = () => {
             </div>
           </div>
 
-          {/* About Section */}
-          {cp.description && (
+          <div className="p-6 sm:p-8 border-b border-slate-100">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Company Overview</h2>
+            <p className="text-sm text-slate-700 leading-relaxed">{cp.description || cp.tagline || 'Company overview coming soon.'}</p>
+          </div>
+
+          {cp.about?.aboutCompany && (
             <div className="p-6 sm:p-8 border-b border-slate-100">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">About</h2>
-              <p className="text-sm text-slate-700 leading-relaxed">{cp.description}</p>
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">About Company</h2>
+              <p className="text-sm text-slate-700 leading-relaxed">{cp.about.aboutCompany}</p>
             </div>
           )}
+
+          {sections.map((section) => {
+            if (!section.isVisible) return null;
+            const content = section.content;
+            const text = typeof content === 'string' ? content : content?.description || content?.text;
+            return (
+              <div key={section.sectionId} className="p-6 sm:p-8 border-b border-slate-100">
+                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+                  {sectionTitles[section.type] || section.title}
+                </h2>
+                {text && <p className="text-sm text-slate-700 leading-relaxed">{text}</p>}
+                {Array.isArray(content?.items) && (
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {content.items.map((item, index) => (
+                      <div key={index} className="rounded-xl bg-slate-50 p-3">
+                        <p className="text-sm font-semibold text-slate-800">{item.title || item.name}</p>
+                        {item.description && <p className="text-xs text-slate-500 mt-1">{item.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {/* Contact Info */}
           {(cp.contact?.email || cp.contact?.phone) && (
             <div className="p-6 sm:p-8">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Contact</h2>
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Contact / Connect</h2>
               <div className="flex flex-wrap gap-4">
                 {cp.contact?.email && (
                   <a

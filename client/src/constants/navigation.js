@@ -11,7 +11,6 @@ import {
   BarChart3,
   FileText,
   Settings,
-  Image,
   UserCheck,
   Bell
 } from 'lucide-react';
@@ -67,12 +66,6 @@ export const ADMIN_NAV_SECTIONS = [
         icon: Send,
         permission: PERMISSIONS.INVITATION_READ
       },
-      {
-        label: 'Media Library',
-        path: '/admin/media',
-        icon: Image,
-        permission: PERMISSIONS.MEDIA_READ
-      }
     ]
   },
   {

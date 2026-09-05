@@ -22,7 +22,7 @@ export const departmentService = {
     return res.data.data;
   },
 
-  archive: async (id) => {
+  delete: async (id) => {
     const res = await api.delete(`${ENDPOINTS.ADMIN.DEPARTMENTS}/${id}`);
     return res.data;
   }

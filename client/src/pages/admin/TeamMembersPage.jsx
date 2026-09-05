@@ -13,6 +13,7 @@ import { InviteMemberModal } from '../../components/team-members/InviteMemberMod
 import { Pagination } from '../../components/common/Pagination';
 import { teamMemberService } from '../../services/teamMemberService';
 import { useNotification } from '../../hooks/useNotification';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 
 export const TeamMembersPage = () => {
   const {
@@ -34,9 +35,10 @@ export const TeamMembersPage = () => {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [detailsMember, setDetailsMember] = useState(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleArchive = async (id) => {
-    if (!window.confirm('Are you sure you want to archive this team member?')) return;
     try {
       await teamMemberService.archive(id);
       success('Team member archived');
@@ -46,7 +48,21 @@ export const TeamMembersPage = () => {
     }
   };
 
-    const handleEdit = async (member) => {
+  const handleDeleteArchived = async () => {
+    setDeleteLoading(true);
+    try {
+      await teamMemberService.archive(pendingDeleteId);
+      success('Archived team member deleted');
+      setPendingDeleteId(null);
+      refetch();
+    } catch (err) {
+      notifyError(err.message || 'Failed to delete team member');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleEdit = async (member) => {
     try {
       setEditingMember(await teamMemberService.getById(member._id));
     } catch (err) {
@@ -106,6 +122,7 @@ export const TeamMembersPage = () => {
           onEditMember={handleEdit}
           onViewProfile={handleViewProfile}
           onArchiveMember={handleArchive}
+          onDeleteMember={setPendingDeleteId}
         />
 
         <Pagination
@@ -146,6 +163,16 @@ export const TeamMembersPage = () => {
         isOpen={Boolean(detailsMember)}
         member={detailsMember}
         onClose={() => setDetailsMember(null)}
+      />
+      <ConfirmDialog
+        isOpen={Boolean(pendingDeleteId)}
+        onClose={() => !deleteLoading && setPendingDeleteId(null)}
+        onConfirm={handleDeleteArchived}
+        title="Delete Archived Member"
+        message="This archived team member will be removed. This action cannot be undone."
+        confirmText="Delete Member"
+        danger
+        loading={deleteLoading}
       />
     </div>
   );

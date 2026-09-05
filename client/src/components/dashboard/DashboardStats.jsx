@@ -6,7 +6,7 @@ export const DashboardStats = ({ overview = {} }) => {
   const totalMembers = overview.totalMembers ?? 0;
   const activeMembers = overview.activeMembers ?? 0;
   const departments = overview.totalDepartments ?? 0;
-  const pendingApprovals = overview.pendingApprovalsCount ?? 0;
+  const pendingApprovals = overview.pendingReviewProfiles ?? overview.pendingApprovalsCount ?? 0;
   const pendingInvites = overview.pendingInvites ?? 0;
 
   return (

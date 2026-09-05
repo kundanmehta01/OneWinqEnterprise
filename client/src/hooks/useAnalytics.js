@@ -22,6 +22,8 @@ export const useAnalytics = (initialRange = '7d') => {
 
   useEffect(() => {
     fetchAnalytics();
+    const interval = window.setInterval(fetchAnalytics, 30000);
+    return () => window.clearInterval(interval);
   }, [fetchAnalytics]);
 
   return {

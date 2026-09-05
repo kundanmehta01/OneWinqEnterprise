@@ -87,7 +87,6 @@ client/src/
 │   ├── dashboard/          # DashboardStats, ProfileCompletionDonut
 │   ├── departments/        # DepartmentsTable, DepartmentStats
 │   ├── invitations/        # InvitationsTable, InviteModal
-│   ├── media/              # MediaGrid, UploadZone
 │   ├── notifications/      # NotificationsList
 │   ├── permissions/        # PermissionMatrixPane
 │   ├── roles/              # RolesTable, RolesStats
@@ -95,7 +94,7 @@ client/src/
 │   ├── team-members/       # TeamMembersTable, Filters, Stats
 │   └── templates/          # TemplatesTable, TemplatesStats
 ├── constants/
-│   └── navigation.js       # Sidebar navigation config (all 15 modules)
+│   └── navigation.js       # Sidebar navigation config
 ├── hooks/                  # useAnalytics, useDashboard, useMembers, etc.
 ├── pages/
 │   ├── admin/              # One page per admin module
@@ -106,7 +105,6 @@ client/src/
 │   ├── analyticsService.js
 │   ├── departmentService.js
 │   ├── invitationService.js
-│   ├── mediaService.js
 │   ├── roleService.js
 │   ├── settingsService.js
 │   ├── teamMemberService.js
@@ -333,10 +331,6 @@ Response KPIs: `kpis.totalViews`, `kpis.totalShares`, `kpis.totalQrScans`, `kpis
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/admin/media` | List all media assets |
-| `GET` | `/admin/media?type=image` | Filter by type |
-| `POST` | `/admin/media/upload` | Upload file (multipart/form-data) |
-| `DELETE` | `/admin/media/:id` | Delete media asset |
 
 ---
 
@@ -373,7 +367,7 @@ Response KPIs: `kpis.totalViews`, `kpis.totalShares`, `kpis.totalQrScans`, `kpis
 
 ## Admin Modules
 
-All 15 modules are accessible from the fixed left sidebar:
+All configured modules are accessible from the fixed left sidebar:
 
 | # | Module | Page Route | API Endpoint |
 |---|---|---|---|
@@ -384,14 +378,25 @@ All 15 modules are accessible from the fixed left sidebar:
 | 5 | Roles | `/admin/roles` | `GET /admin/roles` |
 | 6 | Permissions | `/admin/permissions` | `GET /admin/permissions` |
 | 7 | Invitations | `/admin/invitations` | `GET /admin/invitations` |
-| 8 | Media Library | `/admin/media` | `GET /admin/media` |
-| 9 | Employee Profiles | `/admin/employee-profiles` | `GET /me/profile` |
-| 10 | Templates | `/admin/templates` | `GET /admin/templates` |
-| 11 | Profile Approvals | `/admin/profile-approvals` | `GET /admin/approvals` |
-| 12 | Analytics | `/admin/analytics` | `GET /admin/analytics` |
-| 13 | Audit Logs | `/admin/audit-logs` | `GET /admin/audit-logs` |
-| 14 | Notifications | `/admin/notifications` | `GET /me/notifications` |
-| 15 | General Settings | `/admin/settings` | `GET /admin/settings` |
+| 8 | Employee Profiles | `/admin/employee-profiles` | `GET /admin/team` |
+| 9 | Templates | `/admin/templates` | `GET /admin/templates` |
+| 10 | Profile Approvals | `/admin/profile-approvals` | `GET /admin/approvals` |
+| 11 | Analytics | `/admin/analytics` | `GET /admin/analytics` |
+| 12 | Audit Logs | `/admin/audit-logs` | `GET /admin/audit-logs` |
+| 13 | Notifications | `/admin/notifications` | `GET /me/notifications` |
+| 14 | General Settings | `/admin/settings` | `GET /admin/settings` |
+
+---
+
+## Frontend Module Features
+
+- Analytics renders live profile-view trends with Recharts, polling the existing analytics endpoint and showing loading, empty, and error states.
+- Archived team members and departments use explicit confirmation dialogs for destructive actions.
+- Employee profile cards display QR codes from the public profile QR endpoint.
+- Approval review actions are available only while a request is pending; terminal states are read-only.
+- Roles support dynamic permission selection from the permissions API, including Super Admin role assignment.
+- Company and founder-facing public profiles render reusable overview, about, work, achievements, updates, contact, and QR sections when supplied by the profile API.
+- The removed media gallery frontend route, navigation entry, service, hook, and page have been removed.
 
 ---
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MoreHorizontal, ArrowUpDown, ExternalLink, Edit2, Archive, CheckCircle } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, ExternalLink, Edit2, Archive, Trash2, CheckCircle } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { Dropdown } from '../common/Dropdown';
 import { formatDate } from '../../utils/formatDate';
@@ -9,6 +9,7 @@ export const TeamMembersTable = ({
   loading = false,
   onEditMember,
   onArchiveMember,
+  onDeleteMember,
   onViewProfile
 }) => {
   const [selectedIds, setSelectedIds] = useState([]);
@@ -224,10 +225,12 @@ export const TeamMembersTable = ({
                 },
                 { divider: true },
                 {
-                  label: 'Archive Member',
-                  icon: Archive,
+                  label: m.status === 'archived' ? 'Delete Member' : 'Archive Member',
+                  icon: m.status === 'archived' ? Trash2 : Archive,
                   danger: true,
-                  onClick: () => onArchiveMember?.(m._id)
+                  onClick: () => (m.status === 'archived'
+                    ? onDeleteMember?.(m._id)
+                    : onArchiveMember?.(m._id))
                 }
               ];
 

@@ -27,7 +27,6 @@ export const ENDPOINTS = {
     AUDIT_LOGS: '/admin/audit-logs',
     COMPANY_PROFILE: '/admin/company-profile',
     SETTINGS: '/admin/settings',
-    MEDIA: '/admin/media'
   },
 
   // User / Employee self-service

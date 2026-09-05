@@ -54,7 +54,7 @@ export const ProfileApprovalsPage = () => {
 
         {/* Filter buttons */}
         <div className="flex items-center gap-2">
-          {['', 'pending', 'approved', 'rejected'].map((s) => (
+          {['', 'pending', 'approved', 'rejected', 'changes_requested'].map((s) => (
             <button
               key={s}
               onClick={() => updateFilters({ status: s })}
@@ -64,7 +64,7 @@ export const ProfileApprovalsPage = () => {
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              {s === '' ? 'All Requests' : s.charAt(0).toUpperCase() + s.slice(1)}
+              {s === '' ? 'All Requests' : s === 'changes_requested' ? 'Changes Requested' : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
         </div>

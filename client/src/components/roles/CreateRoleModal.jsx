@@ -4,21 +4,17 @@ import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { roleService } from '../../services/roleService';
 import { useNotification } from '../../hooks/useNotification';
+import { usePermissions } from '../../hooks/usePermissions';
 import { Check } from 'lucide-react';
 
 const defaultPermissions = ['team.read', 'department.read', 'template.read'];
-const availablePerms = [
-  ['team.read', 'View Team Members'], ['team.create', 'Create Team Members'], ['team.update', 'Edit Team Members'], ['team.delete', 'Delete Team Members'],
-  ['department.read', 'View Departments'], ['department.create', 'Create Departments'], ['department.update', 'Edit Departments'], ['department.delete', 'Delete Departments'],
-  ['template.read', 'View Templates'], ['template.create', 'Create Templates'], ['profile_approval.read', 'View Profile Approvals'], ['profile_approval.approve', 'Approve Profiles'],
-  ['invitation.read', 'View Invitations'], ['invitation.create', 'Send Invitations'], ['analytics.read', 'View Analytics'], ['audit_log.read', 'View Audit Logs'], ['settings.read', 'View Organization Settings']
-].map(([code, label]) => ({ code, label }));
 
 export const CreateRoleModal = ({ isOpen, onClose, onSuccess, role = null }) => {
   const { success, error: notifyError } = useNotification();
+  const { permissions, loading: permissionsLoading, error: permissionsError } = usePermissions();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedPerms, setSelectedPerms] = useState(defaultPermissions);
+  const [selectedPerms, setSelectedPerms] = useState([]);
   const [loading, setLoading] = useState(false);
   const isEditing = Boolean(role?._id);
 
@@ -57,9 +53,13 @@ export const CreateRoleModal = ({ isOpen, onClose, onSuccess, role = null }) => 
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">Permissions ({selectedPerms.length} Selected)</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-1 border border-slate-200 rounded-xl">
-            {availablePerms.map((permission) => {
+            {permissionsLoading ? (
+              <p className="p-3 text-xs text-slate-400">Loading available permissions...</p>
+            ) : permissionsError ? (
+              <p className="p-3 text-xs text-rose-600">{permissionsError}</p>
+            ) : permissions.map((permission) => {
               const checked = selectedPerms.includes(permission.code);
-              return <button type="button" key={permission.code} onClick={() => togglePerm(permission.code)} className={`flex items-center gap-2.5 p-2 rounded-lg text-xs font-medium text-left transition ${checked ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'hover:bg-slate-50 text-slate-600 border border-transparent'}`}><span className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 ${checked ? 'bg-indigo-600 text-white' : 'border border-slate-300'}`}>{checked && <Check className="w-3 h-3" />}</span><span>{permission.label}</span></button>;
+              return <button type="button" key={permission.code} onClick={() => togglePerm(permission.code)} className={`flex items-center gap-2.5 p-2 rounded-lg text-xs font-medium text-left transition ${checked ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'hover:bg-slate-50 text-slate-600 border border-transparent'}`}><span className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 ${checked ? 'bg-indigo-600 text-white' : 'border border-slate-300'}`}>{checked && <Check className="w-3 h-3" />}</span><span>{permission.name || permission.code}</span></button>;
             })}
           </div>
         </div>

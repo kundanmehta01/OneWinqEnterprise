@@ -10,30 +10,17 @@ import {
 } from 'recharts';
 import { ChevronDown } from 'lucide-react';
 
-export const ProfileViewsChart = ({ trends = [] }) => {
-  const defaultData = [
-    { date: 'May 18', views: 2050 },
-    { date: 'May 19', views: 2450 },
-    { date: 'May 20', views: 2750 },
-    { date: 'May 21', views: 3550 },
-    { date: 'May 22', views: 2780 },
-    { date: 'May 23', views: 2790 },
-    { date: 'May 24', views: 2320 }
-  ];
-
-  const chartData =
-    trends && trends.length > 0
-      ? trends.map((t) => ({
-          date: t.date?.split('-').slice(1).join('/') || t.date,
-          views: t.views || 2500
-        }))
-      : defaultData;
+export const ProfileViewsChart = ({ trends = [], loading = false, error = null }) => {
+  const chartData = trends.map((t) => ({
+    date: t.date?.split('-').slice(1).join('/') || t.date || 'Unknown',
+    views: Number(t.views ?? t.count ?? 0)
+  }));
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-slate-900 text-white px-3 py-2 rounded-xl shadow-lg text-xs">
-          <p className="font-semibold">{label}, 2025</p>
+          <p className="font-semibold">{label}</p>
           <p className="text-indigo-300 mt-0.5">Views: {payload[0].value.toLocaleString()}</p>
         </div>
       );
@@ -54,9 +41,16 @@ export const ProfileViewsChart = ({ trends = [] }) => {
         </button>
       </div>
 
-      <div className="h-56 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+      {loading ? (
+        <div className="h-56 flex items-center justify-center text-sm text-slate-400">Loading profile views...</div>
+      ) : error ? (
+        <div className="h-56 flex items-center justify-center text-sm text-rose-600">{error}</div>
+      ) : chartData.length === 0 ? (
+        <div className="h-56 flex items-center justify-center text-sm text-slate-400">No profile view data for this period.</div>
+      ) : (
+        <div className="h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
             <XAxis
               dataKey="date"
@@ -69,8 +63,6 @@ export const ProfileViewsChart = ({ trends = [] }) => {
               axisLine={false}
               tick={{ fill: '#94A3B8', fontSize: 11 }}
               tickFormatter={(v) => (v >= 1000 ? `${v / 1000}K` : v)}
-              domain={[0, 4000]}
-              ticks={[0, 1000, 2000, 3000, 4000]}
             />
             <Tooltip content={<CustomTooltip />} />
             <Line
@@ -81,9 +73,10 @@ export const ProfileViewsChart = ({ trends = [] }) => {
               dot={{ r: 4, fill: '#6366F1', strokeWidth: 0 }}
               activeDot={{ r: 6, fill: '#6366F1', stroke: '#FFFFFF', strokeWidth: 2 }}
             />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 };

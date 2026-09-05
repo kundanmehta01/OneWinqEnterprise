@@ -30,6 +30,7 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
   };
 
   const draft = approval.draftSnapshot || {};
+  const canReview = approval.status === 'pending';
 
   return (
     <Modal
@@ -85,6 +86,10 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
           </Button>
 
           <div className="flex items-center gap-2">
+           {!canReview ? (
+             <p className="text-xs text-slate-500">This request is already {approval.status.replace('_', ' ')}.</p>
+           ) : (
+             <>
             <Button
               variant="danger"
               size="sm"
@@ -112,6 +117,8 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
             >
               Approve Profile
             </Button>
+             </>
+           )}
           </div>
         </div>
       </div>
