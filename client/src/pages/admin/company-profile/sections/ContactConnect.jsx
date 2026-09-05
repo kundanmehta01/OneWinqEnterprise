@@ -4,7 +4,7 @@ import CompanySectionCard from '../common/CompanySectionCard';
 
 export default function ContactConnect({ company }) {
   const location = [company?.location?.address, company?.location?.city, company?.location?.state, company?.location?.country, company?.location?.zipCode].filter(Boolean).join(', ');
-  return <CompanySectionCard id="contact" title="Contact / Connect" icon={Link2}>
+  return <CompanySectionCard id="contact" title="Contact & Connect" icon={Link2}>
     <div className="space-y-3 text-sm text-slate-600">
       <div className="flex items-center gap-3"><Mail className="h-4 w-4 text-indigo-600" />{company?.contact?.email || 'hello@onewinq.com'}</div>
       <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-indigo-600" />{company?.contact?.phone || '+91 98765 43210'}</div>

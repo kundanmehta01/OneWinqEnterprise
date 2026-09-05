@@ -18,7 +18,7 @@ import ContactConnect from './sections/ContactConnect';
 const tabs = [
   ['overview', 'Company Overview'], ['about', 'About Company'], ['services', 'Products / Services'],
   ['team', 'Team'], ['projects', 'Projects / Work'], ['achievements', 'Achievements'],
-  ['media', 'Media / Updates'], ['contact', 'Contact / Connect']
+  ['media', 'Media / Updates'], ['contact', 'Contact & Connect']
 ].map(([id, label]) => ({ id, label }));
 
 const byType = (sections, type) => sections.find((section) => section.type === type && section.isVisible !== false);

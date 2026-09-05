@@ -18,6 +18,7 @@ This client implements the production-facing admin modules for analytics, profil
 - Enterprise company profile dashboard at `/admin/company-profile`, split into reusable header, statistics, tabs, section cards, and overview/about/services/team/projects/achievements/media/contact sections. It uses `GET/PATCH /api/v1/admin/company-profile`, team data, analytics KPIs, and the media list.
 - Dashboard profile completion overview using backend completion scores and approval states instead of static 100% values
 - Company Profile now uses a data-driven identity visual layer with replaceable logo, cover, office, product, team, project, achievement, and media image sources plus smooth-scroll section navigation.
+- Company Profile content cards use progressive disclosure with View More/Show Less controls for products, team, projects, achievements, and media.
 - Approval review comparison showing backend-provided current profile data against the submitted draft before approve/request-changes/reject actions.
 - Permission management matrix grouped by backend modules with View, Create, Edit, and Delete checkboxes per selected role.
 
