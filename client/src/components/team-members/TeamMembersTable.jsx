@@ -7,11 +7,15 @@ export function TeamMembersTable({
   onEdit,
   onDelete,
   onPageChange,
+  selectedIds = [],
+  onSelect,
+  onSelectAll,
 }) {
   const [menuOpenId, setMenuOpenId] = useState(null)
 
   const currentPage = Number(pagination.currentPage || 1)
   const totalPages = Number(pagination.totalPages || 1)
+  const allSelected = members.length > 0 && members.every((member) => selectedIds.includes(member._id))
 
   const menuNote = useMemo(
     () => ({
@@ -37,6 +41,14 @@ export function TeamMembersTable({
         <table className="min-w-full text-left text-sm text-slate-700">
           <thead className="bg-slate-50">
             <tr>
+              <th className="px-4 py-3 font-medium">
+                <input
+                  type="checkbox"
+                  aria-label="Select all members"
+                  checked={allSelected}
+                  onChange={(event) => onSelectAll?.(event.target.checked)}
+                />
+              </th>
               <th className="px-4 py-3 font-medium">Member</th>
               <th className="px-4 py-3 font-medium">Designation</th>
               <th className="px-4 py-3 font-medium">Department</th>
@@ -50,13 +62,21 @@ export function TeamMembersTable({
           <tbody>
             {members.length === 0 ? (
               <tr>
-                <td colSpan="8" className="px-4 py-12 text-center text-slate-500">
+                <td colSpan="9" className="px-4 py-12 text-center text-slate-500">
                   No team members found.
                 </td>
               </tr>
             ) : (
               members.map((member) => (
                 <tr key={member._id} className="border-t border-slate-200 hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${member.name}`}
+                      checked={selectedIds.includes(member._id)}
+                      onChange={(event) => onSelect?.(member._id, event.target.checked)}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-slate-900">{member.name}</div>
                     <div className="text-xs text-slate-500">{member.userId?.email || member.email || '—'}</div>

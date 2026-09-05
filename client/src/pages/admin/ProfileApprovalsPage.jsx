@@ -14,6 +14,7 @@ export const ProfileApprovalsPage = () => {
     approvals,
     pagination,
     params,
+    error,
     loading,
     updateFilters,
     changePage,
@@ -74,6 +75,8 @@ export const ProfileApprovalsPage = () => {
         <div className="py-24">
           <LoadingSpinner message="Loading profile approval requests..." />
         </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-6 text-sm text-rose-700">{error}</div>
       ) : approvals.length === 0 ? (
         <EmptyState
           icon={CheckCircle2}

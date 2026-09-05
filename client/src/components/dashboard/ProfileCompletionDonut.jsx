@@ -3,10 +3,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export const ProfileCompletionDonut = ({ overview = {} }) => {
   const total = overview.totalMembers ?? 0;
-  const completed = overview.completedProfiles ?? overview.activeMembers ?? 0;
+  const completed = overview.completedProfiles ?? 0;
   const pending = overview.pendingReviewProfiles ?? overview.pendingApprovalsCount ?? 0;
   const inProgress = overview.inProgressProfiles ?? Math.max(0, total - completed - pending);
-  const percentage = overview.completionPercentage ?? (total ? Math.round((completed / total) * 100) : 0);
+  const percentage = Number(overview.completionPercentage ?? 0);
   const displayTotal = total > 0 ? total : 1;
 
   const data = [

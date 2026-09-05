@@ -8,14 +8,15 @@ This client implements the production-facing admin modules for analytics, profil
 
 ## Included frontend modules
 
-- Analytics dashboard with KPI cards, chart rendering, and loading/error/empty states
-- Team members management with view, edit, and delete flows
+- Analytics dashboard with KPI cards, profile-view charts, preset/custom date ranges, and loading/error/empty states
+- Team members management with select-all/individual selection, view/edit/delete flows, delete confirmation, and refresh-after-delete
 - Department management with delete confirmation and refresh-after-delete behavior
-- Profile approval review actions mapped to backend status transitions
+- Profile approval review actions mapped to `approve`, `reject`, and `request_changes` backend actions with status-safe UI
 - QR code access for employee/public profiles
-- Roles and permissions management with backend-driven permission sets and role updates
+- Roles and permissions management with backend-driven role selection, module-grouped permission checkboxes, and role updates
 - Media gallery for upload, list, and delete operations
-- Company profile presentation aligned to the requested enterprise profile sections
+- Company profile presentation with editable organization/about/contact/branding data and all requested dynamic sections
+- Dashboard profile completion overview using backend completion scores and approval states instead of static 100% values
 
 ## Local development
 
@@ -37,4 +38,6 @@ This client implements the production-facing admin modules for analytics, profil
 
 - The app uses the existing backend APIs and does not rely on placeholder or static data where real API values are available.
 - UI updates follow the server-side status and permission semantics already exposed by the backend.
+- The backend currently exposes member and department `DELETE` routes through soft-archive service behavior; the frontend presents these actions as Delete and refreshes the list after success.
+- Analytics traffic-source and device breakdowns are shown as unavailable when the backend response does not provide those dimensions; no fabricated values are rendered.
 - The codebase is kept modular to support additional admin features without duplicating data or logic.

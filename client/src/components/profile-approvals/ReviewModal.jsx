@@ -87,7 +87,9 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
 
           <div className="flex items-center gap-2">
            {!canReview ? (
-             <p className="text-xs text-slate-500">This request is already {approval.status.replace('_', ' ')}.</p>
+             <p className="text-xs text-slate-500">
+               Review complete: {approval.status.replace('_', ' ')}. No further action is available.
+             </p>
            ) : (
              <>
             <Button

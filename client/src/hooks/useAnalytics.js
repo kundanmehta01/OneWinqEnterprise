@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { analyticsService } from '../services/analyticsService';
 
-export const useAnalytics = (initialRange = '7d') => {
+export const useAnalytics = (initialRange = '7d', initialDates = {}) => {
   const [data, setData] = useState(null);
   const [range, setRange] = useState(initialRange);
+  const [dates, setDates] = useState(initialDates);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -11,14 +12,19 @@ export const useAnalytics = (initialRange = '7d') => {
     setLoading(true);
     setError(null);
     try {
-      const res = await analyticsService.getAggregatedMetrics({ range });
+      const params = { range };
+      if (range === 'custom') {
+        if (dates.startDate) params.startDate = dates.startDate;
+        if (dates.endDate) params.endDate = dates.endDate;
+      }
+      const res = await analyticsService.getAggregatedMetrics(params);
       setData(res);
     } catch (err) {
       setError(err.message || 'Failed to load analytics metrics');
     } finally {
       setLoading(false);
     }
-  }, [range]);
+  }, [range, dates]);
 
   useEffect(() => {
     fetchAnalytics();
@@ -30,6 +36,8 @@ export const useAnalytics = (initialRange = '7d') => {
     analytics: data,
     range,
     setRange,
+    dates,
+    setDates,
     loading,
     error,
     refetch: fetchAnalytics

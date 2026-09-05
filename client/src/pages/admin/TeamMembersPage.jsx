@@ -37,29 +37,32 @@ export const TeamMembersPage = () => {
   const [detailsMember, setDetailsMember] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
 
-  const handleArchive = async (id) => {
-    try {
-      await teamMemberService.archive(id);
-      success('Team member archived');
-      refetch();
-    } catch (err) {
-      notifyError(err.message || 'Failed to archive team member');
-    }
-  };
-
-  const handleDeleteArchived = async () => {
+  const handleDeleteSelected = async () => {
     setDeleteLoading(true);
     try {
-      await teamMemberService.archive(pendingDeleteId);
-      success('Archived team member deleted');
+      const ids = pendingDeleteId === '__selected__' ? selectedIds : [pendingDeleteId];
+      await Promise.all(ids.map((id) => teamMemberService.delete(id)));
+      success(ids.length > 1 ? 'Team members deleted' : 'Team member deleted');
       setPendingDeleteId(null);
+      setSelectedIds([]);
       refetch();
     } catch (err) {
-      notifyError(err.message || 'Failed to delete team member');
+      notifyError(err.message || 'Failed to delete team member(s)');
     } finally {
       setDeleteLoading(false);
     }
+  };
+
+  const handleSelect = (id, checked) => {
+    setSelectedIds((current) => checked
+      ? [...new Set([...current, id])]
+      : current.filter((selectedId) => selectedId !== id));
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectedIds(checked ? members.map((member) => member._id) : []);
   };
 
   const handleEdit = async (member) => {
@@ -116,13 +119,29 @@ export const TeamMembersPage = () => {
           onFilterChange={updateFilters}
         />
 
+        {selectedIds.length > 0 && (
+          <div className="flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
+            <span className="text-sm font-medium text-indigo-800">{selectedIds.length} member(s) selected</span>
+            <button
+              type="button"
+              onClick={() => setPendingDeleteId('__selected__')}
+              className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700"
+            >
+              Delete selected
+            </button>
+          </div>
+        )}
+
         <TeamMembersTable
           members={members}
-          loading={loading}
-          onEditMember={handleEdit}
-          onViewProfile={handleViewProfile}
-          onArchiveMember={handleArchive}
-          onDeleteMember={setPendingDeleteId}
+          pagination={pagination}
+          onView={handleViewProfile}
+          onEdit={handleEdit}
+          onDelete={setPendingDeleteId}
+          onPageChange={changePage}
+          selectedIds={selectedIds}
+          onSelect={handleSelect}
+          onSelectAll={handleSelectAll}
         />
 
         <Pagination
@@ -167,9 +186,11 @@ export const TeamMembersPage = () => {
       <ConfirmDialog
         isOpen={Boolean(pendingDeleteId)}
         onClose={() => !deleteLoading && setPendingDeleteId(null)}
-        onConfirm={handleDeleteArchived}
-        title="Delete Archived Member"
-        message="This archived team member will be removed. This action cannot be undone."
+        onConfirm={handleDeleteSelected}
+        title="Delete team member(s)"
+        message={pendingDeleteId === '__selected__'
+          ? `Delete ${selectedIds.length} selected team member(s)? This action cannot be undone.`
+          : 'Delete this team member? This action cannot be undone.'}
         confirmText="Delete Member"
         danger
         loading={deleteLoading}

@@ -7,8 +7,19 @@ import { Building2, Globe, MapPin, Mail, Phone, Palette, Save, ExternalLink } fr
 import { companyProfileService } from '../../services/companyProfileService';
 import { useNotification } from '../../hooks/useNotification';
 
+const requiredSections = [
+  { type: 'overview', title: 'Company Overview' },
+  { type: 'about', title: 'About Company' },
+  { type: 'services', title: 'Products & Services' },
+  { type: 'team', title: 'Team' },
+  { type: 'projects', title: 'Projects / Work' },
+  { type: 'achievements', title: 'Achievements' },
+  { type: 'updates', title: 'Media / Updates' },
+  { type: 'contact', title: 'Contact / Connect' }
+];
+
 export const CompanyProfilePage = () => {
-  const { profile, loading, refetch } = useCompanyProfile();
+  const { profile, loading, error, refetch } = useCompanyProfile();
   const { success, error: notifyError } = useNotification();
   const [saving, setSaving] = useState(false);
 
@@ -23,7 +34,7 @@ export const CompanyProfilePage = () => {
       city: '',
       state: '',
       country: '',
-      postalCode: ''
+      zipCode: ''
     },
     contact: {
       email: '',
@@ -35,7 +46,13 @@ export const CompanyProfilePage = () => {
       accentColor: '#4F46E5',
       logoUrl: '',
       bannerUrl: ''
-    }
+    },
+    about: {
+      aboutCompany: '',
+      mission: '',
+      vision: ''
+    },
+    dynamicSections: []
   });
 
   useEffect(() => {
@@ -51,7 +68,7 @@ export const CompanyProfilePage = () => {
           city: profile.location?.city || '',
           state: profile.location?.state || '',
           country: profile.location?.country || '',
-          postalCode: profile.location?.postalCode || ''
+          zipCode: profile.location?.zipCode || ''
         },
         contact: {
           email: profile.contact?.email || '',
@@ -62,8 +79,14 @@ export const CompanyProfilePage = () => {
           primaryColor: profile.branding?.primaryColor || '#6366F1',
           accentColor: profile.branding?.accentColor || '#4F46E5',
           logoUrl: profile.branding?.logoUrl || '',
-          bannerUrl: profile.branding?.bannerUrl || ''
-        }
+          bannerUrl: profile.branding?.bannerUrl || profile.branding?.coverUrl || ''
+        },
+        about: {
+          aboutCompany: profile.about?.aboutCompany || '',
+          mission: profile.about?.mission || '',
+          vision: profile.about?.vision || ''
+        },
+        dynamicSections: Array.isArray(profile.dynamicSections) ? profile.dynamicSections : []
       });
     }
   }, [profile]);
@@ -88,6 +111,10 @@ export const CompanyProfilePage = () => {
         <LoadingSpinner message="Loading company profile details..." />
       </div>
     );
+  }
+
+  if (error && !profile) {
+    return <div className="rounded-2xl border border-rose-100 bg-rose-50 p-6 text-sm text-rose-700">{error}</div>;
   }
 
   return (
@@ -233,11 +260,11 @@ export const CompanyProfilePage = () => {
               <Input
                 label="Postal Code"
                 placeholder="94107"
-                value={formData.location.postalCode}
+                value={formData.location.zipCode || ''}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    location: { ...formData.location, postalCode: e.target.value }
+                    location: { ...formData.location, zipCode: e.target.value }
                   })
                 }
               />
@@ -375,6 +402,59 @@ export const CompanyProfilePage = () => {
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-card space-y-4">
+          <h3 className="text-base font-bold text-slate-900">About Company</h3>
+          {['aboutCompany', 'mission', 'vision'].map((field) => (
+            <div key={field}>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                {field === 'aboutCompany' ? 'About company' : field}
+              </label>
+              <textarea
+                rows={field === 'aboutCompany' ? 4 : 3}
+                value={formData.about[field]}
+                onChange={(event) => setFormData({
+                  ...formData,
+                  about: { ...formData.about, [field]: event.target.value }
+                })}
+                className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-card">
+          <h3 className="text-base font-bold text-slate-900">Company Profile Sections</h3>
+          <p className="mt-1 text-xs text-slate-500">These sections are rendered from the backend dynamic section configuration.</p>
+          <div className="mt-4 space-y-3">
+            {requiredSections.map((required) => {
+              const section = formData.dynamicSections.find(
+                (item) => item.type === required.type || item.sectionId === required.type
+              );
+              return (
+                <div key={required.type} className="rounded-xl border border-slate-200 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-semibold text-slate-800">{section?.title || required.title}</span>
+                    <span className="text-xs text-slate-500">
+                      {section ? (section.isVisible ? 'Visible' : 'Hidden') : 'Not configured'}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">
+                    {section
+                      ? (typeof section.content === 'string'
+                        ? section.content
+                        : section.content?.description || section.content?.text || 'No content provided.')
+                      : 'No content configured for this section.'}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {error && <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-sm text-amber-700">{error}</div>}
     </form>
   );
 };

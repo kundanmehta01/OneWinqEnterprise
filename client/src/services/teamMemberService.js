@@ -30,6 +30,11 @@ export const teamMemberService = {
     return res.data;
   },
 
+  delete: async (id) => {
+    const res = await api.delete(`${ENDPOINTS.ADMIN.TEAM}/${id}`);
+    return res.data;
+  },
+
   restore: async (id) => {
     const res = await api.post(`${ENDPOINTS.ADMIN.TEAM}/${id}/restore`);
     return res.data.data;

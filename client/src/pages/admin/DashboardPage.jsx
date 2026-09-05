@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDashboard } from '../../hooks/useDashboard';
+import { useTeamMembers } from '../../hooks/useTeamMembers';
 import { useAuth } from '../../hooks/useAuth';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { DashboardStats } from '../../components/dashboard/DashboardStats';
@@ -11,6 +12,7 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 export const DashboardPage = () => {
   const { dashboardData, loading, error } = useDashboard();
+  const { members } = useTeamMembers({ limit: 100 });
   const { member } = useAuth();
 
   if (loading && !dashboardData) {
@@ -36,6 +38,17 @@ export const DashboardPage = () => {
           ? dashboardData.memberGrowth
           : [];
   const recentActivity = dashboardData?.recentActivity || [];
+  const completionMembers = members.filter((member) => member.status !== 'archived');
+  const completedProfiles = completionMembers.filter((member) => Number(member.profileCompletionScore ?? member.profileId?.completionPercentage ?? 0) >= 100).length;
+  const pendingReviewProfiles = completionMembers.filter((member) => ['pending_review', 'changes_requested'].includes(member.profileId?.approvalStatus)).length;
+  const inProgressProfiles = Math.max(0, completionMembers.length - completedProfiles - pendingReviewProfiles);
+  const completionOverview = {
+    ...overview,
+    completionPercentage: Number(overview.averageProfileCompletion ?? 0),
+    completedProfiles,
+    pendingReviewProfiles: Math.max(pendingReviewProfiles, Number(overview.pendingApprovalsCount ?? 0)),
+    inProgressProfiles
+  };
 
   return (
     <div className="space-y-6">
@@ -51,7 +64,7 @@ export const DashboardPage = () => {
           <MembersGrowthChart trends={trends} />
         </div>
         <div className="lg:col-span-5">
-          <ProfileCompletionDonut overview={overview} />
+          <ProfileCompletionDonut overview={completionOverview} />
         </div>
       </div>
 
