@@ -9,6 +9,7 @@ import { TrafficSourceCard } from '../../components/analytics/TrafficSourceCard'
 import { EngagementFunnelCard } from '../../components/analytics/EngagementFunnelCard';
 import { TopTemplatesCard } from '../../components/analytics/TopTemplatesCard';
 import { DeviceDonutCard } from '../../components/analytics/DeviceDonutCard';
+import { ProfileEngagementChart } from '../../components/analytics/ProfileEngagementChart';
 import { Info, Clock } from 'lucide-react';
 
 export const AnalyticsPage = () => {
@@ -87,7 +88,7 @@ export const AnalyticsPage = () => {
           <TopViewedProfilesCard topProfiles={topProfiles} />
         </div>
         <div className="lg:col-span-3">
-          <TrafficSourceCard kpis={kpis} />
+          <TrafficSourceCard kpis={kpis} loading={loading} />
         </div>
       </div>
 
@@ -100,9 +101,10 @@ export const AnalyticsPage = () => {
           <TopTemplatesCard templateUsage={templateUsage} />
         </div>
         <div className="lg:col-span-4">
-          <DeviceDonutCard />
+          <DeviceDonutCard kpis={kpis} loading={loading} />
         </div>
       </div>
+      <ProfileEngagementChart trends={trends} kpis={kpis} loading={loading} error={error} />
 
       {/* Bottom Notice & Real-time timestamp */}
       <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 pt-4 border-t border-slate-100 gap-2">

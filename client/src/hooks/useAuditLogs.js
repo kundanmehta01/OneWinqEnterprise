@@ -14,6 +14,8 @@ export const useAuditLogs = (initialParams = {}) => {
     limit: 20,
     module: '',
     action: '',
+    startDate: '',
+    endDate: '',
     ...initialParams
   });
   const [loading, setLoading] = useState(true);

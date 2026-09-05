@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Crown, Shield, UserCheck, Users, CheckCircle2, Save } from 'lucide-react';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { permissionService } from '../../services/permissionService';
 import { roleService } from '../../services/roleService';
@@ -41,6 +42,13 @@ export const PermissionsPage = () => {
     () => roles.find((role) => role._id === selectedRoleId) || null,
     [roles, selectedRoleId]
   );
+
+  const roleIcon = (role) => {
+    if (role.name === 'Super Admin') return Crown;
+    if (role.name.toLowerCase().includes('hr')) return UserCheck;
+    if (role.name.toLowerCase().includes('member') || role.name.toLowerCase().includes('employee')) return Users;
+    return Shield;
+  };
 
   useEffect(() => {
     setSelectedPermissions(selectedRole?.permissions || []);
@@ -86,29 +94,25 @@ export const PermissionsPage = () => {
 
       {error && <div className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>}
 
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {roles.map((role) => {
+          const Icon = roleIcon(role);
+          const isSelected = role._id === selectedRoleId;
+          return <button key={role._id} type="button" onClick={() => setSelectedRoleId(role._id)} className={`rounded-2xl border bg-white p-4 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-md ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-100'}`}>
+            <div className="flex items-start justify-between"><span className={`rounded-xl p-2.5 ${role.name === 'Super Admin' ? 'bg-violet-100 text-violet-700' : 'bg-indigo-50 text-indigo-600'}`}><Icon className="h-5 w-5" /></span>{isSelected && <CheckCircle2 className="h-4 w-4 text-indigo-600" />}</div>
+            <h2 className="mt-3 text-sm font-bold text-slate-900">{role.name}</h2>
+            <p className="mt-1 min-h-8 text-xs leading-4 text-slate-500">{role.description || 'Role permission configuration'}</p>
+            <p className="mt-3 text-[11px] font-semibold text-indigo-600">{role.permissions?.includes('*') ? 'All permissions' : `${role.permissions?.length || 0} permissions assigned`}</p>
+          </button>;
+        })}
+      </div>
       <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-card">
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500" htmlFor="role-select">
-          Select role
-        </label>
-        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <select
-            id="role-select"
-            value={selectedRoleId}
-            onChange={(event) => setSelectedRoleId(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 sm:max-w-md"
-          >
-            {roles.map((role) => <option key={role._id} value={role._id}>{role.name}</option>)}
-          </select>
-          <button
-            type="button"
-            onClick={savePermissions}
-            disabled={!selectedRole || saving}
-            className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Save permissions'}
-          </button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Permission details</p><h2 className="mt-1 text-lg font-bold text-slate-900">{selectedRole?.name || 'Select a role'}</h2><p className="mt-1 text-xs text-slate-500">{selectedRole?.description || 'Choose a role to manage module access.'}</p></div>
+          <button type="button" onClick={savePermissions} disabled={!selectedRole || saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Saving...' : 'Save permissions'}</button>
         </div>
-        {selectedRole && <p className="mt-2 text-xs text-slate-500">{selectedRole.description || 'Role permission configuration'}</p>}
+        <label className="mt-4 block text-xs font-bold uppercase tracking-wider text-slate-500" htmlFor="role-select">Selected role</label>
+        <select id="role-select" value={selectedRoleId} onChange={(event) => setSelectedRoleId(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 sm:max-w-md">{roles.map((role) => <option key={role._id} value={role._id}>{role.name}</option>)}</select>
       </div>
 
       {!selectedRole ? (

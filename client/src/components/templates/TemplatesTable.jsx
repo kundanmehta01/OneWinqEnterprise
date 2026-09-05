@@ -124,6 +124,7 @@ export const TemplatesTable = ({
           category: t.category ? t.category.charAt(0).toUpperCase() + t.category.slice(1) : 'General',
           type: t.category === 'company' ? 'Organization' : 'Individual',
           assignedTo: t.assignedTo || t.assignedCount || '-',
+          previewImage: t.previewImage || t.thumbnail || `https://images.unsplash.com/photo-${t.category === 'company' ? '1556761175-b413da4baf72' : t.category === 'executive' ? '1551836022-d5d88e9218df' : '1553484771-371a605b060b'}?auto=format&fit=crop&w=180&q=80`,
           usage: t.usage ?? t.usageCount ?? '-',
           status: t.isActive === false || t.isArchived ? 'inactive' : 'active',
           createdOn: t.createdAt,
@@ -225,10 +226,8 @@ export const TemplatesTable = ({
                   {/* Name + Thumbnail + Description */}
                   <td className="py-3.5 px-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center p-0.5 overflow-hidden flex-shrink-0 shadow-2xs">
-                        <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-600/30 rounded flex flex-col justify-end p-0.5">
-                          <div className="w-3 h-3 rounded-full bg-indigo-600" />
-                        </div>
+                      <div className="h-10 w-14 rounded-lg border border-slate-200 bg-slate-50 p-0.5 overflow-hidden flex-shrink-0 shadow-2xs">
+                        <img src={t.previewImage} alt="" className="h-full w-full rounded object-cover" loading="lazy" />
                       </div>
                       <div>
                         <h4 className="font-bold text-slate-900 leading-snug">{t.name}</h4>
@@ -251,7 +250,7 @@ export const TemplatesTable = ({
 
                   {/* Assigned To Link */}
                   <td className="py-3.5 px-4 font-semibold text-indigo-600 hover:underline">
-                    {t.assignedTo}
+                    {typeof t.assignedTo === 'number' ? `${t.assignedTo} users` : t.assignedTo}
                   </td>
 
                   {/* Usage */}

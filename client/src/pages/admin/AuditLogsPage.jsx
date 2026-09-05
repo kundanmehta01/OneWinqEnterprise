@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
 import { Badge } from '../../components/common/Badge';
-import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
 import { Pagination } from '../../components/common/Pagination';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { EmptyState } from '../../components/common/EmptyState';
-import { FileText, Search, Filter, Eye, Shield } from 'lucide-react';
+import { FileText, Eye, Shield, Users, KeyRound, FileCog, UserRound, BarChart3, Settings, Send, Building2 } from 'lucide-react';
 import { formatDate, formatRelativeTime } from '../../utils/formatDate';
 
 export const AuditLogsPage = () => {
-  const { logs, pagination, params, loading, updateFilters, changePage } = useAuditLogs();
+  const { logs, pagination, params, loading, error, updateFilters, changePage } = useAuditLogs();
   const [selectedLog, setSelectedLog] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
@@ -26,6 +25,18 @@ export const AuditLogsPage = () => {
     if (act.includes('delete') || act.includes('archive')) return 'red';
     return 'purple';
   };
+  const moduleIcon = (module = '') => {
+    const value = module.toLowerCase();
+    if (value.includes('role') || value.includes('permission')) return KeyRound;
+    if (value.includes('template')) return FileCog;
+    if (value.includes('profile')) return UserRound;
+    if (value.includes('analytic')) return BarChart3;
+    if (value.includes('team') || value.includes('member')) return Users;
+    if (value.includes('department')) return Building2;
+    if (value.includes('setting')) return Settings;
+    if (value.includes('invitation')) return Send;
+    return Shield;
+  };
 
   return (
     <div className="space-y-6">
@@ -38,8 +49,9 @@ export const AuditLogsPage = () => {
           </p>
         </div>
 
-        {/* Module Filter */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-[11px] font-semibold text-slate-500">From <input type="date" value={params.startDate || ''} onChange={(event) => updateFilters({ startDate: event.target.value })} className="ml-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700" /></label>
+          <label className="text-[11px] font-semibold text-slate-500">To <input type="date" value={params.endDate || ''} onChange={(event) => updateFilters({ endDate: event.target.value })} className="ml-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700" /></label>
           <select
             value={params.module}
             onChange={(e) => updateFilters({ module: e.target.value })}
@@ -57,7 +69,7 @@ export const AuditLogsPage = () => {
         </div>
       </div>
 
-      {loading ? (
+      {error ? <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : loading ? (
         <div className="py-24">
           <LoadingSpinner message="Loading audit trail entries..." />
         </div>
@@ -95,9 +107,7 @@ export const AuditLogsPage = () => {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <span className="font-bold text-slate-900">
-                        {log.actorId?.email || 'System'}
-                      </span>
+                      <div className="flex items-center gap-2.5"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">{(log.actorId?.email || 'S').charAt(0).toUpperCase()}</div><div><span className="block font-bold text-slate-900">{log.actorId?.email || 'System'}</span><span className="text-[10px] text-slate-400">{formatRelativeTime(log.timestamp)}</span></div></div>
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -107,7 +117,7 @@ export const AuditLogsPage = () => {
                     </td>
 
                     <td className="py-3.5 px-4 font-semibold text-slate-600">
-                      {log.module}
+                      <span className="inline-flex items-center gap-2"><span className="rounded-lg bg-slate-50 p-1.5 text-indigo-600">{React.createElement(moduleIcon(log.module), { className: 'h-3.5 w-3.5' })}</span>{log.module}</span>
                     </td>
 
                     <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
@@ -141,14 +151,9 @@ export const AuditLogsPage = () => {
         </div>
       )}
 
-      {/* Details Modal */}
-      <Modal
-        isOpen={detailsModalOpen}
-        onClose={() => setDetailsModalOpen(false)}
-        title="Audit Record Inspection"
-        subtitle={`Action: ${selectedLog?.action} on module ${selectedLog?.module}`}
-        maxWidth="max-w-2xl"
-      >
+      {detailsModalOpen && selectedLog && <div className="fixed inset-0 z-40 bg-slate-900/20" onClick={() => setDetailsModalOpen(false)}>
+        <aside className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+          <div className="mb-5 flex items-start justify-between border-b border-slate-100 pb-4"><div><p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Activity Details</p><h2 className="mt-1 text-lg font-bold text-slate-900">{selectedLog.action}</h2><p className="mt-1 text-xs text-slate-500">{selectedLog.module}</p></div><button type="button" onClick={() => setDetailsModalOpen(false)} className="text-xl text-slate-400 hover:text-slate-700">×</button></div>
         {selectedLog && (
           <div className="space-y-4 text-xs">
             <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl">
@@ -180,6 +185,13 @@ export const AuditLogsPage = () => {
                 </pre>
               </div>
             )}
+            {selectedLog.previousValue && (
+              <div>
+                <span className="text-slate-400 text-[10px] font-bold uppercase block mb-1">Previous Value:</span>
+                <pre className="p-3 rounded-xl bg-slate-50 text-slate-700 text-[11px] overflow-x-auto font-mono max-h-40">{JSON.stringify(selectedLog.previousValue, null, 2)}</pre>
+              </div>
+            )}
+            {selectedLog.userAgent && <div className="rounded-xl border border-slate-100 p-3"><span className="text-slate-400 text-[10px] font-bold uppercase">Device / User Agent:</span><p className="mt-1 break-words text-slate-700">{selectedLog.userAgent}</p></div>}
 
             <div className="flex justify-end pt-3 border-t border-slate-100">
               <Button variant="secondary" onClick={() => setDetailsModalOpen(false)}>
@@ -188,7 +200,8 @@ export const AuditLogsPage = () => {
             </div>
           </div>
         )}
-      </Modal>
+        </aside>
+      </div>}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, SlidersHorizontal, MoreHorizontal, ArrowUpDown, Shield, UserCheck, ShieldAlert, Edit2, Trash2 } from 'lucide-react';
+import { Search, SlidersHorizontal, MoreHorizontal, ArrowUpDown, Shield, UserCheck, ShieldAlert, Edit2, Trash2, Users, Crown } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { Dropdown } from '../common/Dropdown';
 
@@ -169,8 +169,8 @@ export const RolesTable = ({
                   {/* Name + Icon + Description */}
                   <td className="py-3.5 px-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                        <Shield className="w-4 h-4" />
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${role.name === 'Super Admin' ? 'bg-violet-100 text-violet-700' : role.isSystem ? 'bg-sky-50 text-sky-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                        {role.name === 'Super Admin' ? <Crown className="w-4 h-4" /> : role.name.toLowerCase().includes('hr') ? <UserCheck className="w-4 h-4" /> : role.name.toLowerCase().includes('team') ? <Users className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
                       </div>
                       <div>
                         <h4 className="font-bold text-slate-900 leading-snug">{role.name}</h4>
@@ -189,7 +189,7 @@ export const RolesTable = ({
                   </td>
 
                   {/* Users */}
-                  <td className="py-3.5 px-4 font-bold text-slate-700">{role.usersCount}</td>
+                  <td className="py-3.5 px-4"><div className="font-bold text-slate-700">{role.usersCount}</div><div className="mt-0.5 text-[10px] text-slate-400">{role.permissions.length} permissions</div></td>
 
                   {/* Status */}
                   <td className="py-3.5 px-4">
