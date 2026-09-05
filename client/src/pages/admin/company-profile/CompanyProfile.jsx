@@ -58,8 +58,6 @@ export default function CompanyProfile() {
   }), [members, sections, analytics]);
   const save = async (data) => { setSaving(true); try { const updated = await companyProfileService.update(data); setCompany(updated); setEditOpen(false); } catch (saveError) { setError(saveError.response?.data?.message || 'Unable to save company profile.'); } finally { setSaving(false); } };
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-indigo-600" /></div>;
-  if (!company && error) return <div className="m-6 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700"><AlertCircle className="mr-2 inline h-4 w-4" />{error}</div>;
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
@@ -68,6 +66,8 @@ export default function CompanyProfile() {
     tabs.forEach((tab) => { const node = document.getElementById(tab.id); if (node) observer.observe(node); });
     return () => observer.disconnect();
   }, [loading]);
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-indigo-600" /></div>;
+  if (!company && error) return <div className="m-6 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700"><AlertCircle className="mr-2 inline h-4 w-4" />{error}</div>;
   return <div className="space-y-5 p-4 md:p-6">
     {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <CompanyHeader company={{ ...company, name: company?.name || 'OneWinq Technologies Pvt. Ltd.', tagline: company?.tagline || 'Building trusted digital identities for people and organizations.', location: { ...company?.location, country: company?.location?.country || 'India' } }} data={companyData} onEdit={() => setEditOpen(true)} />
