@@ -12,6 +12,12 @@ export const companyData = {
     'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=700&q=80',
     'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=700&q=80'
   ],
+  products: [
+    { title: 'OneWinq Digital Identity', description: 'Create and manage trusted professional digital profiles for individuals, teams, and organizations.' },
+    { title: 'Smart Digital Cards', description: 'Share your professional identity instantly through a modern, memorable digital card experience.' },
+    { title: 'Enterprise Identity Management', description: 'Manage company teams, employee profiles, permissions, and organizational identity from one place.' },
+    { title: 'AI Powered Assistant', description: 'Use intelligent tools to write, improve, and grow your professional profile with less effort.' }
+  ],
   teamImages: [
     'https://i.pravatar.cc/160?img=12', 'https://i.pravatar.cc/160?img=32',
     'https://i.pravatar.cc/160?img=11', 'https://i.pravatar.cc/160?img=47'
