@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDepartments } from '../../hooks/useDepartments';
 import { DepartmentModal } from '../../components/departments/DepartmentModal';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { EmptyState } from '../../components/common/EmptyState';
-import { Plus, Network, Users, Edit2, Trash2, BarChart3 } from 'lucide-react';
+import { Plus, Network, Users, Edit2, Trash2 } from 'lucide-react';
 import { departmentService } from '../../services/departmentService';
 import { useNotification } from '../../hooks/useNotification';
 import { DeleteDepartmentModal } from '../../components/departments/DeleteDepartmentModal';
+import { auditLogService } from '../../services/auditLogService';
+import DepartmentAnalyticsPanel from '../../components/departments/DepartmentAnalyticsPanel';
 
 export const DepartmentsPage = () => {
   const { departments, loading, refetch } = useDepartments();
@@ -18,6 +20,34 @@ export const DepartmentsPage = () => {
   const [editingDept, setEditingDept] = useState(null);
   const [deletingDept, setDeletingDept] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityError, setActivityError] = useState('');
+  const [activityRefresh, setActivityRefresh] = useState(0);
+
+  useEffect(() => {
+    const loadActivity = async () => {
+      setActivityLoading(true);
+      try {
+        const [departmentResult, teamResult] = await Promise.all([
+          auditLogService.getAll({ module: 'departments', limit: 10 }),
+          auditLogService.getAll({ module: 'team', limit: 10 })
+        ]);
+        const logs = [...(departmentResult.logs || []), ...(teamResult.logs || [])]
+          .filter((log) => log.module === 'departments' || log.newValue?.departmentId || log.previousValue?.departmentId)
+          .sort((a, b) => new Date(b.timestamp || b.createdAt) - new Date(a.timestamp || a.createdAt))
+          .slice(0, 10);
+        setActivityLogs(logs);
+        setActivityError('');
+      } catch (err) {
+        setActivityLogs([]);
+        setActivityError(err.message || 'Unable to load department activity.');
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+    loadActivity();
+  }, [departments.length, activityRefresh]);
 
   const handleDelete = async () => {
     if (!deletingDept) return;
@@ -27,6 +57,7 @@ export const DepartmentsPage = () => {
       success('Department deleted successfully');
       setDeletingDept(null);
       refetch();
+      setActivityRefresh((value) => value + 1);
     } catch (err) {
       notifyError(err.message || 'Failed to delete department');
     } finally {
@@ -126,18 +157,7 @@ export const DepartmentsPage = () => {
             </div>
           ))}
         </div>
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-card">
-          <div className="flex items-center justify-between"><h2 className="text-sm font-bold text-slate-900">Department Overview</h2><BarChart3 className="h-4 w-4 text-indigo-500" /></div>
-          <p className="mt-1 text-xs text-slate-500">Member distribution by department</p>
-          <div className="mt-5 space-y-4">
-            {departments.slice().sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0)).slice(0, 8).map((dept) => {
-              const max = Math.max(...departments.map((item) => Number(item.memberCount || 0)), 1);
-              const count = Number(dept.memberCount || 0);
-              return <div key={dept._id}><div className="mb-1 flex justify-between text-xs"><span className="font-medium text-slate-700">{dept.name}</span><span className="text-slate-500">{count} members</span></div><div className="h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-indigo-600 transition-all" style={{ width: `${Math.max(4, (count / max) * 100)}%` }} /></div></div>;
-            })}
-          </div>
-          <div className="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-xs"><div><span className="block text-slate-400">Total departments</span><strong className="mt-1 block text-lg text-slate-900">{departments.length}</strong></div><div><span className="block text-slate-400">Total members</span><strong className="mt-1 block text-lg text-slate-900">{departments.reduce((sum, dept) => sum + Number(dept.memberCount || 0), 0)}</strong></div></div>
-        </div>
+        <DepartmentAnalyticsPanel departments={departments} logs={activityLogs} loading={activityLoading} error={activityError} />
         </div>
         </>
       )}
@@ -146,7 +166,7 @@ export const DepartmentsPage = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         department={editingDept}
-        onSuccess={refetch}
+        onSuccess={() => { refetch(); setActivityRefresh((value) => value + 1); }}
       />
       <DeleteDepartmentModal
         isOpen={Boolean(deletingDept)}
