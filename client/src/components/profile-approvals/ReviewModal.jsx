@@ -5,6 +5,17 @@ import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { approvalService } from '../../services/approvalService';
 import { useNotification } from '../../hooks/useNotification';
 
+const formatValue = (value) => {
+  if (value === null || value === undefined || value === '') return '-';
+  if (Array.isArray(value)) {
+    return value.map((item) => typeof item === 'object' ? Object.entries(item).filter(([, entry]) => entry !== null && entry !== undefined && entry !== '').map(([key, entry]) => `${key}: ${formatValue(entry)}`).join(' · ') : String(item)).join('\n');
+  }
+  if (typeof value === 'object') {
+    return Object.entries(value).filter(([, entry]) => entry !== null && entry !== undefined && entry !== '').map(([key, entry]) => `${key}: ${formatValue(entry)}`).join(' · ');
+  }
+  return String(value);
+};
+
 export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
   const { success, error: notifyError } = useNotification();
   const [reviewNote, setReviewNote] = useState('');
@@ -76,9 +87,9 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
               <thead><tr className="border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400"><th className="py-2">Field</th><th className="py-2">Before</th><th className="py-2">After</th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {comparisonKeys.length ? comparisonKeys.map((key) => {
-                  const before = typeof previous[key] === 'object' ? JSON.stringify(previous[key]) : String(previous[key] ?? '-');
-                  const after = typeof draft[key] === 'object' ? JSON.stringify(draft[key]) : String(draft[key] ?? '-');
-                  return <tr key={key}><td className="py-2 font-semibold capitalize text-slate-700">{key.replace(/([A-Z])/g, ' $1')}</td><td className="max-w-[180px] break-words py-2 text-slate-500">{before}</td><td className={`max-w-[180px] break-words py-2 ${before !== after ? 'font-semibold text-indigo-700' : 'text-slate-500'}`}>{after}</td></tr>;
+                  const before = formatValue(previous[key]);
+                  const after = formatValue(draft[key]);
+                  return <tr key={key}><td className="py-2 font-semibold capitalize text-slate-700 align-top">{key.replace(/([A-Z])/g, ' $1')}</td><td className="max-w-[180px] whitespace-pre-wrap break-words py-2 align-top text-slate-500">{before}</td><td className={`max-w-[180px] whitespace-pre-wrap break-words py-2 align-top ${before !== after ? 'font-semibold text-indigo-700' : 'text-slate-500'}`}>{after}</td></tr>;
                 }) : <tr><td colSpan="3" className="py-3 text-center text-slate-500">No comparable profile fields were returned.</td></tr>}
               </tbody>
             </table>
@@ -107,9 +118,14 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
 
           <div className="flex items-center gap-2">
            {!canReview ? (
-             <p className="text-xs text-slate-500">
-               Review complete: {approval.status.replace('_', ' ')}. No further action is available.
-             </p>
+             <>
+               <p className="mr-2 text-right text-[11px] text-slate-500">
+                 Current status: <span className="font-semibold capitalize">{approval.status.replace('_', ' ')}</span>. Actions are disabled for this completed request.
+               </p>
+               <Button variant="danger" size="sm" icon={XCircle} disabled>Reject</Button>
+               <Button variant="secondary" size="sm" icon={AlertTriangle} disabled>Request Changes</Button>
+               <Button variant="primary" size="sm" icon={CheckCircle2} disabled>Approve Profile</Button>
+             </>
            ) : (
              <>
             <Button

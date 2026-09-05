@@ -3,9 +3,9 @@ import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { approvalService } from '../../services/approvalService';
 import { useNotification } from '../../hooks/useNotification';
-import { AlertTriangle } from 'lucide-react';
+import { XCircle, AlertTriangle } from 'lucide-react';
 
-export const RequestChangesModal = ({ isOpen, onClose, approval, onSuccess }) => {
+export const RejectConfirmationModal = ({ isOpen, onClose, approval, onSuccess }) => {
   const { success, error: notifyError } = useNotification();
   const [reviewNote, setReviewNote] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,15 +17,15 @@ export const RequestChangesModal = ({ isOpen, onClose, approval, onSuccess }) =>
     setLoading(true);
     try {
       await approvalService.review(approval._id, {
-        action: 'request_changes',
+        action: 'reject',
         reviewNote
       });
-      success('Changes requested successfully');
+      success('Profile rejected successfully');
       onSuccess?.();
       onClose();
       setReviewNote('');
     } catch (err) {
-      notifyError(err.message || 'Failed to request changes');
+      notifyError(err.message || 'Failed to reject profile');
     } finally {
       setLoading(false);
     }
@@ -42,27 +42,26 @@ export const RequestChangesModal = ({ isOpen, onClose, approval, onSuccess }) =>
     <Modal 
       isOpen={isOpen} 
       onClose={handleClose} 
-      title="Request Profile Changes"
-      subtitle={`Provide feedback for ${approval.memberId?.name || 'employee'}`}
+      title="Reject Profile Request"
+      subtitle={`Are you sure you want to reject ${approval.memberId?.name || 'employee'}'s profile?`}
       maxWidth="max-w-lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 flex gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800">Provide constructive feedback for the employee on what needs revision. This will be sent to the employee for review.</p>
+        <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 flex gap-2">
+          <XCircle className="h-4 w-4 text-rose-600 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-rose-800">This action cannot be undone. The employee will be notified that their profile has been rejected.</p>
         </div>
         
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">
-            Feedback / Changes Required
+            Rejection Reason (Optional)
           </label>
           <textarea
-            rows={4}
+            rows={3}
             value={reviewNote}
             onChange={(e) => setReviewNote(e.target.value)}
-            placeholder="Describe what changes are needed..."
-            required
-            className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            placeholder="Provide a reason for rejection..."
+            className="w-full rounded-xl border border-slate-200 p-3 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
           />
         </div>
 
@@ -71,12 +70,12 @@ export const RequestChangesModal = ({ isOpen, onClose, approval, onSuccess }) =>
             Cancel
           </Button>
           <Button 
-            variant="primary" 
+            variant="danger" 
             type="submit" 
             isLoading={loading}
-            className="bg-amber-500 hover:bg-amber-600"
+            icon={XCircle}
           >
-            Request Changes
+            Reject Profile
           </Button>
         </div>
       </form>
