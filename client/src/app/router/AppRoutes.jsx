@@ -24,12 +24,12 @@ import { AnalyticsPage } from '../../pages/admin/AnalyticsPage';
 import { DepartmentsPage } from '../../pages/admin/DepartmentsPage';
 import { ProfileApprovalsPage } from '../../pages/admin/ProfileApprovalsPage';
 import { InvitationsPage } from '../../pages/admin/InvitationsPage';
-import { CompanyProfilePage } from '../../pages/admin/CompanyProfilePage';
+import CompanyProfile from '../../pages/admin/company-profile/CompanyProfile';
 import { AuditLogsPage } from '../../pages/admin/AuditLogsPage';
 import { SettingsPage } from '../../pages/admin/SettingsPage';
 import { NotificationsPage } from '../../pages/admin/NotificationsPage';
 import { EmployeeProfilesPage } from '../../pages/admin/EmployeeProfilesPage';
-import MediaGallery from '../../pages/admin/MediaGallery';
+import MediaGallery from '../../pages/admin/media/MediaGallery';
 
 // User Pages
 import { UserDashboardPage } from '../../pages/user/UserDashboardPage';
@@ -163,7 +163,7 @@ export const AppRoutes = () => {
           path="company-profile"
           element={
             <ProtectedRoute requiredAnyPermission={['company_profile.read', 'company_profile.update']}>
-              <CompanyProfilePage />
+              <CompanyProfile />
             </ProtectedRoute>
           }
         />

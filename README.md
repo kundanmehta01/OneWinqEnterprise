@@ -14,8 +14,8 @@ This client implements the production-facing admin modules for analytics, profil
 - Profile approval review actions mapped to `approve`, `reject`, and `request_changes` backend actions with status-safe UI
 - QR code access for employee/public profiles
 - Roles and permissions management with backend-driven role selection, module-grouped permission checkboxes, and role updates
-- Media gallery for upload, list, and delete operations
-- Company profile presentation with editable organization/about/contact/branding data and all requested dynamic sections
+- Media management dashboard at `/admin/media` with backend-backed upload, filtering, preview, and delete operations. It uses `POST /api/v1/admin/media/upload`, `GET /api/v1/admin/media`, and `DELETE /api/v1/admin/media/:id`; media editing is intentionally not exposed because the backend has no edit endpoint.
+- Enterprise company profile dashboard at `/admin/company-profile`, split into reusable header, statistics, tabs, section cards, and overview/about/services/team/projects/achievements/media/contact sections. It uses `GET/PATCH /api/v1/admin/company-profile`, team data, analytics KPIs, and the media list.
 - Dashboard profile completion overview using backend completion scores and approval states instead of static 100% values
 
 ## Local development
@@ -41,3 +41,4 @@ This client implements the production-facing admin modules for analytics, profil
 - The backend currently exposes member and department `DELETE` routes through soft-archive service behavior; the frontend presents these actions as Delete and refreshes the list after success.
 - Analytics traffic-source and device breakdowns are shown as unavailable when the backend response does not provide those dimensions; no fabricated values are rendered.
 - The codebase is kept modular to support additional admin features without duplicating data or logic.
+- Company profile dynamic sections are rendered only when supplied by the backend; unavailable projects, achievements, and media show explicit empty states instead of fabricated content.

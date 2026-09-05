@@ -15,6 +15,11 @@ export const PERMISSIONS = {
   COMPANY_PROFILE_READ: 'company_profile.read',
   COMPANY_PROFILE_UPDATE: 'company_profile.update',
 
+  // Media
+  MEDIA_READ: 'media.read',
+  MEDIA_UPLOAD: 'media.upload',
+  MEDIA_DELETE: 'media.delete',
+
   // Employee Profile Management
   EMPLOYEE_PROFILE_READ: 'employee_profile.read',
   EMPLOYEE_PROFILE_UPDATE: 'employee_profile.update',

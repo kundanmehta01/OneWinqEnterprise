@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   BarChart3,
   FileText,
+  Images,
   Settings,
   UserCheck,
   Bell
@@ -35,6 +36,12 @@ export const ADMIN_NAV_SECTIONS = [
         path: '/admin/company-profile',
         icon: Building2,
         permission: PERMISSIONS.COMPANY_PROFILE_READ
+      },
+      {
+        label: 'Media',
+        path: '/admin/media',
+        icon: Images,
+        permission: PERMISSIONS.MEDIA_READ
       },
       {
         label: 'Team Members',
