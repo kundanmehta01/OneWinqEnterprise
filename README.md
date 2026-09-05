@@ -20,6 +20,8 @@ This client implements the production-facing admin modules for analytics, profil
 - Company Profile now uses a data-driven identity visual layer with replaceable logo, cover, office, product, team, project, achievement, and media image sources plus smooth-scroll section navigation.
 - Company Profile content cards use progressive disclosure with View More/Show Less controls for products, team, projects, achievements, and media.
 - Product and service cards include consistent OneWinq descriptions, equal-height alignment, fixed media proportions, and bottom-aligned detail actions.
+- Dashboard Members Growth now supports backend analytics period/custom date filters, and Departments includes a responsive backend-driven member distribution overview.
+- Team Members retains backend search/filter/delete behavior while presenting compact avatar rows, status pills, profile completion, selection, and action menus.
 - The supplied OneWinq office reference image is stored as `client/public/onewinq-office.png` and referenced through `companyData.js`; replace that data source with a backend URL when available.
 - Approval review comparison showing backend-provided current profile data against the submitted draft before approve/request-changes/reject actions.
 - Permission management matrix grouped by backend modules with View, Create, Edit, and Delete checkboxes per selected role.

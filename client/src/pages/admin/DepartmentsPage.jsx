@@ -5,7 +5,7 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { EmptyState } from '../../components/common/EmptyState';
-import { Plus, Network, Users, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Network, Users, Edit2, Trash2, BarChart3 } from 'lucide-react';
 import { departmentService } from '../../services/departmentService';
 import { useNotification } from '../../hooks/useNotification';
 import { DeleteDepartmentModal } from '../../components/departments/DeleteDepartmentModal';
@@ -76,7 +76,9 @@ export const DepartmentsPage = () => {
           onAction={() => setModalOpen(true)}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {departments.map((dept) => (
             <div
               key={dept._id}
@@ -124,6 +126,20 @@ export const DepartmentsPage = () => {
             </div>
           ))}
         </div>
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-card">
+          <div className="flex items-center justify-between"><h2 className="text-sm font-bold text-slate-900">Department Overview</h2><BarChart3 className="h-4 w-4 text-indigo-500" /></div>
+          <p className="mt-1 text-xs text-slate-500">Member distribution by department</p>
+          <div className="mt-5 space-y-4">
+            {departments.slice().sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0)).slice(0, 8).map((dept) => {
+              const max = Math.max(...departments.map((item) => Number(item.memberCount || 0)), 1);
+              const count = Number(dept.memberCount || 0);
+              return <div key={dept._id}><div className="mb-1 flex justify-between text-xs"><span className="font-medium text-slate-700">{dept.name}</span><span className="text-slate-500">{count} members</span></div><div className="h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-indigo-600 transition-all" style={{ width: `${Math.max(4, (count / max) * 100)}%` }} /></div></div>;
+            })}
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-xs"><div><span className="block text-slate-400">Total departments</span><strong className="mt-1 block text-lg text-slate-900">{departments.length}</strong></div><div><span className="block text-slate-400">Total members</span><strong className="mt-1 block text-lg text-slate-900">{departments.reduce((sum, dept) => sum + Number(dept.memberCount || 0), 0)}</strong></div></div>
+        </div>
+        </div>
+        </>
       )}
 
       <DepartmentModal

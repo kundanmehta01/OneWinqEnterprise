@@ -8,9 +8,8 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { ChevronDown } from 'lucide-react';
 
-export const MembersGrowthChart = ({ trends = [] }) => {
+export const MembersGrowthChart = ({ trends = [], period = '30d', onPeriodChange }) => {
   const rawTrends = Array.isArray(trends)
     ? trends
     : trends && typeof trends === 'object'
@@ -46,13 +45,17 @@ export const MembersGrowthChart = ({ trends = [] }) => {
         <div>
           <h3 className="text-base font-bold text-slate-900">Members Growth</h3>
         </div>
-        <button
+        <select
           type="button"
+          value={period}
+          onChange={(event) => onPeriodChange?.(event.target.value)}
+          aria-label="Member growth period"
           className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/70 transition cursor-pointer"
         >
-          <span>This Month</span>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-        </button>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">This month</option>
+          <option value="90d">Last 3 months</option>
+        </select>
       </div>
 
       <div className="h-64 w-full">

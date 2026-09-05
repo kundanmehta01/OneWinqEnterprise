@@ -78,8 +78,15 @@ export function TeamMembersTable({
                     />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-slate-900">{member.name}</div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-indigo-100 text-center text-sm font-bold leading-9 text-indigo-700">
+                        {member.profileId?.published?.avatarUrl ? <img src={member.profileId.published.avatarUrl} alt={member.name} className="h-full w-full object-cover" /> : member.name?.charAt(0) || 'M'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-slate-900">{member.name}</div>
                     <div className="text-xs text-slate-500">{member.userId?.email || member.email || '—'}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">{member.designation || '—'}</td>
                   <td className="px-4 py-3">
@@ -93,7 +100,7 @@ export function TeamMembersTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${member.status === 'active' ? 'text-emerald-600' : 'text-slate-500'}`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${member.status === 'active' ? 'bg-emerald-50 text-emerald-600' : member.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
                       <span className="h-2 w-2 rounded-full bg-current" />
                       {member.status || 'inactive'}
                     </span>
