@@ -20,7 +20,7 @@ class CompanyProfileService {
       return null;
     }
 
-    // Filter only visible dynamic sections, navigation items, and social links
+    // Filter only visible dynamic sections, navigation items, social links, products, projects, achievements, media
     const visibleSections = (profile.dynamicSections || [])
       .filter((s) => s.isVisible)
       .sort((a, b) => a.order - b.order);
@@ -33,6 +33,22 @@ class CompanyProfileService {
       .filter((l) => l.isVisible)
       .sort((a, b) => a.order - b.order);
 
+    const visibleProducts = (profile.productsServices || [])
+      .filter((p) => p.isVisible)
+      .sort((a, b) => a.order - b.order);
+
+    const visibleProjects = (profile.projects || [])
+      .filter((p) => p.isVisible)
+      .sort((a, b) => a.order - b.order);
+
+    const visibleAchievements = (profile.achievements || [])
+      .filter((a) => a.isVisible)
+      .sort((a, b) => a.order - b.order);
+
+    const visibleMedia = (profile.mediaGallery || [])
+      .filter((m) => m.isVisible)
+      .sort((a, b) => a.order - b.order);
+
     return {
       name: profile.name,
       slug: profile.slug,
@@ -40,9 +56,19 @@ class CompanyProfileService {
       description: profile.description,
       industry: profile.industry,
       website: profile.website,
+      overviewStats: profile.overviewStats || {
+        foundedYear: '2024',
+        locationShort: '',
+        teamSize: '',
+        customMetrics: []
+      },
       location: profile.location,
       contact: profile.contact,
       about: profile.about,
+      productsServices: visibleProducts,
+      projects: visibleProjects,
+      achievements: visibleAchievements,
+      mediaGallery: visibleMedia,
       branding: profile.branding,
       dynamicSections: visibleSections,
       navigation: visibleNav,
@@ -64,9 +90,14 @@ class CompanyProfileService {
     if (updateData.description !== undefined) profile.description = updateData.description;
     if (updateData.industry !== undefined) profile.industry = updateData.industry;
     if (updateData.website !== undefined) profile.website = updateData.website;
+    if (updateData.overviewStats) profile.overviewStats = { ...profile.overviewStats, ...updateData.overviewStats };
     if (updateData.location) profile.location = { ...profile.location, ...updateData.location };
     if (updateData.contact) profile.contact = { ...profile.contact, ...updateData.contact };
     if (updateData.about) profile.about = { ...profile.about, ...updateData.about };
+    if (updateData.productsServices !== undefined) profile.productsServices = updateData.productsServices;
+    if (updateData.projects !== undefined) profile.projects = updateData.projects;
+    if (updateData.achievements !== undefined) profile.achievements = updateData.achievements;
+    if (updateData.mediaGallery !== undefined) profile.mediaGallery = updateData.mediaGallery;
     if (updateData.branding) profile.branding = { ...profile.branding, ...updateData.branding };
     if (updateData.dynamicSections) profile.dynamicSections = updateData.dynamicSections;
     if (updateData.navigation) profile.navigation = updateData.navigation;
