@@ -51,21 +51,6 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
             <p className="font-semibold text-slate-800 mt-0.5">{draft.headline || 'No headline provided'}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 p-4">
-            <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Compare changes</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[480px] text-left text-xs">
-                <thead><tr className="border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400"><th className="py-2">Field</th><th className="py-2">Before</th><th className="py-2">After</th></tr></thead>
-                <tbody className="divide-y divide-slate-100">
-                  {comparisonKeys.length ? comparisonKeys.map((key) => {
-                    const before = typeof previous[key] === 'object' ? JSON.stringify(previous[key]) : String(previous[key] ?? '-');
-                    const after = typeof draft[key] === 'object' ? JSON.stringify(draft[key]) : String(draft[key] ?? '-');
-                    return <tr key={key}><td className="py-2 font-semibold capitalize text-slate-700">{key.replace(/([A-Z])/g, ' $1')}</td><td className="max-w-[180px] break-words py-2 text-slate-500">{before}</td><td className={`max-w-[180px] break-words py-2 ${before !== after ? 'font-semibold text-indigo-700' : 'text-slate-500'}`}>{after}</td></tr>;
-                  }) : <tr><td colSpan="3" className="py-3 text-center text-slate-500">No comparable profile fields were returned.</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          </div>
           <div>
             <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Bio:</span>
             <p className="text-slate-600 mt-0.5 leading-relaxed">{draft.bio || 'No bio provided'}</p>
@@ -82,6 +67,22 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
               </div>
             </div>
           )}
+        </div>
+
+        <div className="rounded-xl border border-slate-200 p-4">
+          <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Compare changes</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[480px] text-left text-xs">
+              <thead><tr className="border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400"><th className="py-2">Field</th><th className="py-2">Before</th><th className="py-2">After</th></tr></thead>
+              <tbody className="divide-y divide-slate-100">
+                {comparisonKeys.length ? comparisonKeys.map((key) => {
+                  const before = typeof previous[key] === 'object' ? JSON.stringify(previous[key]) : String(previous[key] ?? '-');
+                  const after = typeof draft[key] === 'object' ? JSON.stringify(draft[key]) : String(draft[key] ?? '-');
+                  return <tr key={key}><td className="py-2 font-semibold capitalize text-slate-700">{key.replace(/([A-Z])/g, ' $1')}</td><td className="max-w-[180px] break-words py-2 text-slate-500">{before}</td><td className={`max-w-[180px] break-words py-2 ${before !== after ? 'font-semibold text-indigo-700' : 'text-slate-500'}`}>{after}</td></tr>;
+                }) : <tr><td colSpan="3" className="py-3 text-center text-slate-500">No comparable profile fields were returned.</td></tr>}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Review Note */}
