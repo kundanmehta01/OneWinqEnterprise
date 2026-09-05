@@ -1,8 +1,8 @@
 import React from 'react';
 
-export default function CompanySectionCard({ title, icon: Icon, children, action }) {
+export default function CompanySectionCard({ id, title, icon: Icon, children, action }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section id={id} className="scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {Icon && <Icon className="h-4 w-4 text-indigo-600" />}

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { companyProfileService, teamMemberService, analyticsService, mediaService } from '../../../services';
+import { companyData, fallbackContent } from './companyData';
 import CompanyHeader from './components/CompanyHeader';
 import CompanyStats from './components/CompanyStats';
 import CompanyTabs from './components/CompanyTabs';
@@ -22,12 +23,6 @@ const tabs = [
 
 const byType = (sections, type) => sections.find((section) => section.type === type && section.isVisible !== false);
 const unwrapList = (value) => Array.isArray(value) ? value : value?.data || value?.members || value?.assets || [];
-const fallbackSections = [
-  { type: 'services', content: { items: [{ title: 'OneWinq Digital ID', description: 'Trusted digital identities for professionals and organizations.' }, { title: 'NFC Smart Card', description: 'Share a professional profile with one tap.' }, { title: 'AI Assistant', description: 'Intelligent support for profile and networking workflows.' }, { title: 'Website Templates', description: 'Launch polished digital identity pages quickly.' }, { title: 'Enterprise Identity Solutions', description: 'Centralized identity management for modern teams.' }] } },
-  { type: 'projects', content: { items: [{ title: 'Enterprise Identity Platform', description: 'A connected identity layer for people, teams, and companies.', status: 'In progress' }] } },
-  { type: 'achievements', content: { items: [{ title: 'Startup Award 2024', description: 'Recognition for innovation in digital identity.' }, { title: 'ISO Certification', description: 'Quality and security practices aligned with enterprise needs.' }] } }
-];
-
 export default function CompanyProfile() {
   const [company, setCompany] = useState(null);
   const [members, setMembers] = useState([]);
@@ -53,7 +48,7 @@ export default function CompanyProfile() {
   useEffect(() => { load(); }, []);
 
   const sections = company?.sections || company?.dynamicSections || [];
-  const contentSections = (type) => byType(sections, type) || fallbackSections.find((section) => section.type === type);
+  const contentSections = (type) => byType(sections, type);
   const stats = useMemo(() => ({
     members: members.length,
     projects: (contentSections('projects')?.content?.items || contentSections('projects')?.content || []).length || 0,
@@ -65,24 +60,26 @@ export default function CompanyProfile() {
 
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-indigo-600" /></div>;
   if (!company && error) return <div className="m-6 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700"><AlertCircle className="mr-2 inline h-4 w-4" />{error}</div>;
-  const content = {
-    overview: <CompanyOverview company={company} />, about: <AboutCompany company={company} />,
-    services: <ProductsServices section={contentSections('services')} />, team: <CompanyTeam members={members} />,
-    projects: <ProjectsWork section={contentSections('projects')} />, achievements: <Achievements section={contentSections('achievements')} />,
-    media: <MediaUpdates assets={assets} />, contact: <ContactConnect company={company} />
-  }[activeTab];
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible) setActiveTab(visible.target.id);
+    }, { rootMargin: '-20% 0px -65% 0px', threshold: [0.1, 0.4, 0.8] });
+    tabs.forEach((tab) => { const node = document.getElementById(tab.id); if (node) observer.observe(node); });
+    return () => observer.disconnect();
+  }, [loading]);
   return <div className="space-y-5 p-4 md:p-6">
     {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-    <CompanyHeader company={company} onEdit={() => setEditOpen(true)} />
+    <CompanyHeader company={{ ...company, name: company?.name || 'OneWinq Technologies Pvt. Ltd.', tagline: company?.tagline || 'Building trusted digital identities for people and organizations.', location: { ...company?.location, country: company?.location?.country || 'India' } }} data={companyData} onEdit={() => setEditOpen(true)} />
     <CompanyStats stats={stats} />
     <CompanyTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
     <div className="grid gap-5 xl:grid-cols-2">
       <CompanyOverview company={company} />
       <AboutCompany company={company} />
-      <ProductsServices section={contentSections('services')} />
+      <ProductsServices section={contentSections('services') || { content: { items: fallbackContent.products.map(([title, description]) => ({ title, description })) } }} />
       <CompanyTeam members={members} />
-      <ProjectsWork section={contentSections('projects')} />
-      <Achievements section={contentSections('achievements')} />
+      <ProjectsWork section={contentSections('projects') || { content: { items: fallbackContent.projects.map(([title, description, status]) => ({ title, description, status })) } }} />
+      <Achievements section={contentSections('achievements') || { content: { items: fallbackContent.achievements.map((title) => ({ title })) } }} />
       <MediaUpdates assets={assets} />
       <ContactConnect company={company} />
     </div>

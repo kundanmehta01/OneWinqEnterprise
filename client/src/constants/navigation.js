@@ -38,11 +38,6 @@ export const ADMIN_NAV_SECTIONS = [
         permission: PERMISSIONS.COMPANY_PROFILE_READ
       },
       {
-        label: 'Founder Profile',
-        path: '/admin/founder-profile',
-        icon: UserCheck
-      },
-      {
         label: 'Media',
         path: '/admin/media',
         icon: Images,

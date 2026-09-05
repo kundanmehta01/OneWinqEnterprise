@@ -17,7 +17,7 @@ This client implements the production-facing admin modules for analytics, profil
 - Media management dashboard at `/admin/media` with backend-backed upload, filtering, preview, and delete operations. It uses `POST /api/v1/admin/media/upload`, `GET /api/v1/admin/media`, and `DELETE /api/v1/admin/media/:id`; media editing is intentionally not exposed because the backend has no edit endpoint.
 - Enterprise company profile dashboard at `/admin/company-profile`, split into reusable header, statistics, tabs, section cards, and overview/about/services/team/projects/achievements/media/contact sections. It uses `GET/PATCH /api/v1/admin/company-profile`, team data, analytics KPIs, and the media list.
 - Dashboard profile completion overview using backend completion scores and approval states instead of static 100% values
-- Founder/Admin profile view at `/admin/founder-profile` with founder overview, journey, impact, achievements, contact, and QR presentation.
+- Company Profile now uses a data-driven identity visual layer with replaceable logo, cover, office, product, team, project, achievement, and media image sources plus smooth-scroll section navigation.
 - Approval review comparison showing backend-provided current profile data against the submitted draft before approve/request-changes/reject actions.
 - Permission management matrix grouped by backend modules with View, Create, Edit, and Delete checkboxes per selected role.
 

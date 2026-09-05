@@ -1,9 +1,9 @@
 import React from 'react';
 import { CheckCircle2, Globe2, MapPin, Pencil, Phone } from 'lucide-react';
 
-export default function CompanyHeader({ company, onEdit }) {
-  const logo = company?.branding?.logoUrl;
-  const cover = company?.branding?.coverUrl || company?.branding?.bannerUrl;
+export default function CompanyHeader({ company, onEdit, data }) {
+  const logo = company?.branding?.logoUrl || data.companyLogo;
+  const cover = company?.branding?.coverUrl || company?.branding?.bannerUrl || data.coverImage;
   return (
     <div className="overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-950 via-indigo-800 to-violet-700 text-white shadow-lg">
       <div className="relative h-20 bg-cover bg-center opacity-80" style={cover ? { backgroundImage: `url(${cover})` } : undefined}>
@@ -27,9 +27,11 @@ export default function CompanyHeader({ company, onEdit }) {
             </div>
           </div>
         </div>
-        <button type="button" onClick={onEdit} className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-indigo-800 shadow-sm hover:bg-indigo-50">
-          <Pencil className="h-4 w-4" /> Edit Profile
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={onEdit} className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-indigo-800 shadow-sm hover:bg-indigo-50"><Pencil className="h-4 w-4" /> Edit Profile</button>
+          <button type="button" className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">Connect</button>
+          <button type="button" className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">Message</button>
+        </div>
       </div>
     </div>
   );
