@@ -115,7 +115,13 @@ export const PermissionsPage = () => {
         <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center text-sm text-slate-500">No roles available.</div>
       ) : (
         <div className="space-y-5">
-          {Object.entries(groups).map(([moduleName, modulePermissions]) => (
+          {Object.entries(groups).map(([moduleName, modulePermissions]) => {
+            const permissionsByAction = (modulePermissions || []).reduce((result, permission) => {
+              const action = permission.code.split('.').pop();
+              result[action] = permission;
+              return result;
+            }, {});
+            return (
             <section key={moduleName} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-card">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700">{moduleName}</h2>
@@ -123,24 +129,23 @@ export const PermissionsPage = () => {
                   {(modulePermissions || []).filter((permission) => selectedPermissions.includes(permission.code)).length}/{modulePermissions?.length || 0} enabled
                 </span>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {(modulePermissions || []).map((permission) => (
-                  <label key={permission.code} className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3 hover:border-indigo-300">
-                    <input
-                      type="checkbox"
-                      checked={selectedPermissions.includes(permission.code)}
-                      onChange={() => togglePermission(permission.code)}
-                      className="mt-0.5 h-4 w-4 accent-indigo-600"
-                    />
-                    <span>
-                      <span className="block text-sm font-semibold text-slate-800">{permission.name || permission.code}</span>
-                      <span className="mt-1 block text-xs text-slate-500">{permission.code}</span>
-                    </span>
-                  </label>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-left text-xs">
+                  <thead><tr className="border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400"><th className="py-2">Permission</th>{['read', 'create', 'update', 'delete'].map((action) => <th key={action} className="py-2 text-center">{action === 'read' ? 'View' : action === 'update' ? 'Edit' : action}</th>)}</tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    <tr>
+                      <td className="py-3 font-semibold text-slate-800">{moduleName}</td>
+                      {['read', 'create', 'update', 'delete'].map((action) => {
+                        const permission = permissionsByAction[action];
+                        return <td key={action} className="py-3 text-center">{permission ? <input type="checkbox" checked={selectedPermissions.includes(permission.code)} onChange={() => togglePermission(permission.code)} className="h-4 w-4 accent-indigo-600" aria-label={`${moduleName} ${action}`} /> : <span className="text-slate-300">-</span>}</td>;
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </section>
-          ))}
+            );
+          })}
           {permissions.length === 0 && (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center text-sm text-slate-500">No permissions are available from the backend.</div>
           )}

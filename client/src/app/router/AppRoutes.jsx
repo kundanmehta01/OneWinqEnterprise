@@ -25,6 +25,7 @@ import { DepartmentsPage } from '../../pages/admin/DepartmentsPage';
 import { ProfileApprovalsPage } from '../../pages/admin/ProfileApprovalsPage';
 import { InvitationsPage } from '../../pages/admin/InvitationsPage';
 import CompanyProfile from '../../pages/admin/company-profile/CompanyProfile';
+import FounderProfile from '../../pages/admin/CompanyProfile';
 import { AuditLogsPage } from '../../pages/admin/AuditLogsPage';
 import { SettingsPage } from '../../pages/admin/SettingsPage';
 import { NotificationsPage } from '../../pages/admin/NotificationsPage';
@@ -167,6 +168,7 @@ export const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="founder-profile" element={<FounderProfile />} />
 
         <Route
           path="audit-logs"

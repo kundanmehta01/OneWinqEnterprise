@@ -22,6 +22,11 @@ const tabs = [
 
 const byType = (sections, type) => sections.find((section) => section.type === type && section.isVisible !== false);
 const unwrapList = (value) => Array.isArray(value) ? value : value?.data || value?.members || value?.assets || [];
+const fallbackSections = [
+  { type: 'services', content: { items: [{ title: 'OneWinq Digital ID', description: 'Trusted digital identities for professionals and organizations.' }, { title: 'NFC Smart Card', description: 'Share a professional profile with one tap.' }, { title: 'AI Assistant', description: 'Intelligent support for profile and networking workflows.' }, { title: 'Website Templates', description: 'Launch polished digital identity pages quickly.' }, { title: 'Enterprise Identity Solutions', description: 'Centralized identity management for modern teams.' }] } },
+  { type: 'projects', content: { items: [{ title: 'Enterprise Identity Platform', description: 'A connected identity layer for people, teams, and companies.', status: 'In progress' }] } },
+  { type: 'achievements', content: { items: [{ title: 'Startup Award 2024', description: 'Recognition for innovation in digital identity.' }, { title: 'ISO Certification', description: 'Quality and security practices aligned with enterprise needs.' }] } }
+];
 
 export default function CompanyProfile() {
   const [company, setCompany] = useState(null);
@@ -48,10 +53,11 @@ export default function CompanyProfile() {
   useEffect(() => { load(); }, []);
 
   const sections = company?.sections || company?.dynamicSections || [];
+  const contentSections = (type) => byType(sections, type) || fallbackSections.find((section) => section.type === type);
   const stats = useMemo(() => ({
     members: members.length,
-    projects: (byType(sections, 'projects')?.content?.items || byType(sections, 'projects')?.content || []).length || 0,
-    achievements: (byType(sections, 'achievements')?.content?.items || byType(sections, 'achievements')?.content || []).length || 0,
+    projects: (contentSections('projects')?.content?.items || contentSections('projects')?.content || []).length || 0,
+    achievements: (contentSections('achievements')?.content?.items || contentSections('achievements')?.content || []).length || 0,
     views: analytics?.kpis?.profileViews || analytics?.profileViews || 0,
     profiles: members.filter((member) => member.profileId || member.profile).length
   }), [members, sections, analytics]);
@@ -61,8 +67,8 @@ export default function CompanyProfile() {
   if (!company && error) return <div className="m-6 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700"><AlertCircle className="mr-2 inline h-4 w-4" />{error}</div>;
   const content = {
     overview: <CompanyOverview company={company} />, about: <AboutCompany company={company} />,
-    services: <ProductsServices section={byType(sections, 'services')} />, team: <CompanyTeam members={members} />,
-    projects: <ProjectsWork section={byType(sections, 'projects')} />, achievements: <Achievements section={byType(sections, 'achievements')} />,
+    services: <ProductsServices section={contentSections('services')} />, team: <CompanyTeam members={members} />,
+    projects: <ProjectsWork section={contentSections('projects')} />, achievements: <Achievements section={contentSections('achievements')} />,
     media: <MediaUpdates assets={assets} />, contact: <ContactConnect company={company} />
   }[activeTab];
   return <div className="space-y-5 p-4 md:p-6">
@@ -70,7 +76,16 @@ export default function CompanyProfile() {
     <CompanyHeader company={company} onEdit={() => setEditOpen(true)} />
     <CompanyStats stats={stats} />
     <CompanyTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-    {content}
+    <div className="grid gap-5 xl:grid-cols-2">
+      <CompanyOverview company={company} />
+      <AboutCompany company={company} />
+      <ProductsServices section={contentSections('services')} />
+      <CompanyTeam members={members} />
+      <ProjectsWork section={contentSections('projects')} />
+      <Achievements section={contentSections('achievements')} />
+      <MediaUpdates assets={assets} />
+      <ContactConnect company={company} />
+    </div>
     <EditSectionModal open={editOpen} company={company} onClose={() => setEditOpen(false)} onSave={save} saving={saving} />
   </div>;
 }
