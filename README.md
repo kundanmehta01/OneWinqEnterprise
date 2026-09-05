@@ -25,6 +25,16 @@ This client implements the production-facing admin modules for analytics, profil
 - The supplied OneWinq office reference image is stored as `client/public/onewinq-office.png` and referenced through `companyData.js`; replace that data source with a backend URL when available.
 - Approval review comparison showing backend-provided current profile data against the submitted draft before approve/request-changes/reject actions.
 - Permission management matrix grouped by backend modules with View, Create, Edit, and Delete checkboxes per selected role.
+- Roles & Permissions now presents role cards with role-specific icons, descriptions, assigned-permission counts, and a focused permission details/save panel while retaining backend role updates.
+- Templates now show preview thumbnails, categories, assigned-user values, status badges, and existing edit/duplicate/archive actions.
+- Profile Approval now uses an approval-dashboard layout with request metrics, searchable status tabs, avatar-aware request rows, a selected profile preview, and existing approve/request-changes/reject workflow actions.
+- Analytics now includes responsive traffic-source and device donut visualizations plus a multi-series profile engagement chart with tooltips, legends, loading, empty, and error states. Traffic and device attribution use clearly scoped frontend fallback estimates because the current analytics API returns KPI/trend data only.
+- Audit Logs now support backend date-range filtering through `startDate`/`endDate`, module-specific icons, actor avatars/initials, relative timestamps, improved error handling, and richer activity inspection including previous/new values and user-agent details when available.
+- Profile Approval provides backend-backed totals for all workflow states, searchable approval cards, an on-demand complete profile/diff preview, and status-gated approve, reject, and request-changes actions. Review actions call `POST /admin/approvals/:id/review` and prevent duplicate submissions locally while the backend remains the source of truth.
+- Company Profile is integrated into the existing admin sidebar as an expandable section menu. Its Overview, About, Services & Products, Team Members, Projects / Work, Achievements, Media Gallery, and Contact & Connect links scroll to the corresponding backend-backed profile sections and retain their active state.
+- Company Profile now uses the reference-aligned enterprise layout: a branded verified banner, five responsive KPI cards, page-local horizontal section tabs, and compact Overview, About, Products, Team, Projects, Achievements, Media, and Contact cards. The global sidebar remains a single Company Profile route.
+- Company Profile image placement follows the reference: the local OneWinq logo is limited to the banner, the office image to Overview, member avatars to Team, project imagery to Projects, and gallery imagery to Media; Products and Achievements use icons instead of decorative image cards.
+- Company Profile Projects and Media / Updates now use compact icon-and-metadata cards without images; the company building image is reserved for the dedicated Overview image area to keep the desktop layout balanced.
 
 ## Local development
 
