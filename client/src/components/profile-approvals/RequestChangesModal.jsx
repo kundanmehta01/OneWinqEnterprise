@@ -12,14 +12,14 @@ export const RequestChangesModal = ({ isOpen, onClose, approval, onSuccess }) =>
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!approval) return;
+    if (!approval || approval.status !== 'pending') {
+      notifyError('Only pending profile requests can be reviewed.');
+      return;
+    }
 
     setLoading(true);
     try {
-      await approvalService.review(approval._id, {
-        action: 'request_changes',
-        reviewNote
-      });
+      await approvalService.requestChanges(approval._id, reviewNote, [reviewNote]);
       success('Changes requested successfully');
       onSuccess?.();
       onClose();

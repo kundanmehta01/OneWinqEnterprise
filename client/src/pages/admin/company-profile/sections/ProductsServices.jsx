@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Boxes } from 'lucide-react';
+import { BarChart3, Boxes, BriefcaseBusiness, UsersRound } from 'lucide-react';
 import CompanySectionCard from '../common/CompanySectionCard';
-import { companyData, fallbackContent } from '../companyData';
+import { fallbackContent } from '../companyData';
 
 export default function ProductsServices({ section }) {
   const [expanded, setExpanded] = useState(false);
@@ -15,9 +15,11 @@ export default function ProductsServices({ section }) {
   return <CompanySectionCard id="services" title="Products / Services" icon={Boxes}>
     <div className="grid items-stretch gap-4 sm:grid-cols-2">{values.slice(0, expanded ? values.length : 4).map((item, index) => {
       const title = item.title || item.name || 'Untitled service';
-      return <div key={title || index} className="flex h-full min-h-[315px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
-        <img src={item.image || companyData.productsImages[index % companyData.productsImages.length]} alt={title} className="h-32 w-full shrink-0 object-cover" />
-        <div className="flex flex-1 flex-col p-4">
+      const icons = [Boxes, BriefcaseBusiness, UsersRound, BarChart3];
+      const Icon = icons[index % icons.length];
+      return <div key={title || index} className="flex h-full min-h-[190px] flex-col rounded-xl border border-slate-100 bg-slate-50/70 p-4 transition hover:border-indigo-200 hover:bg-white hover:shadow-sm">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-indigo-700"><Icon className="h-4 w-4" /></span>
+        <div className="flex flex-1 flex-col pt-3">
           <h3 className="min-h-[40px] text-sm font-bold leading-5 text-slate-800">{title}</h3>
           <p className="mt-2 line-clamp-3 min-h-[66px] text-sm leading-5 text-slate-500">{item.description || item.features || descriptions[title] || 'A professional OneWinq solution designed to help teams build a trusted digital presence.'}</p>
           <button type="button" className="mt-auto pt-4 text-left text-xs font-bold text-indigo-600">View details →</button>

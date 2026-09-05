@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useProfileApprovals } from '../../hooks/useAnalytics'
 import { profileApprovalService } from '../../services'
+import ConfirmModal from '../../components/common/ConfirmModal'
 
 const tabs = [
   { value: 'pending', label: 'Pending' },
@@ -20,14 +21,32 @@ const statusStyles = {
 export default function ProfileApproval() {
   const [page, setPage] = useState(1)
   const [tab, setTab] = useState('pending')
+  const [review, setReview] = useState(null)
+  const [reviewError, setReviewError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const { data, loading, error, refetch } = useProfileApprovals(page, 10, tab === 'all' ? {} : { status: tab })
 
-  const handleReview = async (id, status) => {
+  const handleReview = async () => {
+    if (!review) return
+
     try {
-      await profileApprovalService.review(id, { status, reviewNote: status === 'approved' ? 'Approved by admin' : status === 'rejected' ? 'Rejected by admin' : 'Changes requested by admin' })
+      setReviewError('')
+      const reviewNote = review.action === 'approve'
+        ? 'Approved by admin'
+        : review.action === 'reject'
+          ? 'Rejected by admin'
+          : 'Changes requested by admin'
+
+      await profileApprovalService.review(review.id, {
+        action: review.action,
+        reviewNote,
+        requestedChanges: review.action === 'request_changes' ? ['Please review the submitted profile updates.'] : [],
+      })
       await refetch()
+      setSuccessMessage(`Profile update ${review.action === 'approve' ? 'approved' : review.action === 'reject' ? 'rejected' : 'marked as changes requested'} successfully.`)
+      setReview(null)
     } catch (err) {
-      console.error(err)
+      setReviewError(err?.response?.data?.error?.message || 'Unable to update this profile approval.')
     }
   }
 
@@ -42,6 +61,18 @@ export default function ProfileApproval() {
         <h1 className="text-2xl font-semibold text-slate-900">Profile Approval</h1>
         <p className="text-sm text-slate-600">Review submitted profile updates and handle approval states from the backend.</p>
       </div>
+
+      <div className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900">
+        Admins with the profile approval permission can approve, reject, or request changes. Super Admin can manage every submitted profile update.
+      </div>
+
+      {successMessage && (
+        <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+          <span>{successMessage}</span>
+          <button type="button" onClick={() => setSuccessMessage('')} className="font-medium hover:underline">Dismiss</button>
+        </div>
+      )}
+      {reviewError && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{reviewError}</div>}
 
       <div className="grid gap-4 md:grid-cols-4">
         <div className="rounded-xl border bg-white p-4"><div className="text-sm text-slate-500">Pending</div><div className="mt-2 text-3xl font-semibold text-slate-900">{data?.pending ?? 0}</div></div>
@@ -99,14 +130,15 @@ export default function ProfileApproval() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        {approval.status !== 'approved' && (
-                          <button type="button" onClick={() => handleReview(approval._id, 'approved')} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100">Approve</button>
+                        {approval.status === 'pending' && (
+                          <>
+                            <button type="button" onClick={() => setReview({ id: approval._id, action: 'approve', memberName: approval.memberId?.name || approval.memberName || 'this member' })} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100">Approve</button>
+                            <button type="button" onClick={() => setReview({ id: approval._id, action: 'reject', memberName: approval.memberId?.name || approval.memberName || 'this member' })} className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100">Reject</button>
+                            <button type="button" onClick={() => setReview({ id: approval._id, action: 'request_changes', memberName: approval.memberId?.name || approval.memberName || 'this member' })} className="rounded border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100">Request changes</button>
+                          </>
                         )}
-                        {approval.status !== 'rejected' && (
-                          <button type="button" onClick={() => handleReview(approval._id, 'rejected')} className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100">Reject</button>
-                        )}
-                        {approval.status !== 'changes_requested' && (
-                          <button type="button" onClick={() => handleReview(approval._id, 'changes_requested')} className="rounded border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100">Request changes</button>
+                        {approval.status !== 'pending' && (
+                          <span className="text-xs text-slate-500">Already reviewed</span>
                         )}
                       </div>
                     </td>
@@ -117,6 +149,19 @@ export default function ProfileApproval() {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        open={Boolean(review)}
+        title={review?.action === 'approve' ? 'Approve profile update?' : review?.action === 'reject' ? 'Reject profile update?' : 'Request profile changes?'}
+        message={review?.action === 'approve'
+          ? `Approve the submitted update for ${review?.memberName}? The profile will be marked approved.`
+          : review?.action === 'reject'
+            ? `Reject the submitted update for ${review?.memberName}? The profile will be marked rejected.`
+            : `Ask ${review?.memberName} to review and update the submitted profile changes?`}
+        confirmLabel={review?.action === 'approve' ? 'Approve Profile' : review?.action === 'reject' ? 'Reject Profile' : 'Request Changes'}
+        onClose={() => setReview(null)}
+        onConfirm={handleReview}
+      />
     </div>
   )
 }

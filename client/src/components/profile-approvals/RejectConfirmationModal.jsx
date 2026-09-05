@@ -12,14 +12,14 @@ export const RejectConfirmationModal = ({ isOpen, onClose, approval, onSuccess }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!approval) return;
+    if (!approval || approval.status !== 'pending') {
+      notifyError('Only pending profile requests can be reviewed.');
+      return;
+    }
 
     setLoading(true);
     try {
-      await approvalService.review(approval._id, {
-        action: 'reject',
-        reviewNote
-      });
+      await approvalService.rejectProfile(approval._id, reviewNote);
       success('Profile rejected successfully');
       onSuccess?.();
       onClose();

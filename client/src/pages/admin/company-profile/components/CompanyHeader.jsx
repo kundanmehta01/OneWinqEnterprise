@@ -3,14 +3,10 @@ import { CheckCircle2, Globe2, MapPin, Pencil, Phone } from 'lucide-react';
 
 export default function CompanyHeader({ company, onEdit, data }) {
   const logo = company?.branding?.logoUrl || data.companyLogo;
-  const cover = company?.branding?.coverUrl || company?.branding?.bannerUrl || data.coverImage;
   return (
     <div className="overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-950 via-indigo-800 to-violet-700 text-white shadow-lg">
-      <div className="relative h-28 bg-cover bg-center opacity-80" style={cover ? { backgroundImage: `url(${cover})` } : undefined}>
-        {!cover && <div className="absolute inset-0 bg-gradient-to-r from-indigo-950 to-violet-700" />}
-      </div>
-      <div className="relative -mt-10 flex flex-col gap-4 px-6 pb-6 md:flex-row md:items-end md:justify-between">
-        <div className="flex items-end gap-4">
+      <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
           <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-white/40 bg-slate-950 shadow-xl">
             {logo ? <img src={logo} alt={`${company?.name || 'Company'} logo`} className="h-full w-full object-contain" /> : <span className="text-2xl font-black text-violet-300">{(company?.name || 'C').charAt(0)}</span>}
           </div>

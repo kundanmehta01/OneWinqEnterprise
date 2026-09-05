@@ -17,6 +17,7 @@ export const useApprovals = (initialParams = {}) => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [statusTotals, setStatusTotals] = useState({ total: 0, pending: 0, approved: 0, rejected: 0, changes_requested: 0 });
 
   const fetchApprovals = useCallback(async () => {
     setLoading(true);
@@ -29,11 +30,21 @@ export const useApprovals = (initialParams = {}) => {
         }
       });
 
-      const res = await approvalService.getAll(cleanParams);
+      const [res, ...statusResults] = await Promise.all([
+        approvalService.getApprovalRequests(cleanParams),
+        ...['', 'pending', 'approved', 'rejected', 'changes_requested'].map((status) => approvalService.getApprovalRequests({ status, page: 1, limit: 1 }))
+      ]);
       setApprovals(res.approvals || []);
       if (res.pagination) {
         setPagination(res.pagination);
       }
+      setStatusTotals({
+        total: statusResults[0]?.pagination?.totalItems || 0,
+        pending: statusResults[1]?.pagination?.totalItems || 0,
+        approved: statusResults[2]?.pagination?.totalItems || 0,
+        rejected: statusResults[3]?.pagination?.totalItems || 0,
+        changes_requested: statusResults[4]?.pagination?.totalItems || 0
+      });
     } catch (err) {
       setError(err.message || 'Failed to load approvals');
     } finally {
@@ -59,6 +70,7 @@ export const useApprovals = (initialParams = {}) => {
     params,
     loading,
     error,
+    statusTotals,
     updateFilters,
     changePage,
     refetch: fetchApprovals

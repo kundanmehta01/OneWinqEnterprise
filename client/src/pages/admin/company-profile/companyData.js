@@ -1,16 +1,14 @@
+import companyLogo from '../../../assets/logos/onewingimage.png';
+
 export const companyData = {
-  companyLogo: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=160&q=80',
-  coverImage: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1600&q=85',
+  companyLogo,
+  coverImage: '/onewinq-office.png',
   officeImage: '/onewinq-office.png',
   aboutImages: [
-    'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=80'
+    '/onewinq-office.png', '/onewinq-office.png'
   ],
   productsImages: [
-    'https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=700&q=80',
-    'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=700&q=80',
-    'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=700&q=80',
-    'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=700&q=80'
+    '/onewinq-office.png', '/onewinq-office.png', '/onewinq-office.png', '/onewinq-office.png'
   ],
   products: [
     { title: 'OneWinq Digital Identity', description: 'Create and manage trusted professional digital profiles for individuals, teams, and organizations.' },
@@ -19,24 +17,16 @@ export const companyData = {
     { title: 'AI Powered Assistant', description: 'Use intelligent tools to write, improve, and grow your professional profile with less effort.' }
   ],
   teamImages: [
-    'https://i.pravatar.cc/160?img=12', 'https://i.pravatar.cc/160?img=32',
-    'https://i.pravatar.cc/160?img=11', 'https://i.pravatar.cc/160?img=47'
+    '/onewinq-office.png', '/onewinq-office.png', '/onewinq-office.png', '/onewinq-office.png'
   ],
   projectImages: [
-    'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=900&q=80'
+    '/onewinq-office.png', '/onewinq-office.png'
   ],
   achievementImages: [
-    'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&w=700&q=80',
-    'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=700&q=80',
-    'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=700&q=80',
-    'https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=700&q=80'
+    '/onewinq-office.png', '/onewinq-office.png', '/onewinq-office.png', '/onewinq-office.png'
   ],
   mediaImages: [
-    'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=700&q=80',
-    'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=700&q=80',
-    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=700&q=80',
-    'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=700&q=80'
+    '/onewinq-office.png', '/onewinq-office.png', '/onewinq-office.png', '/onewinq-office.png'
   ]
 };
 

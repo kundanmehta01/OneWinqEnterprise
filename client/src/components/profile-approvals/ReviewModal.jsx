@@ -26,9 +26,18 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
   const handleAction = async (action) => {
     setLoading(true);
     try {
+      if (approval.status !== 'pending') {
+        notifyError('This request has already been reviewed and cannot be changed.');
+        return;
+      }
+      if (action === 'request_changes' && !reviewNote.trim()) {
+        notifyError('Please add the changes required for the employee.');
+        return;
+      }
       await approvalService.review(approval._id, {
         action,
-        reviewNote
+        reviewNote,
+        requestedChanges: action === 'request_changes' ? [reviewNote] : []
       });
       success(`Profile review submitted (${action})`);
       onSuccess?.();
@@ -41,7 +50,7 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
   };
 
   const draft = approval.draftSnapshot || {};
-  const previous = approval.memberId?.profileId?.published || approval.currentSnapshot || {};
+  const previous = approval.profileId?.published || approval.currentSnapshot || {};
   const comparisonKeys = Array.from(new Set([...Object.keys(previous), ...Object.keys(draft)]))
     .filter((key) => !['updatedAt', 'createdAt'].includes(key));
   const canReview = approval.status === 'pending';
@@ -118,14 +127,9 @@ export const ReviewModal = ({ isOpen, onClose, approval, onSuccess }) => {
 
           <div className="flex items-center gap-2">
            {!canReview ? (
-             <>
-               <p className="mr-2 text-right text-[11px] text-slate-500">
-                 Current status: <span className="font-semibold capitalize">{approval.status.replace('_', ' ')}</span>. Actions are disabled for this completed request.
-               </p>
-               <Button variant="danger" size="sm" icon={XCircle} disabled>Reject</Button>
-               <Button variant="secondary" size="sm" icon={AlertTriangle} disabled>Request Changes</Button>
-               <Button variant="primary" size="sm" icon={CheckCircle2} disabled>Approve Profile</Button>
-             </>
+             <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold capitalize text-slate-600">
+               {approval.status.replace('_', ' ')}
+             </span>
            ) : (
              <>
             <Button

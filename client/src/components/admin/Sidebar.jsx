@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { ADMIN_NAV_SECTIONS } from '../../constants/navigation';
 import { useAuth } from '../../hooks/useAuth';
-import { Crown, Sparkles, X } from 'lucide-react';
+import { Crown, X } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, onClose }) => {
   const { hasPermission } = useAuth();
@@ -63,22 +63,8 @@ export const Sidebar = ({ isOpen, onClose }) => {
                   {visibleItems.map((item) => {
                     const Icon = item.icon;
                     return (
-                      <NavLink
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => {
-                          if (window.innerWidth < 1024) onClose();
-                        }}
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                            isActive
-                              ? 'bg-indigo-600 text-white shadow-sm'
-                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                          }`
-                        }
-                      >
-                        <Icon className="w-4 h-4 flex-shrink-0" />
-                        <span>{item.label}</span>
+                      <NavLink key={item.path} to={item.path} onClick={() => { if (window.innerWidth < 1024) onClose(); }} className={({ isActive }) => `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${isActive ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}>
+                        <Icon className="w-4 h-4 flex-shrink-0" /><span>{item.label}</span>
                       </NavLink>
                     );
                   })}

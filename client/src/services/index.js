@@ -36,8 +36,9 @@ export const profileApprovalService = {
   getAll: (params) => axios.get(`${API}/approvals`, { params }).then((r) => r.data.data),
   getById: (id) => axios.get(`${API}/approvals/${id}`).then((r) => r.data.data),
   review: (id, data) => axios.post(`${API}/approvals/${id}/review`, data).then((r) => r.data.data),
-  approve: (id, data) => axios.post(`${API}/approvals/${id}/review`, { ...data, status: 'approved' }).then((r) => r.data.data),
-  reject: (id, data) => axios.post(`${API}/approvals/${id}/review`, { ...data, status: 'rejected' }).then((r) => r.data.data),
+  approve: (id, data = {}) => axios.post(`${API}/approvals/${id}/review`, { ...data, action: 'approve' }).then((r) => r.data.data),
+  reject: (id, data = {}) => axios.post(`${API}/approvals/${id}/review`, { ...data, action: 'reject' }).then((r) => r.data.data),
+  requestChanges: (id, data = {}) => axios.post(`${API}/approvals/${id}/review`, { ...data, action: 'request_changes' }).then((r) => r.data.data),
 }
 
 export const analyticsService = {
