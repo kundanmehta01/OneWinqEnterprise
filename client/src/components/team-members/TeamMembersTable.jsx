@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-export default function TeamMembersTable({
+export function TeamMembersTable({
   members = [],
   pagination = {},
   onView,
@@ -163,3 +163,5 @@ export default function TeamMembersTable({
     </div>
   )
 }
+
+export default TeamMembersTable
