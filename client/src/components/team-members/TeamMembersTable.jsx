@@ -1,328 +1,165 @@
-import React, { useState } from 'react';
-import { MoreHorizontal, ArrowUpDown, ExternalLink, Edit2, Archive, Trash2, CheckCircle } from 'lucide-react';
-import { Badge } from '../common/Badge';
-import { Dropdown } from '../common/Dropdown';
-import { formatDate } from '../../utils/formatDate';
+import React, { useMemo, useState } from 'react'
 
-export const TeamMembersTable = ({
+export default function TeamMembersTable({
   members = [],
-  loading = false,
-  onEditMember,
-  onArchiveMember,
-  onDeleteMember,
-  onViewProfile
-}) => {
-  const [selectedIds, setSelectedIds] = useState([]);
+  pagination = {},
+  onView,
+  onEdit,
+  onDelete,
+  onPageChange,
+}) {
+  const [menuOpenId, setMenuOpenId] = useState(null)
 
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedIds(members.map((m) => m._id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
+  const currentPage = Number(pagination.currentPage || 1)
+  const totalPages = Number(pagination.totalPages || 1)
 
-  const handleSelectOne = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  const getDepartmentBadgeVariant = (deptName = '') => {
-    const lower = deptName.toLowerCase();
-    if (lower.includes('market')) return 'purple';
-    if (lower.includes('eng')) return 'blue';
-    if (lower.includes('design')) return 'pink';
-    if (lower.includes('human') || lower.includes('hr')) return 'amber';
-    if (lower.includes('prod')) return 'green';
-    return 'default';
-  };
-
-  const getStatusBadge = (status = '') => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return <Badge variant="green" dot>Active</Badge>;
-      case 'pending':
-      case 'pending approval':
-        return <Badge variant="amber" dot>Pending Approval</Badge>;
-      case 'inactive':
-      case 'suspended':
-        return <Badge variant="red" dot>Inactive</Badge>;
-      default:
-        return <Badge variant="default" dot>{status || 'Unknown'}</Badge>;
-    }
-  };
-
-  const sampleMembersFallback = [
-    {
-      _id: '1',
-      name: 'Priya Sharma',
-      email: 'priya.sharma@onewinq.com',
-      designation: 'Marketing Manager',
-      department: 'Marketing',
-      role: 'Admin',
-      status: 'active',
-      completion: 100,
-      joinedOn: '2024-05-12'
-    },
-    {
-      _id: '2',
-      name: 'Rahul Verma',
-      email: 'rahul.verma@onewinq.com',
-      designation: 'Senior Developer',
-      department: 'Engineering',
-      role: 'Member',
-      status: 'active',
-      completion: 85,
-      joinedOn: '2024-04-28'
-    },
-    {
-      _id: '3',
-      name: 'Anjali Mehta',
-      email: 'anjali.mehta@onewinq.com',
-      designation: 'UI/UX Designer',
-      department: 'Design',
-      role: 'Member',
-      status: 'active',
-      completion: 90,
-      joinedOn: '2024-04-20'
-    },
-    {
-      _id: '4',
-      name: 'Vikram Singh',
-      email: 'vikram.singh@onewinq.com',
-      designation: 'HR Executive',
-      department: 'Human Resources',
-      role: 'Member',
-      status: 'active',
-      completion: 75,
-      joinedOn: '2024-04-18'
-    },
-    {
-      _id: '5',
-      name: 'Neha Patel',
-      email: 'neha.patel@onewinq.com',
-      designation: 'Content Writer',
-      department: 'Marketing',
-      role: 'Member',
-      status: 'pending',
-      completion: 60,
-      joinedOn: '2024-05-20'
-    },
-    {
-      _id: '6',
-      name: 'Arjun Mehta',
-      email: 'arjun.mehta@onewinq.com',
-      designation: 'Business Analyst',
-      department: 'Engineering',
-      role: 'Member',
-      status: 'active',
-      completion: 80,
-      joinedOn: '2024-03-30'
-    },
-    {
-      _id: '7',
-      name: 'Sneha Joshi',
-      email: 'sneha.joshi@onewinq.com',
-      designation: 'Product Manager',
-      department: 'Product',
-      role: 'Admin',
-      status: 'active',
-      completion: 95,
-      joinedOn: '2024-03-15'
-    },
-    {
-      _id: '8',
-      name: 'Karan Malhotra',
-      email: 'karan.malhotra@onewinq.com',
-      designation: 'DevOps Engineer',
-      department: 'Engineering',
-      role: 'Member',
-      status: 'inactive',
-      completion: 40,
-      joinedOn: '2024-02-10'
-    }
-  ];
-
-  const tableData = members.map((m) => ({
-          _id: m._id,
-          name: m.name,
-          email: m.userId?.email || 'member@onewinq.com',
-          designation: m.designation || 'Team Member',
-          department: m.departmentId?.name || 'General',
-          role: m.roleId?.name || (m.userId?.role === 'super_admin' ? 'Admin' : 'Member'),
-          status: m.status || 'active',
-          completion: m.profileCompletionScore || m.profileId?.completionPercentage || 75,
-          joinedOn: m.joiningDate || m.createdAt,
-          slug: m.profileId?.slug,
-          profileId: m.profileId,
-          departmentId: m.departmentId,
-          userId: m.userId,
-          joiningDate: m.joiningDate,
-          createdAt: m.createdAt
-        }));
+  const menuNote = useMemo(
+    () => ({
+      view: 'View',
+      edit: 'Edit',
+      delete: 'Delete Member',
+    }),
+    []
+  )
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b bg-slate-50 p-4">
+        <input
+          type="text"
+          readOnly
+          placeholder="Search members..."
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none"
+        />
+      </div>
+
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-slate-100 bg-slate-50/50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              <th className="py-3.5 px-4 w-10">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.length > 0 && selectedIds.length === tableData.length}
-                  onChange={handleSelectAll}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 w-4 h-4 cursor-pointer"
-                />
-              </th>
-              <th className="py-3.5 px-4">
-                <span className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600">
-                  Member <ArrowUpDown className="w-3 h-3" />
-                </span>
-              </th>
-              <th className="py-3.5 px-4">
-                <span className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600">
-                  Designation <ArrowUpDown className="w-3 h-3" />
-                </span>
-              </th>
-              <th className="py-3.5 px-4">
-                <span className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600">
-                  Department <ArrowUpDown className="w-3 h-3" />
-                </span>
-              </th>
-              <th className="py-3.5 px-4">
-                <span className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600">
-                  Role <ArrowUpDown className="w-3 h-3" />
-                </span>
-              </th>
-              <th className="py-3.5 px-4">
-                <span className="inline-flex items-center gap-1 cursor-pointer hover:text-slate-600">
-                  Status <ArrowUpDown className="w-3 h-3" />
-                </span>
-              </th>
-              <th className="py-3.5 px-4">Profile Completion</th>
-              <th className="py-3.5 px-4">Joined On</th>
-              <th className="py-3.5 px-4 text-right">Actions</th>
+        <table className="min-w-full text-left text-sm text-slate-700">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-4 py-3 font-medium">Member</th>
+              <th className="px-4 py-3 font-medium">Designation</th>
+              <th className="px-4 py-3 font-medium">Department</th>
+              <th className="px-4 py-3 font-medium">Role</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Profile</th>
+              <th className="px-4 py-3 font-medium">Joined</th>
+              <th className="px-4 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
-
-          <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-            {tableData.map((m) => {
-              const isSelected = selectedIds.includes(m._id);
-              const initial = m.name?.charAt(0).toUpperCase() || 'M';
-
-              const menuItems = [
-                {
-                  label: 'Edit Details',
-                  icon: Edit2,
-                  onClick: () => onEditMember?.(m)
-                },
-                {
-                  label: 'View Public Profile',
-                  icon: ExternalLink,
-                  onClick: () => onViewProfile?.(m)
-                },
-                { divider: true },
-                {
-                  label: m.status === 'archived' ? 'Delete Member' : 'Archive Member',
-                  icon: m.status === 'archived' ? Trash2 : Archive,
-                  danger: true,
-                  onClick: () => (m.status === 'archived'
-                    ? onDeleteMember?.(m._id)
-                    : onArchiveMember?.(m._id))
-                }
-              ];
-
-              return (
-                <tr
-                  key={m._id}
-                  className={`hover:bg-slate-50/70 transition-colors ${
-                    isSelected ? 'bg-indigo-50/30' : ''
-                  }`}
-                >
-                  <td className="py-3.5 px-4">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleSelectOne(m._id)}
-                      className="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 w-4 h-4 cursor-pointer"
-                    />
+          <tbody>
+            {members.length === 0 ? (
+              <tr>
+                <td colSpan="8" className="px-4 py-12 text-center text-slate-500">
+                  No team members found.
+                </td>
+              </tr>
+            ) : (
+              members.map((member) => (
+                <tr key={member._id} className="border-t border-slate-200 hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-900">{member.name}</div>
+                    <div className="text-xs text-slate-500">{member.userId?.email || member.email || '—'}</div>
                   </td>
+                  <td className="px-4 py-3">{member.designation || '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                      {member.departmentId?.name || member.department || 'Unassigned'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="rounded-full bg-violet-100 px-2 py-1 text-xs font-medium text-violet-700">
+                      {member.roleId?.name || member.role || '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${member.status === 'active' ? 'text-emerald-600' : 'text-slate-500'}`}>
+                      <span className="h-2 w-2 rounded-full bg-current" />
+                      {member.status || 'inactive'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">{member.profileId?.completionPercentage ?? member.profileCompletion ?? 0}%</td>
+                  <td className="px-4 py-3 text-xs text-slate-500">
+                    {member.joiningDate ? new Date(member.joiningDate).toLocaleDateString() : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="relative flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setMenuOpenId(menuOpenId === member._id ? null : member._id)}
+                        className="rounded-md border border-slate-200 px-2 py-1 text-lg text-slate-600 hover:bg-slate-100"
+                        aria-label="Open actions"
+                      >
+                        ⋯
+                      </button>
 
-                  {/* Member Avatar + Name + Email */}
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-2xs">
-                        {initial}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900 leading-snug">{m.name}</h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{m.email}</p>
-                      </div>
+                      {menuOpenId === member._id && (
+                        <div className="absolute right-0 top-10 z-10 w-40 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpenId(null)
+                              onView?.(member)
+                            }}
+                            className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100"
+                          >
+                            {menuNote.view}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpenId(null)
+                              onEdit?.(member)
+                            }}
+                            className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100"
+                          >
+                            {menuNote.edit}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpenId(null)
+                              onDelete?.(member)
+                            }}
+                            className="block w-full rounded-md px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                          >
+                            {menuNote.delete}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  </td>
-
-                  {/* Designation */}
-                  <td className="py-3.5 px-4 font-medium text-slate-700">{m.designation}</td>
-
-                  {/* Department */}
-                  <td className="py-3.5 px-4">
-                    <Badge variant={getDepartmentBadgeVariant(m.department)}>
-                      {m.department}
-                    </Badge>
-                  </td>
-
-                  {/* Role */}
-                  <td className="py-3.5 px-4">
-                    <Badge variant={m.role === 'Admin' ? 'purple' : 'default'}>
-                      {m.role}
-                    </Badge>
-                  </td>
-
-                  {/* Status */}
-                  <td className="py-3.5 px-4">{getStatusBadge(m.status)}</td>
-
-                  {/* Profile Completion Bar */}
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-3 min-w-[120px]">
-                      <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300"
-                          style={{ width: `${m.completion}%` }}
-                        />
-                      </div>
-                      <span className="text-[11px] font-bold text-slate-700 min-w-[32px]">
-                        {m.completion}%
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* Joined On */}
-                  <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                    {formatDate(m.joinedOn)}
-                  </td>
-
-                  {/* Actions Dropdown */}
-                  <td className="py-3.5 px-4 text-right">
-                    <Dropdown
-                      trigger={
-                        <button
-                          type="button"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                      }
-                      items={menuItems}
-                    />
                   </td>
                 </tr>
-              );
-            })}
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      <div className="flex items-center justify-between border-t bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <div>
+          Showing {members.length} of {pagination.totalItems || members.length}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onPageChange?.(Math.max(1, currentPage - 1))}
+            disabled={currentPage <= 1}
+            className="rounded border border-slate-200 bg-white px-2 py-1 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            ←
+          </button>
+          <span className="rounded border border-violet-600 bg-violet-600 px-2 py-1 text-white">{currentPage}</span>
+          <button
+            type="button"
+            onClick={() => onPageChange?.(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage >= totalPages}
+            className="rounded border border-slate-200 bg-white px-2 py-1 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            →
+          </button>
+        </div>
+      </div>
     </div>
-  );
-};
+  )
+}
