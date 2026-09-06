@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
-  Activity,
   Award,
   BarChart3,
   BriefcaseBusiness,
@@ -18,7 +17,6 @@ import {
   MoreHorizontal,
   Phone,
   PieChart,
-  Search,
   ShieldCheck,
   Sparkles,
   Trophy,
@@ -27,8 +25,7 @@ import {
   Youtube,
   ContactIcon,
   Loader2,
-  Contact2,
-  Contact
+  Contact2
 } from "lucide-react";
 import {
   companyProfileService,
@@ -38,6 +35,7 @@ import {
 } from "../../../services";
 import EditSectionModal from "./common/EditSectionModal";
 import companyLogo from "../../../assets/logos/onewingimage.png";
+import ContactConnectSection from "./sections/ContactConnect";
 
 const fallbackImage = "/onewinq-office.png";
 const tabs = [
@@ -577,8 +575,8 @@ function Dashboard({ company, members, assets, stats, onEdit }) {
             <Achievements items={achievementItems} />
             <Media assets={assets} />
           </div>
-          <div className="sm:max-w-[calc(50%-6px)] lg:max-w-[calc(33.333%-8px)]">
-            <Contact company={company} />
+          <div className="sm:max-w-[calc(50%-6px)] lg:w-full lg:max-w-none">
+            <ContactConnectSection company={company} />
           </div>
         </div>
         <footer className="mt-5 flex flex-col gap-2 border-t border-[#e8e6ef] px-1 pt-4 text-[9px] text-[#9a96a5] sm:flex-row sm:items-center sm:justify-between">
