@@ -1,13 +1,28 @@
-import React, { useState } from 'react';
-import { Award } from 'lucide-react';
-import CompanySectionCard from '../common/CompanySectionCard';
-import { fallbackContent } from '../companyData';
+import React from 'react'
+import { Award, Rocket, Trophy, Users } from 'lucide-react'
+import CardTitle from '../common/CardTitle'
 
-export default function Achievements({ section }) {
-  const [expanded, setExpanded] = useState(false);
-  const items = Array.isArray(section?.content) ? section.content : section?.content?.items || fallbackContent.achievements.map((title) => ({ title, description: 'Recognition for OneWinq innovation and enterprise impact.' }));
-  return <CompanySectionCard id="achievements" title="Achievements" icon={Award}>
-    <div className="grid gap-3 sm:grid-cols-2">{items.slice(0, expanded ? items.length : 2).map((item, index) => <div key={item.title || index} className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-4"><span className="rounded-xl bg-amber-100 p-2 text-amber-600"><Award className="h-4 w-4" /></span><div><h3 className="font-semibold text-slate-800">{item.title || 'Recognition'}</h3><p className="mt-1 text-sm text-slate-500">{item.description || item.issuer || 'Recognition for OneWinq innovation and enterprise impact.'}</p><p className="mt-2 text-[11px] font-semibold text-slate-400">{item.year || '2024'}</p></div></div>)}</div>
-    {items.length > 2 && <button type="button" onClick={() => setExpanded((value) => !value)} className="mt-4 text-xs font-bold text-indigo-600">{expanded ? 'Show less' : 'View all achievements'} →</button>}
-  </CompanySectionCard>;
+const icons = { rocket: Rocket, users: Users, award: Award }
+
+export default function Achievements({ data }) {
+  return (
+    <section id="achievements" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+      <CardTitle eyebrow={data.eyebrow} title={data.title} />
+      <div className="relative mt-8 space-y-7 before:absolute before:bottom-2 before:left-[19px] before:top-2 before:w-px before:bg-indigo-100">
+        {data.items.map((item) => {
+          const Icon = icons[item.icon] || Trophy
+          return (
+            <article key={item.year} className="relative flex gap-5">
+              <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm"><Icon size={18} /></span>
+              <div className="pt-0.5">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-500">{item.year}</p>
+                <h3 className="mt-1 font-semibold text-slate-900">{item.title}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{item.description}</p>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
 }
