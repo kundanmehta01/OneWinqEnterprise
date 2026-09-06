@@ -48,41 +48,41 @@
 import companyLogo from "../../../assets/logos/onewingimage.png";
 
 
-// Office Images
+// Overview / Cover
 import office1 from "../../../assets/images/office-1.webp";
 import office2 from "../../../assets/images/office-2.jpg";
 
 
-// Product Images
+// Products
 import product1 from "../../../assets/images/product1.webp";
 import product2 from "../../../assets/images/product2.webp";
 import product3 from "../../../assets/images/product3.webp";
 import product4 from "../../../assets/images/product4.webp";
 
 
-// Team Images
+// Team
 import team1 from "../../../assets/images/team1.webp";
 import team2 from "../../../assets/images/team2.webp";
 import team3 from "../../../assets/images/team3.webp";
 import team4 from "../../../assets/images/team4.jpg";
 
 
-// Project Images
+// Projects
 import project1 from "../../../assets/images/project1.png";
 import project2 from "../../../assets/images/project2.webp";
 
 
-// Achievement Images
+// Achievements
 import achieve1 from "../../../assets/images/achive.jpg";
 import achieve2 from "../../../assets/images/achive2.webp";
 
 
-// Media Images
+// Media
 import media1 from "../../../assets/images/media1.jpg";
 import media2 from "../../../assets/images/media2.jpg";
 
 
-// Mobile App
+// Mobile / Extra
 import mobileApp from "../../../assets/images/mobileapp.webp";
 
 
@@ -93,26 +93,26 @@ export const companyData = {
   companyLogo,
 
 
+  // Only overview fallback / main image
   coverImage: office1,
 
 
   officeImage: office2,
 
 
+
   aboutImages: [
     office1,
-    office2
+    office2,
   ],
 
 
 
   productsImages: [
-
     product1,
     product2,
     product3,
-    product4
-
+    product4,
   ],
 
 
@@ -120,39 +120,31 @@ export const companyData = {
   products: [
 
     {
-      title:
-      "OneWinq Digital Identity",
-
+      title: "OneWinq Digital Identity",
       description:
-      "Create and manage trusted professional digital profiles for individuals, teams, and organizations."
+        "Create and manage trusted professional digital profiles for individuals, teams, and organizations.",
     },
 
 
     {
-      title:
-      "Smart Digital Cards",
-
+      title: "Smart Digital Cards",
       description:
-      "Share your professional identity instantly through a modern digital card experience."
+        "Share your professional identity instantly through a modern, memorable digital card experience.",
     },
 
 
     {
-      title:
-      "Enterprise Identity Management",
-
+      title: "Enterprise Identity Management",
       description:
-      "Manage company teams, employee profiles, permissions, and organizational identity from one place."
+        "Manage company teams, employee profiles, permissions, and organizational identity from one place.",
     },
 
 
     {
-      title:
-      "AI Powered Assistant",
-
+      title: "AI Powered Assistant",
       description:
-      "Use intelligent tools to write, improve, and grow your professional profile."
-    }
+        "Use intelligent tools to write, improve, and grow your professional profile with less effort.",
+    },
 
   ],
 
@@ -164,7 +156,7 @@ export const companyData = {
     team1,
     team2,
     team3,
-    team4
+    team4,
 
   ],
 
@@ -174,7 +166,7 @@ export const companyData = {
   projectImages: [
 
     project1,
-    project2
+    project2,
 
   ],
 
@@ -184,7 +176,7 @@ export const companyData = {
   achievementImages: [
 
     achieve1,
-    achieve2
+    achieve2,
 
   ],
 
@@ -195,9 +187,9 @@ export const companyData = {
 
     media1,
     media2,
-    mobileApp
+    mobileApp,
 
-  ]
+  ],
 
 
 };
@@ -206,61 +198,68 @@ export const companyData = {
 
 
 
+
 export const fallbackContent = {
 
 
-  products:[
+  products: [
 
     [
       "OneWinq Digital Identity",
-      "Create and manage professional digital profiles."
+      "Create and manage professional digital profiles.",
     ],
+
 
     [
       "Smart Digital Cards",
-      "Share professional identity instantly."
+      "Share professional identity instantly.",
     ],
+
 
     [
       "Enterprise Identity Management",
-      "Manage company teams and employee profiles."
+      "Manage company teams and employee profiles.",
     ],
+
 
     [
       "AI Powered Assistant",
-      "Smart AI tools for professional growth."
-    ]
+      "Smart AI tools for professional growth.",
+    ],
 
   ],
 
 
 
-  projects:[
+
+  projects: [
 
     [
       "OneWinq Enterprise Platform",
       "Enterprise platform for managing company and employee digital identities.",
-      "Completed"
+      "Completed",
     ],
+
 
     [
       "AI Profile Assistant",
       "AI based assistant for creating professional profiles.",
-      "In Progress"
-    ]
+      "In Progress",
+    ],
 
   ],
 
 
 
-  achievements:[
+
+  achievements: [
 
     "Startup Excellence Award",
     "Technology Innovation Award",
     "1000+ Digital Profiles Created",
-    "Enterprise Recognition Award"
+    "Enterprise Recognition Award",
 
-  ]
+  ],
 
 
 };

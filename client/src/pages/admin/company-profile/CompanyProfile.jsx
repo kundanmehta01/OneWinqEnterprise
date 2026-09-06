@@ -27,6 +27,7 @@ import {
   Loader2,
   Contact2
 } from "lucide-react";
+import { companyData } from "./companyData.js";
 import {
   companyProfileService,
   teamMemberService,
@@ -571,7 +572,10 @@ function Dashboard({ company, members, assets, stats, onEdit }) {
             <Team members={members} />
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.05fr_.8fr_.8fr]">
-            <Projects items={projectItems} />
+         <Projects
+  items={projectItems}
+  projectImages={company.projectImages}
+/>
             <Achievements items={achievementItems} />
             <Media assets={assets} />
           </div>
@@ -680,13 +684,20 @@ export default function CompanyProfile() {
           {error}
         </div>
       )}
-      <Dashboard
-        company={company}
-        members={members}
-        assets={assets}
-        stats={stats}
-        onEdit={() => setEditOpen(true)}
-      />
+    <Dashboard
+  company={{
+    ...company,
+    projectImages: companyData.projectImages,
+    mediaImages: companyData.mediaImages,
+    teamImages: companyData.teamImages,
+    achievementImages: companyData.achievementImages,
+    productsImages: companyData.productsImages,
+  }}
+  members={members}
+  assets={assets}
+  stats={stats}
+  onEdit={() => setEditOpen(true)}
+/>
       <EditSectionModal
         open={editOpen}
         company={company}
