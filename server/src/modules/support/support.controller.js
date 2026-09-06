@@ -2,7 +2,7 @@ import { supportService } from './support.service.js';
 import { ApiResponse } from '../../utils/apiResponse.util.js';
 
 export class SupportController {
-  getFaqs(req, res, next) {
+  async getFaqs(req, res, next) {
     try {
       const faqs = supportService.getFaqs();
       return ApiResponse.success(res, { data: { faqs } });
