@@ -44,5 +44,22 @@ export const APP_EVENTS = {
   // Analytics & Media
   ANALYTICS_EVENT_RECORDED: 'analytics.event_recorded',
   MEDIA_UPLOADED: 'media.uploaded',
-  MEDIA_DELETED: 'media.deleted'
+  MEDIA_DELETED: 'media.deleted',
+
+  // Networking & Connections
+  CONNECTION_REQUESTED: 'connection.requested',
+  CONNECTION_ACCEPTED: 'connection.accepted',
+  CONNECTION_DECLINED: 'connection.declined',
+  CONNECTION_REMOVED: 'connection.removed',
+
+  // Enterprise Events
+  EVENT_CREATED: 'event.created',
+  EVENT_UPDATED: 'event.updated',
+  EVENT_CANCELLED: 'event.cancelled',
+  EVENT_REGISTERED: 'event.registered',
+  EVENT_REGISTRATION_CANCELLED: 'event.registration_cancelled',
+
+  // Support & Helpdesk
+  SUPPORT_TICKET_CREATED: 'support.ticket_created',
+  SUPPORT_TICKET_UPDATED: 'support.ticket_updated'
 };
