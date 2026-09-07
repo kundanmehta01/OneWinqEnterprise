@@ -7,6 +7,7 @@ import { seedTemplates } from './templates.seed.js';
 import { seedOrganization } from './organization.seed.js';
 import { seedSuperAdmin } from './superAdmin.seed.js';
 import { seedSampleMembers } from './sampleMembers.seed.js';
+import { seedEvents } from './events.seed.js';
 
 const runSeed = async () => {
   try {
@@ -36,6 +37,9 @@ const runSeed = async () => {
 
     // 7. Sample Team Members & Profiles
     await seedSampleMembers();
+
+    // 8. Enterprise Events
+    await seedEvents();
 
     logger.info('====================================================');
     logger.info('✨ OneWinq Database Seeding Completed Successfully!');

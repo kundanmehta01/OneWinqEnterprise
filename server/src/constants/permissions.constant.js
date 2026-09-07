@@ -55,7 +55,17 @@ export const PERMISSIONS = {
   // Media
   MEDIA_UPLOAD: 'media.upload',
   MEDIA_DELETE: 'media.delete',
-  MEDIA_READ: 'media.read'
+  MEDIA_READ: 'media.read',
+
+  // Events Management (Admin)
+  EVENT_READ: 'event.read',
+  EVENT_CREATE: 'event.create',
+  EVENT_UPDATE: 'event.update',
+  EVENT_DELETE: 'event.delete',
+
+  // Support & Helpdesk
+  SUPPORT_READ: 'support.read',
+  SUPPORT_MANAGE: 'support.manage'
 };
 
 export const ALL_PERMISSIONS = Object.values(PERMISSIONS);
