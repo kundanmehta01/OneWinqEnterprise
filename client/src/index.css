@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #6b46ff;
+  --muted: #6b7280;
+}
+
+body {
+  @apply bg-gray-50 text-gray-700 font-sans antialiased;
+}
+
+/* App container */
+.app-container {
+  @apply min-h-screen bg-white;
+}
+
+/* simple card */
+.card {
+  @apply bg-white rounded-lg shadow-sm p-4;
+}
+
+.header-title {
+  @apply text-2xl font-semibold text-gray-900;
+}
+
