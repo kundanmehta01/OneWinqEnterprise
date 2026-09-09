@@ -17,7 +17,7 @@ import {
   X,
   CheckCircle2
 } from 'lucide-react';
-import { useAuth } from '../../app/providers/AuthProvider';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function EditProfile() {
   const navigate = useNavigate();

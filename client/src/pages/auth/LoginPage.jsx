@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Eye, EyeOff, Zap, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 
 export const LoginPage = () => {
-  const { login } = useAuth();
+  const { user, isAdmin, loading: authLoading, login } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -12,6 +12,14 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // If already authenticated, redirect to the respective dashboard
+  useEffect(() => {
+    if (!authLoading && user) {
+      const destination = isAdmin ? '/admin/dashboard' : '/user/dashboard';
+      navigate(destination, { replace: true });
+    }
+  }, [user, isAdmin, authLoading, navigate]);
 
   const fillAdminCredentials = () => {
     setEmail('superadmin@onewinq.com');
@@ -25,13 +33,10 @@ export const LoginPage = () => {
     setLoading(true);
 
     try {
-      const user = await login({ email, password });
-      // Redirect based on role
-      if (user?.role?.name === 'Employee') {
-        navigate('/me/dashboard', { replace: true });
-      } else {
-        navigate('/admin/dashboard', { replace: true });
-      }
+      const authResult = await login({ email, password });
+      // Redirect accurately based on role / admin status from login result
+      const destination = authResult?.redirectPath || (authResult?.isAdmin ? '/admin/dashboard' : '/user/dashboard');
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err.message || 'Invalid email or password. Please try again.');
     } finally {
@@ -183,7 +188,7 @@ export const LoginPage = () => {
 
         {/* Watermark */}
         <p className="text-center text-[11px] text-white/20 mt-4">
-          OneWinq Enterprise © 2025 · Secure Identity Infrastructure
+          OneWinq Enterprise © 2026 · Secure Identity Infrastructure
         </p>
       </div>
     </div>

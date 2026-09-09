@@ -1,10 +1,13 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
+import { useAuth } from '../../hooks/useAuth';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 // Layouts (use Outlet internally)
 import { AdminLayout } from '../../layouts/AdminLayout';
-import { UserLayout } from '../../layouts/UserLayout';
+import { UserLayout } from '../../user/layouts/UserLayout';
+import { UserRouteElements } from '../../user/routes/userRoutes';
 
 // Auth Pages
 import { LoginPage } from '../../pages/auth/LoginPage';
@@ -31,29 +34,56 @@ import { NotificationsPage } from '../../pages/admin/NotificationsPage';
 import { EmployeeProfilesPage } from '../../pages/admin/EmployeeProfilesPage';
 import MediaGallery from '../../pages/admin/media/MediaGallery';
 
-// User Pages
-import { UserDashboardPage } from '../../pages/user/UserDashboardPage';
-import { MyProfilePage } from '../../pages/user/MyProfilePage';
-import { MyNotificationsPage } from '../../pages/user/MyNotificationsPage';
-
 // Public Pages
 import { PublicCompanyPage } from '../../pages/public/PublicCompanyPage';
 import { PublicProfilePage } from '../../pages/public/PublicProfilePage';
 import { NotFoundPage } from '../../pages/public/NotFoundPage';
 
+/**
+ * Smart Root Redirect
+ * Directs unauthenticated users to /login,
+ * Administrators to /admin/dashboard,
+ * and Employees/Members to /user/dashboard.
+ */
+const RootRedirect = () => {
+  const { user, loading, isAdmin } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FC]">
+        <LoadingSpinner message="Loading your workspace..." />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Navigate to={isAdmin ? '/admin/dashboard' : '/user/dashboard'} replace />;
+};
+
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* ===== ROOT REDIRECT ===== */}
-      <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+      {/* ===== ROOT REDIRECT (Role & Session Aware) ===== */}
+      <Route path="/" element={<RootRedirect />} />
 
-      {/* ===== AUTH ROUTES (no auth required) ===== */}
+      {/* ===== AUTH & INVITATION ROUTES (no auth required) ===== */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-otp" element={<VerifyOTPPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* Complete invitation acceptance URLs supported by backend & links */}
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+      <Route path="/invite/accept" element={<AcceptInvitationPage />} />
+      <Route path="/invitations/accept" element={<AcceptInvitationPage />} />
+      <Route path="/invite" element={<AcceptInvitationPage />} />
+      <Route path="/invitation/accept" element={<AcceptInvitationPage />} />
+      <Route path="/invitation" element={<AcceptInvitationPage />} />
+
       {/* Support /auth/* prefix as well */}
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
@@ -61,22 +91,30 @@ export const AppRoutes = () => {
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
       <Route path="/auth/accept-invitation" element={<AcceptInvitationPage />} />
+      <Route path="/auth/invite/accept" element={<AcceptInvitationPage />} />
 
       {/* ===== PUBLIC DIGITAL BUSINESS CARD PAGES ===== */}
       <Route path="/p/company" element={<PublicCompanyPage />} />
       <Route path="/p/:slug" element={<PublicProfilePage />} />
 
-      {/* ===== ADMIN PORTAL (AdminLayout uses <Outlet />) ===== */}
+      {/* ===== ADMIN PORTAL (Restricted to Admin / Super Admin roles only) ===== */}
       <Route
         path="/admin"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredAdmin>
             <AdminLayout />
           </ProtectedRoute>
         }
       >
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute requiredPermission="dashboard.read">
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="team-members"
@@ -209,7 +247,18 @@ export const AppRoutes = () => {
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>
 
-      {/* ===== EMPLOYEE PORTAL (UserLayout uses <Outlet />) ===== */}
+      {/* ===== USER / EMPLOYEE DIGITAL IDENTITY PLATFORM (Both /user and /me supported) ===== */}
+      <Route
+        path="/user"
+        element={
+          <ProtectedRoute>
+            <UserLayout />
+          </ProtectedRoute>
+        }
+      >
+        {UserRouteElements()}
+      </Route>
+
       <Route
         path="/me"
         element={
@@ -218,11 +267,7 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<UserDashboardPage />} />
-        <Route path="profile" element={<MyProfilePage />} />
-        <Route path="notifications" element={<MyNotificationsPage />} />
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
+        {UserRouteElements()}
       </Route>
 
       {/* ===== CATCH-ALL 404 ===== */}

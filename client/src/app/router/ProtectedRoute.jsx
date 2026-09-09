@@ -5,17 +5,14 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ShieldAlert } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 
-// TEMPORARY DEVELOPMENT BYPASS: set to false when invitation-based admin auth is ready.
-const TEMP_ADMIN_AUTH_BYPASS = false;
-
-export const ProtectedRoute = ({ children, requiredPermission, requiredAnyPermission }) => {
-  const { user, loading, hasPermission, hasAnyPermission } = useAuth();
+export const ProtectedRoute = ({
+  children,
+  requiredAdmin = false,
+  requiredPermission,
+  requiredAnyPermission
+}) => {
+  const { user, loading, isAdmin, hasPermission, hasAnyPermission } = useAuth();
   const location = useLocation();
-
-  // TEMPORARY DEVELOPMENT BYPASS: keep the full auth and permission logic below intact.
-  if (TEMP_ADMIN_AUTH_BYPASS) {
-    return children;
-  }
 
   if (loading) {
     return (
@@ -27,6 +24,11 @@ export const ProtectedRoute = ({ children, requiredPermission, requiredAnyPermis
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // If this route is restricted to Administrators, redirect normal members/employees to the user dashboard
+  if (requiredAdmin && !isAdmin) {
+    return <Navigate to="/user/dashboard" replace />;
   }
 
   if (requiredPermission && !hasPermission(requiredPermission)) {

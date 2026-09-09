@@ -17,7 +17,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { QRCode } from '../components/QRCode';
-import { useAuth } from '../../app/providers/AuthProvider';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function DigitalCard() {
   const { user } = useAuth();

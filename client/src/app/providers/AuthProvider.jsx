@@ -3,9 +3,26 @@ import { AuthContext } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
 import { storage } from '../../utils/storage';
 
-// DEVELOPMENT ONLY: load the existing Super Admin automatically; never creates a duplicate account.
-// Set VITE_DEV_AUTO_LOGIN=false to return to manual login during local auth testing.
-const DEV_AUTO_LOGIN = import.meta.env.DEV && import.meta.env.VITE_DEV_AUTO_LOGIN !== 'false';
+// DEVELOPMENT ONLY: Set VITE_DEV_AUTO_LOGIN=true in .env if you want automatic Super Admin auto-login.
+// Defaults to false so that logout, user switching, and invitation acceptance work correctly on all developer machines.
+const DEV_AUTO_LOGIN = import.meta.env.VITE_DEV_AUTO_LOGIN === 'true';
+
+const ADMIN_ROLES = ['Super Admin', 'Admin', 'HR Admin', 'Content Admin'];
+
+export const computeRoleAndAdmin = (userObj, memberObj, dataRole, dataIsSuperAdmin, dataPermissions = []) => {
+  const email = (userObj?.email || '').toLowerCase().trim();
+  const isSuperAdminEmail = email === 'superadmin@onewinq.com';
+  const memberRoleName = typeof memberObj?.roleId === 'object' ? memberObj.roleId?.name : (dataRole || null);
+  const roleName = isSuperAdminEmail ? 'Super Admin' : (memberRoleName || dataRole || 'Employee');
+  const isSuperAdmin = isSuperAdminEmail || roleName === 'Super Admin' || Boolean(dataIsSuperAdmin);
+  const isAdmin = isSuperAdmin || ADMIN_ROLES.includes(roleName) || dataPermissions.includes('*') || dataPermissions.includes('dashboard.read');
+  return {
+    role: roleName,
+    isSuperAdmin,
+    isAdmin,
+    redirectPath: isAdmin ? '/admin/dashboard' : '/user/dashboard'
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(storage.getUser());
@@ -19,21 +36,7 @@ export const AuthProvider = ({ children }) => {
     const token = storage.getAccessToken();
 
     try {
-      if (!token && !DEV_AUTO_LOGIN) {
-        setUser(null);
-        setMember(null);
-        setRole(null);
-        setIsSuperAdmin(false);
-        setPermissions([]);
-        return;
-      }
-
-      let data;
-      try {
-        data = await authService.getMe();
-      } catch (meErr) {
-        // If unauthenticated or token expired, and auto-login is active in development,
-        // authenticate using the existing seeded Super Admin credentials from the backend
+      if (!token) {
         if (DEV_AUTO_LOGIN) {
           try {
             const loginResult = await authService.login({
@@ -45,30 +48,50 @@ export const AuthProvider = ({ children }) => {
               storage.setRefreshToken(loginResult.refreshToken);
             }
             storage.setUser(loginResult.user);
-            data = await authService.getMe();
           } catch (loginErr) {
             console.warn('Auto-login with seeded super admin failed:', loginErr);
-            throw meErr;
           }
         } else {
-          throw meErr;
+          setUser(null);
+          setMember(null);
+          setRole(null);
+          setIsSuperAdmin(false);
+          setPermissions([]);
+          return null;
         }
       }
 
+      const data = await authService.getMe();
+      const status = computeRoleAndAdmin(
+        data.user,
+        data.member,
+        data.role,
+        data.isSuperAdmin,
+        data.permissions || []
+      );
+
       setUser(data.user);
-      setMember(data.member);
-      setRole(data.role);
-      setIsSuperAdmin(Boolean(data.isSuperAdmin));
+      setMember(data.member || null);
+      setRole(status.role);
+      setIsSuperAdmin(status.isSuperAdmin);
       setPermissions(data.permissions || []);
       storage.setUser(data.user);
+
+      return {
+        ...data,
+        ...status
+      };
     } catch (err) {
-      console.error('Failed to load user info:', err);
-      storage.clearAuth();
-      setUser(null);
-      setMember(null);
-      setRole(null);
-      setIsSuperAdmin(false);
-      setPermissions([]);
+      console.warn('Session check warning:', err.message || err);
+      if (err.status === 401 || err.code === 'UNAUTHORIZED' || err.code === 'INVALID_TOKEN') {
+        storage.clearAuth();
+        setUser(null);
+        setMember(null);
+        setRole(null);
+        setIsSuperAdmin(false);
+        setPermissions([]);
+      }
+      return null;
     } finally {
       setLoading(false);
     }
@@ -78,11 +101,13 @@ export const AuthProvider = ({ children }) => {
     fetchCurrentUser();
 
     const handleAuthExpired = () => {
+      storage.clearAuth();
       setUser(null);
       setMember(null);
       setRole(null);
       setIsSuperAdmin(false);
       setPermissions([]);
+      setLoading(false);
     };
 
     window.addEventListener('auth:expired', handleAuthExpired);
@@ -90,6 +115,15 @@ export const AuthProvider = ({ children }) => {
   }, [fetchCurrentUser]);
 
   const login = async ({ email, password }) => {
+    // 1. Clear previous session state
+    storage.clearAuth();
+    setUser(null);
+    setMember(null);
+    setRole(null);
+    setIsSuperAdmin(false);
+    setPermissions([]);
+
+    // 2. Perform authentication request
     const result = await authService.login({ email, password });
     storage.setAccessToken(result.accessToken);
     if (result.refreshToken) {
@@ -97,20 +131,60 @@ export const AuthProvider = ({ children }) => {
     }
     storage.setUser(result.user);
 
+    // 3. Compute role and admin status from login payload
+    const initialStatus = computeRoleAndAdmin(result.user, result.member);
     setUser(result.user);
-    setMember(result.member);
-    setRole(result.member?.roleId?.name || (result.user.email === 'superadmin@onewinq.com' ? 'Super Admin' : 'Employee'));
-    setIsSuperAdmin(result.user.email === 'superadmin@onewinq.com');
+    setMember(result.member || null);
+    setRole(initialStatus.role);
+    setIsSuperAdmin(initialStatus.isSuperAdmin);
 
-    // Fetch full permissions & state
-    await fetchCurrentUser();
-    return result;
+    // 4. Enrich permissions via getMe without breaking session if getMe fails
+    try {
+      const meData = await authService.getMe();
+      if (meData?.user) {
+        const enrichedStatus = computeRoleAndAdmin(
+          meData.user,
+          meData.member || result.member,
+          meData.role,
+          meData.isSuperAdmin,
+          meData.permissions || []
+        );
+        setUser(meData.user);
+        setMember(meData.member || result.member || null);
+        setRole(enrichedStatus.role);
+        setIsSuperAdmin(enrichedStatus.isSuperAdmin);
+        setPermissions(meData.permissions || []);
+        storage.setUser(meData.user);
+
+        return {
+          ...result,
+          user: meData.user,
+          member: meData.member || result.member,
+          role: enrichedStatus.role,
+          isAdmin: enrichedStatus.isAdmin,
+          isSuperAdmin: enrichedStatus.isSuperAdmin,
+          redirectPath: enrichedStatus.redirectPath
+        };
+      }
+    } catch (enrichErr) {
+      console.warn('Post-login enrichment skipped:', enrichErr.message || enrichErr);
+    }
+
+    return {
+      ...result,
+      role: initialStatus.role,
+      isAdmin: initialStatus.isAdmin,
+      isSuperAdmin: initialStatus.isSuperAdmin,
+      redirectPath: initialStatus.redirectPath
+    };
   };
 
   const logout = async () => {
     try {
       const refreshToken = storage.getRefreshToken();
-      await authService.logout(refreshToken);
+      if (refreshToken) {
+        await authService.logout(refreshToken);
+      }
     } catch (err) {
       console.warn('Logout error:', err);
     } finally {
@@ -120,37 +194,42 @@ export const AuthProvider = ({ children }) => {
       setRole(null);
       setIsSuperAdmin(false);
       setPermissions([]);
+      setLoading(false);
     }
   };
 
+  const currentStatus = computeRoleAndAdmin(user, member, role, isSuperAdmin, permissions);
+
   const hasPermission = useCallback(
     (perm) => {
-      if (isSuperAdmin || permissions.includes('*')) return true;
+      if (currentStatus.isSuperAdmin || permissions.includes('*')) return true;
       return permissions.includes(perm);
     },
-    [isSuperAdmin, permissions]
+    [currentStatus.isSuperAdmin, permissions]
   );
 
   const hasAnyPermission = useCallback(
     (perms = []) => {
-      if (isSuperAdmin || permissions.includes('*')) return true;
+      if (currentStatus.isSuperAdmin || permissions.includes('*')) return true;
       return perms.some((p) => permissions.includes(p));
     },
-    [isSuperAdmin, permissions]
+    [currentStatus.isSuperAdmin, permissions]
   );
 
   const value = {
     user,
     member,
-    role,
-    isSuperAdmin,
+    role: currentStatus.role,
+    isAdmin: currentStatus.isAdmin,
+    isSuperAdmin: currentStatus.isSuperAdmin,
     permissions,
     loading,
     login,
     logout,
     hasPermission,
     hasAnyPermission,
-    refreshUser: fetchCurrentUser
+    refreshUser: fetchCurrentUser,
+    redirectPath: currentStatus.redirectPath
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

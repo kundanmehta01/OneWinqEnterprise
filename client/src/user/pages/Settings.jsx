@@ -13,7 +13,7 @@ import {
   Globe
 } from 'lucide-react';
 import { userSettingsService } from '../services/userSettingsService';
-import { useAuth } from '../../app/providers/AuthProvider';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function Settings() {
   const { user } = useAuth();
