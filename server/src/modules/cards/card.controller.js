@@ -81,7 +81,10 @@ export class CardController {
       };
 
       const result = await cardService.unlinkCard(req.body, actorContext);
-      return ApiResponse.success(res, result);
+      return ApiResponse.success(res, {
+        message: result.message,
+        data: result.card
+      });
     } catch (error) {
       next(error);
     }

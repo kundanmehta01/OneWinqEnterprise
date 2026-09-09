@@ -11,7 +11,7 @@ import { NotFoundError } from '../../errors/index.js';
 class UserDashboardService {
   async getUserHome(userId) {
     const member = await TeamMember.findOne({ userId })
-      .populate('departmentId', 'name description headOfDepartment')
+      .populate('departmentId', 'name description headMemberId')
       .populate('profileId')
       .lean();
 
@@ -45,8 +45,8 @@ class UserDashboardService {
     if (member.departmentId) {
       const deptId = member.departmentId._id;
       const [deptHead, deptColleagues, totalDeptMembers] = await Promise.all([
-        member.departmentId.headOfDepartment
-          ? TeamMember.findById(member.departmentId.headOfDepartment).select('name designation').lean()
+        member.departmentId.headMemberId
+          ? TeamMember.findById(member.departmentId.headMemberId).select('name designation').lean()
           : null,
         TeamMember.find({ departmentId: deptId, status: 'active', userId: { $ne: userId } })
           .populate('profileId', 'slug published.avatarUrl published.headline')

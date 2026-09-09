@@ -14,8 +14,8 @@ export const seedCards = async () => {
     }
 
     // Find sample members to link initial executive cards
-    const rajatMember = await TeamMember.findOne({ employeeId: 'OWQ-001' });
-    const priyaMember = await TeamMember.findOne({ employeeId: 'OWQ-002' });
+    const rajatMember = await TeamMember.findOne({ employeeId: { $in: ['EMP-001', 'OWQ-001'] } });
+    const priyaMember = await TeamMember.findOne({ employeeId: { $in: ['EMP-002', 'OWQ-002'] } });
 
     const sampleCards = [
       {

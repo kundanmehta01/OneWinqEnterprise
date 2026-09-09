@@ -32,6 +32,24 @@ export const seedSuperAdmin = async () => {
     });
   }
 
+  let adminMember = await TeamMember.findOne({ employeeId: 'ADM-001' });
+  if (!adminMember) {
+    adminMember = await TeamMember.create({
+      userId: superAdminUser._id,
+      employeeId: 'ADM-001',
+      name: 'OneWinq Master Admin',
+      designation: 'Enterprise Super Administrator',
+      departmentId: execDept?._id || null,
+      roleId: superAdminRole._id,
+      status: 'active',
+      joiningDate: new Date('2024-01-01')
+    });
+  } else {
+    adminMember.userId = superAdminUser._id;
+    adminMember.roleId = superAdminRole._id;
+    await adminMember.save();
+  }
+
   // 2. Founder & CEO Personal Account (Rajat Chaturvedi)
   const ceoEmail = 'rajat@onewinq.in';
   const ceoPassword = 'OneWinq@Admin2026!';
