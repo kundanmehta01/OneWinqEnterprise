@@ -1,59 +1,33 @@
-import React from 'react';
-import { Users, UserCheck, Network, Mail, ShieldCheck } from 'lucide-react';
-import { StatCard } from '../common/StatCard';
+import React from 'react'
 
-export const TeamMembersStats = ({
-  totalMembers = 126,
-  activeMembers = 118,
-  departments = 9,
-  pendingInvites = 8,
-  adminsCount = 6
-}) => {
+export default function TeamMembersStats({ stats = {} }){
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-      <StatCard
-        icon={Users}
-        iconBg="bg-indigo-50 text-indigo-600"
-        title="Total Members"
-        value={totalMembers}
-        trend="12"
-        trendType="up"
-        trendSubtext="vs last month"
-      />
-      <StatCard
-        icon={UserCheck}
-        iconBg="bg-emerald-50 text-emerald-600"
-        title="Active Members"
-        value={activeMembers}
-        trend="10"
-        trendType="up"
-        trendSubtext="vs last month"
-      />
-      <StatCard
-        icon={Network}
-        iconBg="bg-amber-50 text-amber-600"
-        title="Departments"
-        value={departments}
-        trendType="neutral"
-        trendSubtext="No change"
-      />
-      <StatCard
-        icon={Mail}
-        iconBg="bg-sky-50 text-sky-600"
-        title="Pending Invitations"
-        value={pendingInvites}
-        trend="4"
-        trendType="up"
-        trendSubtext="vs last month"
-      />
-      <StatCard
-        icon={ShieldCheck}
-        iconBg="bg-purple-50 text-purple-600"
-        title="Admins"
-        value={adminsCount}
-        trendType="neutral"
-        trendSubtext="No change"
-      />
+    <div className="grid grid-cols-5 gap-4">
+      <div className="p-4 bg-white rounded-xl border">
+        <div className="text-sm text-gray-500">Total Members</div>
+        <div className="text-2xl font-semibold">{stats?.total ?? 126}</div>
+        <div className="text-xs text-green-600">+12 vs last month</div>
+      </div>
+      <div className="p-4 bg-white rounded-xl border">
+        <div className="text-sm text-gray-500">Active Members</div>
+        <div className="text-2xl font-semibold">{stats?.active ?? 118}</div>
+        <div className="text-xs text-green-600">+10 vs last month</div>
+      </div>
+      <div className="p-4 bg-white rounded-xl border">
+        <div className="text-sm text-gray-500">Departments</div>
+        <div className="text-2xl font-semibold">{stats?.departments ?? 9}</div>
+        <div className="text-xs text-gray-500">No change</div>
+      </div>
+      <div className="p-4 bg-white rounded-xl border">
+        <div className="text-sm text-gray-500">Pending Invitations</div>
+        <div className="text-2xl font-semibold">{stats?.pendingInvites ?? 8}</div>
+        <div className="text-xs text-green-600">+4 vs last month</div>
+      </div>
+      <div className="p-4 bg-white rounded-xl border">
+        <div className="text-sm text-gray-500">Admins</div>
+        <div className="text-2xl font-semibold">{stats?.admins ?? 6}</div>
+        <div className="text-xs text-gray-500">No change</div>
+      </div>
     </div>
-  );
-};
+  )
+}

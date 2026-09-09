@@ -20,29 +20,16 @@ export const seedSuperAdmin = async () => {
   const superAdminEmail = 'superadmin@onewinq.com';
   const superAdminPassword = 'OneWinq@Admin2026!';
 
-  let superAdminUser = await User.findOne({ email: superAdminEmail }).select('+passwordHash');
-  const passwordHash = await hashPassword(superAdminPassword);
-
+  let superAdminUser = await User.findOne({ email: superAdminEmail });
   if (!superAdminUser) {
+    const passwordHash = await hashPassword(superAdminPassword);
     superAdminUser = await User.create({
       email: superAdminEmail,
       passwordHash,
       status: 'active',
       emailVerified: true,
-      emailVerifiedAt: new Date(),
-      failedLoginAttempts: 0,
-      lockUntil: null
+      emailVerifiedAt: new Date()
     });
-  } else {
-    // Keep the documented development credentials usable on repeated seed runs.
-    superAdminUser.passwordHash = passwordHash;
-    superAdminUser.status = 'active';
-    superAdminUser.emailVerified = true;
-    superAdminUser.emailVerifiedAt = superAdminUser.emailVerifiedAt || new Date();
-    superAdminUser.failedLoginAttempts = 0;
-    superAdminUser.lockUntil = null;
-    superAdminUser.refreshTokens = [];
-    await superAdminUser.save();
   }
 
   // 2. Founder & CEO Personal Account (Rajat Chaturvedi)

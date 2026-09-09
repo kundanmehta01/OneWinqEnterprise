@@ -1,45 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
-import { analyticsService } from '../services/analyticsService';
+import { useEffect, useState, useCallback } from 'react'
+import { profileApprovalService, analyticsService } from '../services'
 
-export const useAnalytics = (initialRange = '7d', initialDates = {}) => {
-  const [data, setData] = useState(null);
-  const [range, setRange] = useState(initialRange);
-  const [dates, setDates] = useState(initialDates);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+export function useProfileApprovals(page = 1, limit = 10, filters = {}) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const fetchAnalytics = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetch = useCallback(async () => {
+    setLoading(true)
     try {
-      const params = { range };
-      if (range === 'custom') {
-        if (dates.startDate) params.startDate = dates.startDate;
-        if (dates.endDate) params.endDate = dates.endDate;
-      }
-      const res = await analyticsService.getAggregatedMetrics(params);
-      setData(res);
+      const res = await profileApprovalService.getAll({ page, limit, ...filters })
+      setData(res)
+      setError(null)
     } catch (err) {
-      setError(err.message || 'Failed to load analytics metrics');
+      setError(err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [range, dates]);
+  }, [page, limit, filters])
 
-  useEffect(() => {
-    fetchAnalytics();
-    const interval = window.setInterval(fetchAnalytics, 30000);
-    return () => window.clearInterval(interval);
-  }, [fetchAnalytics]);
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
 
-  return {
-    analytics: data,
-    range,
-    setRange,
-    dates,
-    setDates,
-    loading,
-    error,
-    refetch: fetchAnalytics
-  };
-};
+export function useAnalytics(dateRange = 'all') {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await analyticsService.getOverview({ range: dateRange })
+      setData(res)
+      setError(null)
+    } catch (err) {
+      setError(err)
+    } finally {
+      setLoading(false)
+    }
+  }, [dateRange])
+
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}

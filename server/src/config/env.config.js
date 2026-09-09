@@ -20,8 +20,6 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRATION: z.string().default('15m'),
   JWT_REFRESH_SECRET: z.string().min(16, 'JWT_REFRESH_SECRET must be at least 16 chars').default('onewinq_default_refresh_secret_key_32_chars_min!'),
   JWT_REFRESH_EXPIRATION: z.string().default('7d'),
-  // TEMPORARY DEVELOPMENT BYPASS: defaults on only outside production; remove when invitation auth is ready.
-  DEV_AUTH_BYPASS: z.coerce.boolean().default(process.env.NODE_ENV !== 'production'),
   PASSWORD_SALT_ROUNDS: z.coerce.number().default(12),
   ARGON2_MEMORY_COST: z.coerce.number().default(65536),
   ARGON2_TIME_COST: z.coerce.number().default(3),
