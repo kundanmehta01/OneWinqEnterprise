@@ -61,5 +61,12 @@ export const APP_EVENTS = {
 
   // Support & Helpdesk
   SUPPORT_TICKET_CREATED: 'support.ticket_created',
-  SUPPORT_TICKET_UPDATED: 'support.ticket_updated'
+  SUPPORT_TICKET_UPDATED: 'support.ticket_updated',
+
+  // Smart & Physical NFC Cards
+  CARD_CREATED: 'card.created',
+  CARD_LINKED: 'card.linked',
+  CARD_UNLINKED: 'card.unlinked',
+  CARD_STATUS_CHANGED: 'card.status_changed',
+  CARD_DELETED: 'card.deleted'
 };

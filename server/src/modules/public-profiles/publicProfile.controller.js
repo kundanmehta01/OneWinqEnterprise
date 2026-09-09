@@ -1,6 +1,7 @@
 import { publicProfileService } from './publicProfile.service.js';
 import { companyProfileService } from '../company-profile/companyProfile.service.js';
 import { analyticsService } from '../analytics/analytics.service.js';
+import { cardService } from '../cards/card.service.js';
 import { ApiResponse } from '../../utils/apiResponse.util.js';
 
 export class PublicProfileController {
@@ -64,6 +65,21 @@ export class PublicProfileController {
       });
 
       return ApiResponse.success(res, { message: 'Event recorded successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resolveCardTap(req, res, next) {
+    try {
+      const clientContext = {
+        ipAddress: req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip,
+        userAgent: req.headers['user-agent'],
+        referer: req.headers['referer'] || ''
+      };
+
+      const result = await cardService.resolvePublicCardTap(req.params.cardUid, clientContext);
+      return ApiResponse.success(res, { data: result });
     } catch (error) {
       next(error);
     }

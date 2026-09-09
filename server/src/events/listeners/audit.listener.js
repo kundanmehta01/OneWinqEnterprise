@@ -34,7 +34,12 @@ export const registerAuditListeners = () => {
     [APP_EVENTS.EVENT_REGISTERED]: { module: 'events', resourceType: 'EventRegistration' },
     [APP_EVENTS.CONNECTION_REQUESTED]: { module: 'connections', resourceType: 'Connection' },
     [APP_EVENTS.CONNECTION_ACCEPTED]: { module: 'connections', resourceType: 'Connection' },
-    [APP_EVENTS.SUPPORT_TICKET_CREATED]: { module: 'support', resourceType: 'SupportTicket' }
+    [APP_EVENTS.SUPPORT_TICKET_CREATED]: { module: 'support', resourceType: 'SupportTicket' },
+    [APP_EVENTS.CARD_CREATED]: { module: 'cards', resourceType: 'Card' },
+    [APP_EVENTS.CARD_LINKED]: { module: 'cards', resourceType: 'Card' },
+    [APP_EVENTS.CARD_UNLINKED]: { module: 'cards', resourceType: 'Card' },
+    [APP_EVENTS.CARD_STATUS_CHANGED]: { module: 'cards', resourceType: 'Card' },
+    [APP_EVENTS.CARD_DELETED]: { module: 'cards', resourceType: 'Card' }
   };
 
   for (const [eventName, config] of Object.entries(eventConfig)) {
