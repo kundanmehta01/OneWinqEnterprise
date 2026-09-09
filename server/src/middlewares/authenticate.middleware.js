@@ -6,33 +6,9 @@ import { UnauthorizedError, ForbiddenError } from '../errors/index.js';
 import { ERROR_CODES } from '../constants/errorCodes.constant.js';
 import { SYSTEM_ROLES } from '../constants/roles.constant.js';
 import { ALL_PERMISSIONS } from '../constants/permissions.constant.js';
-import { env } from '../config/env.config.js';
 
 export const authenticate = async (req, res, next) => {
   try {
-    // TEMPORARY DEVELOPMENT BYPASS: uses the seeded Super Admin only outside production.
-    // Set DEV_AUTH_BYPASS=false when invitation-based authentication is ready.
-    if (env.DEV_AUTH_BYPASS && env.NODE_ENV !== 'production') {
-      const devAdmin = await User.findOne({ email: 'superadmin@onewinq.com' });
-      if (!devAdmin) {
-        throw new UnauthorizedError(
-          'Development admin not found. Run `npm run seed` in the server folder.',
-          ERROR_CODES.UNAUTHORIZED
-        );
-      }
-
-      const devMember = await TeamMember.findOne({ userId: devAdmin._id, status: { $ne: 'archived' } })
-        .populate('roleId')
-        .populate('departmentId');
-
-      req.user = devAdmin;
-      req.member = devMember || null;
-      req.roleName = SYSTEM_ROLES.SUPER_ADMIN;
-      req.isSuperAdmin = true;
-      req.permissions = ALL_PERMISSIONS;
-      return next();
-    }
-
     let token = null;
 
     // 1. Check Authorization header

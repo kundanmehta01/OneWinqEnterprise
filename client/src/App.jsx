@@ -1,13 +1,12 @@
-import React from 'react';
-import { AppProvider } from './app/providers/AppProvider';
-import { AppRoutes } from './app/router/AppRoutes';
+import React from 'react'
+import { BrowserRouter } from 'react-router-dom'
+import AppRoutes from './app/router/AppRoutes'
+import './index.css'
 
-function App() {
+export default function App() {
   return (
-    <AppProvider>
+    <BrowserRouter>
       <AppRoutes />
-    </AppProvider>
-  );
+    </BrowserRouter>
+  )
 }
-
-export default App;

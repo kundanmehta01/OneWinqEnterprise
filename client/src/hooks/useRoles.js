@@ -1,32 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
-import { roleService } from '../services/roleService';
+import { useEffect, useState, useCallback } from 'react'
+import { roleService } from '../services'
 
-export const useRoles = () => {
-  const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+export function useRoles(page = 1, limit = 10, filters = {}) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const fetchRoles = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetch = useCallback(async () => {
+    setLoading(true)
     try {
-      const data = await roleService.getAll({ includeInactive: true });
-      setRoles(data || []);
+      const res = await roleService.getAll({ page, limit, ...filters })
+      setData(res)
+      setError(null)
     } catch (err) {
-      setError(err.message || 'Failed to load roles');
+      setError(err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, []);
+  }, [page, limit, filters])
 
-  useEffect(() => {
-    fetchRoles();
-  }, [fetchRoles]);
-
-  return {
-    roles,
-    loading,
-    error,
-    refetch: fetchRoles
-  };
-};
+  useEffect(() => { fetch() }, [fetch])
+  return { data, loading, error, refetch: fetch }
+}
