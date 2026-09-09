@@ -8,6 +8,7 @@ import { seedOrganization } from './organization.seed.js';
 import { seedSuperAdmin } from './superAdmin.seed.js';
 import { seedSampleMembers } from './sampleMembers.seed.js';
 import { seedEvents } from './events.seed.js';
+import { seedCards } from './cards.seed.js';
 
 const runSeed = async () => {
   try {
@@ -40,6 +41,9 @@ const runSeed = async () => {
 
     // 8. Enterprise Events
     await seedEvents();
+
+    // 9. Smart & Physical NFC Cards
+    await seedCards();
 
     logger.info('====================================================');
     logger.info('✨ OneWinq Database Seeding Completed Successfully!');

@@ -10,6 +10,10 @@ router.get('/company', publicProfileController.getCompanyProfile.bind(publicProf
 router.get('/profiles/:slug', publicProfileController.getEmployeeProfile.bind(publicProfileController));
 router.get('/profiles/:slug/qr', publicProfileController.getProfileQrCode.bind(publicProfileController));
 
+// Public smart / NFC card tap resolver
+router.get('/cards/:cardUid', publicProfileController.resolveCardTap.bind(publicProfileController));
+router.get('/c/:cardUid', publicProfileController.resolveCardTap.bind(publicProfileController));
+
 // Public telemetry interaction event tracking
 router.post('/events', publicProfileController.recordPublicEvent.bind(publicProfileController));
 

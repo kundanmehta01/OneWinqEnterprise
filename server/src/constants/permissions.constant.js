@@ -65,7 +65,15 @@ export const PERMISSIONS = {
 
   // Support & Helpdesk
   SUPPORT_READ: 'support.read',
-  SUPPORT_MANAGE: 'support.manage'
+  SUPPORT_MANAGE: 'support.manage',
+
+  // Smart & Physical NFC Cards
+  CARD_READ: 'card.read',
+  CARD_CREATE: 'card.create',
+  CARD_UPDATE: 'card.update',
+  CARD_DELETE: 'card.delete',
+  CARD_LINK: 'card.link',
+  CARD_UNLINK: 'card.unlink'
 };
 
 export const ALL_PERMISSIONS = Object.values(PERMISSIONS);

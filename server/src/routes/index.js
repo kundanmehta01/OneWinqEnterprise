@@ -23,6 +23,7 @@ import { eventRoutes } from '../modules/events/event.routes.js';
 import { adminEventRoutes } from '../modules/events/adminEvent.routes.js';
 import { userDirectoryRoutes } from '../modules/user-directory/userDirectory.routes.js';
 import { supportRoutes } from '../modules/support/support.routes.js';
+import { cardRoutes } from '../modules/cards/card.routes.js';
 
 const apiRouter = Router();
 
@@ -75,6 +76,7 @@ apiRouter.use('/admin/company-profile', companyProfileRoutes);
 apiRouter.use('/admin/templates', templateRoutes);
 apiRouter.use('/admin/approvals', profileApprovalRoutes);
 apiRouter.use('/admin/events', adminEventRoutes);
+apiRouter.use('/admin/cards', cardRoutes);
 apiRouter.use('/admin/analytics', analyticsRoutes);
 apiRouter.use('/admin/audit-logs', auditLogRoutes);
 apiRouter.use('/admin/settings', settingsRoutes);
