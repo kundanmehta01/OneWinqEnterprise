@@ -1,0 +1,16 @@
+export const isValidEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+export const isValidPassword = (password) => {
+  return typeof password === 'string' && password.length >= 8;
+};
+
+export const isValidUrl = (url) => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
