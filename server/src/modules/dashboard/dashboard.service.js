@@ -24,12 +24,12 @@ class DashboardService {
       memberGrowthAgg,
       analyticsMetrics
     ] = await Promise.all([
-      TeamMember.countDocuments({ isArchived: false }),
-      TeamMember.countDocuments({ status: 'active', isArchived: false }),
+      TeamMember.countDocuments({ isArchived: false, isDeleted: { $ne: true }, isSystem: { $ne: true } }),
+      TeamMember.countDocuments({ status: 'active', isArchived: false, isDeleted: { $ne: true }, isSystem: { $ne: true } }),
       Invitation.countDocuments({ status: 'pending', expiresAt: { $gt: new Date() } }),
       Department.countDocuments({ isArchived: false }),
       ProfileApproval.countDocuments({ status: 'pending' }),
-      TeamMember.find({ status: 'active', isArchived: false })
+      TeamMember.find({ status: 'active', isArchived: false, isDeleted: { $ne: true }, isSystem: { $ne: true } })
         .sort({ createdAt: -1 })
         .limit(5)
         .populate('roleId', 'name')
@@ -42,13 +42,13 @@ class DashboardService {
         .populate('submittedBy', 'email')
         .lean(),
       TeamMember.aggregate([
-        { $match: { isArchived: false, status: 'active' } },
+        { $match: { isArchived: false, isDeleted: { $ne: true }, isSystem: { $ne: true }, status: 'active' } },
         { $group: { _id: null, avgScore: { $avg: '$profileCompletionScore' } } }
       ]),
-      TeamMember.countDocuments({ isArchived: false, profileCompletionScore: { $gte: 80 } }),
-      TeamMember.countDocuments({ isArchived: false, profileCompletionScore: { $gt: 0, $lt: 80 } }),
+      TeamMember.countDocuments({ isArchived: false, isDeleted: { $ne: true }, isSystem: { $ne: true }, profileCompletionScore: { $gte: 80 } }),
+      TeamMember.countDocuments({ isArchived: false, isDeleted: { $ne: true }, isSystem: { $ne: true }, profileCompletionScore: { $gt: 0, $lt: 80 } }),
       TeamMember.aggregate([
-        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+        { $match: { createdAt: { $gte: sevenDaysAgo }, isDeleted: { $ne: true }, isSystem: { $ne: true } } },
         {
           $group: {
             _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
