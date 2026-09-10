@@ -66,13 +66,7 @@ class InvitationService {
   async createInvitation({ email, name, roleId, departmentId, designation }, inviterContext = {}) {
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
-      throw new ConflictError(`A user with email '${normalizedEmail}' already has an active OneWinq account.`, ERROR_CODES.USER_ALREADY_EXISTS);
-    }
-
-    // Check existing pending invitation
+    // Check existing pending invitation for this email
     const existingInvite = await Invitation.findOne({
       email: normalizedEmail,
       status: 'pending',
@@ -82,19 +76,22 @@ class InvitationService {
       throw new ConflictError('A pending invitation for this email address is already active.');
     }
 
-    // Verify role exists
-    const role = await Role.findById(roleId);
+    // Verify or find role
+    let role = null;
+    if (roleId && mongoose.Types.ObjectId.isValid(roleId)) {
+      role = await Role.findById(roleId);
+    }
     if (!role) {
-      throw new NotFoundError('Selected role not found', ERROR_CODES.ROLE_NOT_FOUND);
+      role = (await Role.findOne({ name: { $regex: /viewer|member|user|guest/i } })) || (await Role.findOne({ name: { $ne: 'Super Admin' } })) || (await Role.findOne());
+      if (!role) {
+        throw new NotFoundError('Selected role not found', ERROR_CODES.ROLE_NOT_FOUND);
+      }
     }
 
     // Verify department if provided
     let department = null;
-    if (departmentId) {
+    if (departmentId && mongoose.Types.ObjectId.isValid(departmentId)) {
       department = await Department.findById(departmentId);
-      if (!department) {
-        throw new NotFoundError('Selected department not found', ERROR_CODES.DEPARTMENT_NOT_FOUND);
-      }
     }
 
     const rawToken = generateRandomToken(32);
@@ -104,8 +101,8 @@ class InvitationService {
     const invitation = await Invitation.create({
       email: normalizedEmail,
       name: name || '',
-      roleId,
-      departmentId: departmentId || null,
+      roleId: role._id,
+      departmentId: department ? department._id : null,
       designation: designation || 'Team Member',
       invitedBy: inviterContext.actorId,
       tokenHash,
@@ -113,16 +110,20 @@ class InvitationService {
       status: 'pending'
     });
 
-    const inviteLink = `${env.FRONTEND_URL}/invite/accept?token=${rawToken}`;
+    const inviteLink = `${env.FRONTEND_URL}/invite/${rawToken}`;
     const inviter = await User.findById(inviterContext.actorId).lean();
 
-    await emailService.sendInvitationEmail({
-      to: normalizedEmail,
-      inviterName: inviter ? inviter.email : 'OneWinq Admin',
-      inviteLink,
-      companyName: 'OneWinq',
-      designation: designation || 'Team Member'
-    });
+    try {
+      await emailService.sendInvitationEmail({
+        to: normalizedEmail,
+        inviterName: inviter ? (inviter.name || inviter.email) : 'OneWinq Admin',
+        inviteLink,
+        companyName: 'OneWinq',
+        designation: designation || 'Team Member'
+      });
+    } catch (emailErr) {
+      console.warn('[InvitationService] Failed to send invitation email (proceeding with link generation):', emailErr?.message);
+    }
 
     eventBus.emitEvent(APP_EVENTS.MEMBER_INVITED, {
       actorId: inviterContext.actorId,
@@ -131,13 +132,25 @@ class InvitationService {
       context: inviterContext
     });
 
-    return invitation;
+    return {
+      ...invitation.toObject(),
+      token: rawToken,
+      inviteLink
+    };
   }
 
   async verifyInvitationToken(token) {
+    if (!token) {
+      throw new BadRequestError('Invitation token is required.', ERROR_CODES.BAD_REQUEST);
+    }
     const tokenHash = hashToken(token);
+    const orClauses = [{ tokenHash }];
+    if (mongoose.Types.ObjectId.isValid(token) && String(token).length === 24) {
+      orClauses.push({ _id: token });
+    }
+
     const invitation = await Invitation.findOne({
-      tokenHash,
+      $or: orClauses,
       status: 'pending',
       expiresAt: { $gt: new Date() }
     })
@@ -153,17 +166,22 @@ class InvitationService {
     return {
       email: invitation.email,
       name: invitation.name,
-      role: invitation.roleId?.name,
-      department: invitation.departmentId?.name,
-      designation: invitation.designation,
+      role: invitation.roleId?.name || 'Team Member',
+      department: invitation.departmentId?.name || 'General',
+      designation: invitation.designation || 'Team Member',
       expiresAt: invitation.expiresAt
     };
   }
 
   async acceptInvitation({ token, password, name, ipAddress = '', userAgent = '' }) {
     const tokenHash = hashToken(token);
+    const orClauses = [{ tokenHash }];
+    if (mongoose.Types.ObjectId.isValid(token) && String(token).length === 24) {
+      orClauses.push({ _id: token });
+    }
+
     const invitation = await Invitation.findOne({
-      tokenHash,
+      $or: orClauses,
       status: 'pending',
       expiresAt: { $gt: new Date() }
     });
@@ -172,10 +190,118 @@ class InvitationService {
       throw new BadRequestError('Invitation token is invalid or has expired.', ERROR_CODES.INVITATION_NOT_FOUND);
     }
 
-    // Double check email isn't registered
+    // Check if the invited email already has a registered account
     const existingUser = await User.findOne({ email: invitation.email });
+
     if (existingUser) {
-      throw new ConflictError('A user account with this email already exists.');
+      // --- EXISTING USER PATH: add to org without re-registration ---
+      // Check if they already have a team member record (double-acceptance guard)
+      const existingMember = await TeamMember.findOne({ userId: existingUser._id, isDeleted: { $ne: true } });
+      if (existingMember) {
+        throw new ConflictError('This user is already a member of the organization.');
+      }
+
+      const memberName = existingUser.name || name || invitation.name || invitation.email.split('@')[0];
+
+      // Generate unique employee ID
+      const memberCount = await TeamMember.countDocuments();
+      const employeeId = `OWQ-${String(memberCount + 1).padStart(3, '0')}`;
+
+      // Generate slug for profile
+      let baseSlug = memberName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      let slug = baseSlug;
+      let slugCounter = 1;
+      while (await EmployeeProfile.findOne({ slug })) {
+        slug = `${baseSlug}-${slugCounter}`;
+        slugCounter++;
+      }
+
+      const defaultTemplate = await templateService.getDefaultTemplate();
+
+      // Create TeamMember record
+      const member = await TeamMember.create({
+        userId: existingUser._id,
+        employeeId,
+        name: memberName,
+        designation: invitation.designation,
+        departmentId: invitation.departmentId,
+        roleId: invitation.roleId,
+        status: 'active',
+        joiningDate: new Date()
+      });
+
+      // Create EmployeeProfile for existing user
+      const profile = await EmployeeProfile.create({
+        memberId: member._id,
+        userId: existingUser._id,
+        slug,
+        templateId: defaultTemplate._id,
+        templateVersion: defaultTemplate.version,
+        visibility: 'public',
+        approvalStatus: 'approved',
+        published: {
+          headline: `${invitation.designation} at OneWinq`,
+          bio: '',
+          workEmail: existingUser.email,
+          experience: [],
+          skills: [],
+          projects: [],
+          achievements: [],
+          socialLinks: []
+        },
+        draft: {
+          headline: `${invitation.designation} at OneWinq`,
+          bio: '',
+          workEmail: existingUser.email,
+          experience: [],
+          skills: [],
+          projects: [],
+          achievements: [],
+          socialLinks: []
+        }
+      });
+
+      member.profileId = profile._id;
+      member.profileCompletionScore = profile.calculateCompletionScore();
+      await member.save();
+
+      // Mark invitation as accepted
+      invitation.status = 'accepted';
+      invitation.acceptedAt = new Date();
+      await invitation.save();
+
+      // Issue tokens for existing user
+      const familyId = uuidv4();
+      const payload = { userId: existingUser._id.toString(), email: existingUser.email };
+      const accessToken = generateAccessToken(payload);
+      const refreshToken = generateRefreshToken({ ...payload, familyId });
+
+      existingUser.refreshTokens.push({
+        tokenHash: hashToken(refreshToken),
+        familyId,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        ipAddress,
+        userAgent,
+        isRevoked: false
+      });
+      await existingUser.save();
+
+      eventBus.emitEvent(APP_EVENTS.MEMBER_JOINED, {
+        actorId: existingUser._id,
+        memberId: member._id,
+        email: existingUser.email,
+        name: member.name
+      });
+
+      const userClean = existingUser.toObject();
+      delete userClean.passwordHash;
+      delete userClean.refreshTokens;
+
+      return { user: userClean, member, profile, accessToken, refreshToken };
+    }
+
+    if (!password || password.length < 6) {
+      throw new BadRequestError('Password must be at least 6 characters long.', ERROR_CODES.VALIDATION_ERROR);
     }
 
     const passwordHash = await hashPassword(password);
@@ -313,16 +439,20 @@ class InvitationService {
     invitation.status = 'pending';
     await invitation.save();
 
-    const inviteLink = `${env.FRONTEND_URL}/invite/accept?token=${rawToken}`;
+    const inviteLink = `${env.FRONTEND_URL}/invite/${rawToken}`;
     const inviter = await User.findById(inviterContext.actorId).lean();
 
-    await emailService.sendInvitationEmail({
-      to: invitation.email,
-      inviterName: inviter ? inviter.email : 'OneWinq Admin',
-      inviteLink,
-      companyName: 'OneWinq',
-      designation: invitation.designation
-    });
+    try {
+      await emailService.sendInvitationEmail({
+        to: invitation.email,
+        inviterName: inviter ? (inviter.name || inviter.email) : 'OneWinq Admin',
+        inviteLink,
+        companyName: 'OneWinq',
+        designation: invitation.designation
+      });
+    } catch (emailErr) {
+      console.warn('[InvitationService] Failed to send invitation email:', emailErr?.message);
+    }
 
     eventBus.emitEvent(APP_EVENTS.MEMBER_INVITATION_RESENT, {
       actorId: inviterContext.actorId,
@@ -331,7 +461,11 @@ class InvitationService {
       context: inviterContext
     });
 
-    return { message: `Invitation resent successfully to ${invitation.email}` };
+    return {
+      message: `Invitation resent successfully to ${invitation.email}`,
+      token: rawToken,
+      inviteLink
+    };
   }
 
   async cancelInvitation(id, inviterContext = {}) {

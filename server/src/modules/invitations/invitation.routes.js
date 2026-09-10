@@ -15,6 +15,10 @@ const router = Router();
 
 // Public invitation routes
 router.get('/verify', invitationController.verifyToken.bind(invitationController));
+router.get('/verify/:token', (req, res, next) => {
+  req.query.token = req.params.token;
+  return invitationController.verifyToken(req, res, next);
+});
 
 router.post(
   '/accept',
@@ -57,6 +61,14 @@ router.post(
 
 router.post(
   '/:id/cancel',
+  authenticate,
+  requirePermission(PERMISSIONS.INVITATION_CANCEL),
+  validate({ params: invitationIdParamSchema }),
+  invitationController.cancelInvitation.bind(invitationController)
+);
+
+router.delete(
+  '/:id',
   authenticate,
   requirePermission(PERMISSIONS.INVITATION_CANCEL),
   validate({ params: invitationIdParamSchema }),

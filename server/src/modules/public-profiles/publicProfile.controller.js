@@ -17,6 +17,15 @@ export class PublicProfileController {
     }
   }
 
+  async getPublicTeam(req, res, next) {
+    try {
+      const team = await publicProfileService.getPublicTeamMembers();
+      return ApiResponse.success(res, { data: team });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getEmployeeProfile(req, res, next) {
     try {
       const clientContext = {

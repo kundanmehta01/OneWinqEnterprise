@@ -7,7 +7,8 @@ export class ProfileApprovalController {
       const result = await profileApprovalService.getAllApprovals(req.query);
       return ApiResponse.paginated(res, {
         data: result.approvals,
-        pagination: result.pagination
+        pagination: result.pagination,
+        meta: { counts: result.counts }
       });
     } catch (error) {
       next(error);

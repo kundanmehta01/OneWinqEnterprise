@@ -54,37 +54,105 @@ export class CardController {
     }
   }
 
-  async linkCard(req, res, next) {
+  // 1. Assign card to member (Status: AVAILABLE -> ACTIVATION PENDING)
+  async assignCard(req, res, next) {
     try {
       const actorContext = {
         actorId: req.user._id,
+        user: req.user,
         ipAddress: req.auditContext?.ipAddress || req.ip,
         userAgent: req.auditContext?.userAgent || req.headers['user-agent']
       };
 
-      const card = await cardService.linkCard(req.body, actorContext);
+      const payload = {
+        ...req.body,
+        cardId: req.params.id || req.body.cardId
+      };
+
+      const result = await cardService.assignCard(payload, actorContext);
       return ApiResponse.success(res, {
-        message: `Card ${card.cardUid} successfully linked to ${card.member?.name || 'team member'}`,
-        data: card
+        message: result.message,
+        data: result
       });
     } catch (error) {
       next(error);
     }
   }
 
-  async unlinkCard(req, res, next) {
+  // 2. Unassign card (Status -> AVAILABLE)
+  async unassignCard(req, res, next) {
     try {
       const actorContext = {
         actorId: req.user._id,
+        user: req.user,
         ipAddress: req.auditContext?.ipAddress || req.ip,
         userAgent: req.auditContext?.userAgent || req.headers['user-agent']
       };
 
-      const result = await cardService.unlinkCard(req.body, actorContext);
+      const payload = {
+        ...req.body,
+        cardId: req.params.id || req.body.cardId
+      };
+
+      const result = await cardService.unassignCard(payload, actorContext);
       return ApiResponse.success(res, result);
     } catch (error) {
       next(error);
     }
+  }
+
+  // 3. Get Activation Details (Public check before activation)
+  async getActivationDetails(req, res, next) {
+    try {
+      const details = await cardService.getActivationDetails(req.params.token);
+      return ApiResponse.success(res, { data: details });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // 4. Activate Card (Status: ACTIVATION PENDING -> ACTIVE, authenticated & ownership verified)
+  async activateCard(req, res, next) {
+    try {
+      const actorContext = {
+        actorId: req.user._id,
+        user: req.user,
+        ipAddress: req.auditContext?.ipAddress || req.ip,
+        userAgent: req.auditContext?.userAgent || req.headers['user-agent']
+      };
+
+      const result = await cardService.activateCard(req.params.token, actorContext);
+      return ApiResponse.success(res, {
+        message: result.message,
+        data: result.card
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // 5. Generate / Regenerate Activation Link
+  async generateActivationLink(req, res, next) {
+    try {
+      const actorContext = {
+        actorId: req.user._id,
+        user: req.user
+      };
+
+      const result = await cardService.generateActivationLink(req.params.id, actorContext);
+      return ApiResponse.success(res, { data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Legacy link/unlink support
+  async linkCard(req, res, next) {
+    return this.assignCard(req, res, next);
+  }
+
+  async unlinkCard(req, res, next) {
+    return this.unassignCard(req, res, next);
   }
 
   async updateCardStatus(req, res, next) {

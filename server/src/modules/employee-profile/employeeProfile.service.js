@@ -1,6 +1,9 @@
 import { EmployeeProfile } from './employeeProfile.model.js';
 import { TeamMember } from '../team-members/teamMember.model.js';
+import { Card } from '../cards/card.model.js';
 import { Template } from '../templates/template.model.js';
+import { User } from '../users/user.model.js';
+import { Role } from '../roles/role.model.js';
 import { ProfileApproval } from '../profile-approvals/profileApproval.model.js';
 import { calculateObjectDiff } from '../../utils/objectDiff.util.js';
 import { NotFoundError, BadRequestError, ForbiddenError, ConflictError } from '../../errors/index.js';
@@ -9,16 +12,100 @@ import { eventBus } from '../../events/appEventBus.js';
 import { APP_EVENTS } from '../../constants/events.constant.js';
 
 class EmployeeProfileService {
+  async _ensureProfileForUser(userId) {
+    let profile = await EmployeeProfile.findOne({ userId });
+    if (!profile) {
+      let member = await TeamMember.findOne({ userId });
+      const user = await User.findById(userId);
+
+      if (!member && user) {
+        const adminRole = (await Role.findOne({ slug: 'super-admin' })) || (await Role.findOne({}));
+        member = await TeamMember.create({
+          userId: user._id,
+          name: user.email ? user.email.split('@')[0].replace('.', ' ') : 'Enterprise User',
+          email: user.email,
+          employeeId: `EMP-${Date.now().toString().slice(-4)}`,
+          designation: 'Enterprise Member',
+          roleId: adminRole?._id,
+          status: 'active'
+        });
+      }
+
+      if (member) {
+        const defaultTemplate = (await Template.findOne({ isDefault: true })) || (await Template.findOne({}));
+        const baseSlug = member.name ? member.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'profile';
+        let slug = baseSlug;
+        let count = 1;
+        while (await EmployeeProfile.findOne({ slug })) {
+          slug = `${baseSlug}-${count++}`;
+        }
+
+        profile = await EmployeeProfile.create({
+          userId,
+          memberId: member._id,
+          slug,
+          templateId: defaultTemplate?._id,
+          templateVersion: defaultTemplate?.version || 1,
+          approvalStatus: 'approved',
+          draft: {
+            headline: member.designation,
+            workEmail: member.email || user?.email,
+            avatarUrl: member.avatarUrl || '',
+            bio: 'Enterprise professional at OneWinq.'
+          },
+          published: {
+            headline: member.designation,
+            workEmail: member.email || user?.email,
+            avatarUrl: member.avatarUrl || '',
+            bio: 'Enterprise professional at OneWinq.'
+          }
+        });
+
+        member.profileId = profile._id;
+        await member.save();
+      }
+    }
+    return profile;
+  }
+
   async getProfileByUserId(userId) {
-    const profile = await EmployeeProfile.findOne({ userId })
+    let profile = await EmployeeProfile.findOne({ userId })
       .populate('memberId', 'name employeeId designation departmentId status')
       .populate('templateId')
       .lean();
 
     if (!profile) {
+      await this._ensureProfileForUser(userId);
+      profile = await EmployeeProfile.findOne({ userId })
+        .populate('memberId', 'name employeeId designation departmentId status')
+        .populate('templateId')
+        .lean();
+    }
+
+    if (!profile) {
       throw new NotFoundError('Employee profile not found', ERROR_CODES.PROFILE_NOT_FOUND);
     }
-    return profile;
+
+    const memberId = profile.memberId?._id || profile.memberId;
+    let nfcCard = null;
+    if (memberId) {
+      const card = await Card.findOne({
+        memberId,
+        status: { $in: ['active', 'linked', 'activation_pending', 'suspended'] }
+      }).select('cardUid serialNumber cardType status tapCount lastTappedAt activatedAt assignedAt').lean();
+
+      if (card) {
+        let normalizedStatus = card.status;
+        if (card.status === 'linked') normalizedStatus = 'active';
+        if (card.status === 'blocked') normalizedStatus = 'suspended';
+        nfcCard = { ...card, status: normalizedStatus };
+      }
+    }
+
+    return {
+      ...profile,
+      nfcCard
+    };
   }
 
   async getProfileByMemberId(memberId) {
@@ -30,11 +117,31 @@ class EmployeeProfileService {
     if (!profile) {
       throw new NotFoundError('Employee profile not found', ERROR_CODES.PROFILE_NOT_FOUND);
     }
-    return profile;
+
+    let nfcCard = null;
+    const card = await Card.findOne({
+      memberId,
+      status: { $in: ['active', 'linked', 'activation_pending', 'suspended'] }
+    }).select('cardUid serialNumber cardType status tapCount lastTappedAt activatedAt assignedAt').lean();
+
+    if (card) {
+      let normalizedStatus = card.status;
+      if (card.status === 'linked') normalizedStatus = 'active';
+      if (card.status === 'blocked') normalizedStatus = 'suspended';
+      nfcCard = { ...card, status: normalizedStatus };
+    }
+
+    return {
+      ...profile,
+      nfcCard
+    };
   }
 
   async updateDraftProfile(userId, updateData, actorContext = {}) {
-    const profile = await EmployeeProfile.findOne({ userId });
+    let profile = await EmployeeProfile.findOne({ userId });
+    if (!profile) {
+      profile = await this._ensureProfileForUser(userId);
+    }
     if (!profile) {
       throw new NotFoundError('Employee profile not found', ERROR_CODES.PROFILE_NOT_FOUND);
     }

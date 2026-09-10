@@ -32,6 +32,13 @@ router.get(
   eventController.getEventById.bind(eventController)
 );
 
+// 4. Registered members / attendees of an event
+router.get(
+  '/:id/attendees',
+  validate({ params: eventIdParamSchema }),
+  eventController.getEventAttendees.bind(eventController)
+);
+
 router.post(
   '/:id/register',
   validate({ params: eventIdParamSchema }),
@@ -40,6 +47,12 @@ router.post(
 
 router.post(
   '/:id/cancel',
+  validate({ params: eventIdParamSchema }),
+  eventController.cancelRegistration.bind(eventController)
+);
+
+router.delete(
+  '/:id/register',
   validate({ params: eventIdParamSchema }),
   eventController.cancelRegistration.bind(eventController)
 );

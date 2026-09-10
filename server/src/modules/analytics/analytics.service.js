@@ -36,13 +36,23 @@ class AnalyticsService {
     if (range === 'today') {
       start.setHours(0, 0, 0, 0);
     } else if (range === '7d') {
-      start.setDate(end.getDate() - 7);
+      start.setDate(end.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
     } else if (range === '30d') {
-      start.setDate(end.getDate() - 30);
+      start.setDate(end.getDate() - 29);
+      start.setHours(0, 0, 0, 0);
+    } else if (range === '90d') {
+      start.setDate(end.getDate() - 89);
+      start.setHours(0, 0, 0, 0);
+    } else if (range === 'month' || range === 'this_month') {
+      start = new Date(end.getFullYear(), end.getMonth(), 1);
+    } else if (range === 'year' || range === 'this_year') {
+      start = new Date(end.getFullYear(), 0, 1);
     } else if (range === 'custom' && customStart) {
       start = new Date(customStart);
     } else {
-      start.setDate(end.getDate() - 7);
+      start.setDate(end.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
     }
 
     return { start, end };
@@ -160,20 +170,154 @@ class AnalyticsService {
       { $sort: { profileCount: -1 } }
     ]);
 
+    // 5. Active Members Count
+    const activeMembersCount = await TeamMember.countDocuments({ status: 'active', isArchived: false });
+
+    // 6. Traffic Sources Breakdown (Dynamic from AnalyticsEvent)
+    const rawSources = await AnalyticsEvent.aggregate([
+      { $match: matchFilter },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ['$eventType', 'QR_SCAN'] },
+              'QR Code',
+              {
+                $cond: [
+                  { $regexMatch: { input: '$referer', regex: /facebook|twitter|linkedin|instagram|whatsapp|t\.co/i } },
+                  'Social Media',
+                  {
+                    $cond: [
+                      { $or: [{ $eq: ['$referer', ''] }, { $not: ['$referer'] }] },
+                      'Direct',
+                      'Web Referral'
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const totalSourcesEvents = rawSources.reduce((sum, s) => sum + s.count, 0) || 1;
+    const colorMap = {
+      'Direct': '#6366f1',
+      'QR Code': '#ec4899',
+      'Social Media': '#f59e0b',
+      'Web Referral': '#10b981',
+      'Other': '#8b5cf6'
+    };
+
+    const trafficSources = rawSources.length
+      ? rawSources.map((s) => ({
+          source: s._id || 'Direct',
+          count: s.count,
+          percentage: Number(((s.count / totalSourcesEvents) * 100).toFixed(1)),
+          color: colorMap[s._id] || '#8b5cf6'
+        }))
+      : [
+          { source: 'Direct', count: 0, percentage: 0, color: '#6366f1' },
+          { source: 'QR Code', count: 0, percentage: 0, color: '#ec4899' },
+          { source: 'Social Media', count: 0, percentage: 0, color: '#f59e0b' }
+        ];
+
+    // 7. Profile Engagement Funnel
+    const totalViews = kpiMap.PROFILE_VIEW || 0;
+    const calcRate = (cnt) => (totalViews > 0 ? `${((cnt / totalViews) * 100).toFixed(1)}%` : '0%');
+
+    const funnel = [
+      { stage: 'Profile Views', count: totalViews, rate: totalViews > 0 ? '100%' : '0%', color: '#4f46e5' },
+      { stage: 'Profile Shares', count: kpiMap.PROFILE_SHARE || 0, rate: calcRate(kpiMap.PROFILE_SHARE || 0), color: '#6366f1' },
+      { stage: 'Link Clicks', count: kpiMap.PROFILE_LINK_CLICK || 0, rate: calcRate(kpiMap.PROFILE_LINK_CLICK || 0), color: '#38bdf8' },
+      { stage: 'Contact Clicks', count: kpiMap.CONTACT_CLICK || 0, rate: calcRate(kpiMap.CONTACT_CLICK || 0), color: '#34d399' }
+    ];
+
+    // 8. Device Breakdown
+    const rawDevices = await AnalyticsEvent.aggregate([
+      { $match: matchFilter },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $regexMatch: { input: '$userAgent', regex: /iPad|Tablet/i } },
+              'Tablet',
+              {
+                $cond: [
+                  { $regexMatch: { input: '$userAgent', regex: /Mobile|Android|iPhone/i } },
+                  'Mobile',
+                  'Desktop'
+                ]
+              }
+            ]
+          },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const totalDeviceEvents = rawDevices.reduce((sum, d) => sum + d.count, 0) || 1;
+    const deviceColorMap = {
+      Mobile: '#4f46e5',
+      Desktop: '#38bdf8',
+      Tablet: '#34d399'
+    };
+
+    const deviceBreakdown = rawDevices.length
+      ? rawDevices.map((d) => ({
+          device: d._id || 'Desktop',
+          count: d.count,
+          percentage: Number(((d.count / totalDeviceEvents) * 100).toFixed(1)),
+          color: deviceColorMap[d._id] || '#4f46e5'
+        }))
+      : [
+          { device: 'Mobile', count: 0, percentage: 0, color: '#4f46e5' },
+          { device: 'Desktop', count: 0, percentage: 0, color: '#38bdf8' }
+        ];
+
+    // 9. Ensure continuous trend date series
+    const finalTrends = [];
+    const currDate = new Date(start);
+    while (currDate <= end) {
+      const dateKey = currDate.toISOString().slice(0, 10);
+      const label = currDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const record = dateMap[dateKey] || { views: 0, shares: 0, scans: 0, clicks: 0 };
+      finalTrends.push({
+        date: label,
+        views: record.views,
+        shares: record.shares,
+        scans: record.scans,
+        clicks: record.clicks
+      });
+      currDate.setDate(currDate.getDate() + 1);
+    }
+
     return {
       timeRange: { range, start, end },
       kpis: {
-        totalViews: kpiMap.PROFILE_VIEW,
-        totalShares: kpiMap.PROFILE_SHARE,
-        totalQrScans: kpiMap.QR_SCAN,
-        totalLinkClicks: kpiMap.PROFILE_LINK_CLICK,
-        totalContactClicks: kpiMap.CONTACT_CLICK
+        totalViews: kpiMap.PROFILE_VIEW || 0,
+        totalShares: kpiMap.PROFILE_SHARE || 0,
+        totalQrScans: kpiMap.QR_SCAN || 0,
+        totalLinkClicks: kpiMap.PROFILE_LINK_CLICK || 0,
+        totalContactClicks: kpiMap.CONTACT_CLICK || 0,
+        activeMembers: activeMembersCount
       },
-      trends: trendSeries,
-      topViewedProfiles,
+      trends: finalTrends,
+      topViewedProfiles: topViewedProfiles,
+      topTemplates: templateUsage.map((t) => ({
+        name: t.name,
+        category: t.category,
+        usage: t.profileCount || 0
+      })),
+      trafficSources,
+      funnel,
+      deviceBreakdown,
       templateUsage
     };
   }
 }
 
 export const analyticsService = new AnalyticsService();
+

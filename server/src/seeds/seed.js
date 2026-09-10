@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { connectDB, disconnectDB } from '../config/db.config.js';
 import { logger } from '../config/logger.config.js';
 import { seedPermissions } from './permissions.seed.js';
@@ -17,6 +18,14 @@ const runSeed = async () => {
     logger.info('====================================================');
 
     await connectDB();
+
+    // 0. Clean / Empty existing MongoDB collections
+    logger.info('🧹 Emptying existing collections in MongoDB...');
+    const collections = await mongoose.connection.db.collections();
+    for (const col of collections) {
+      await col.deleteMany({});
+    }
+    logger.info('✅ Database wiped cleanly.');
 
     // 1. Permissions
     await seedPermissions();

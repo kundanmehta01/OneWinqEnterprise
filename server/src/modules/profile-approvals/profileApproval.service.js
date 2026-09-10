@@ -14,28 +14,37 @@ class ProfileApprovalService {
     const { page, limit, skip, sort } = parsePagination(query, 20);
     const filter = {};
 
-    if (query.status) {
+    if (query.status && query.status !== 'all') {
       filter.status = query.status;
     }
 
-    const [approvals, totalItems] = await Promise.all([
+    const [approvals, totalItems, pendingCount, approvedCount, rejectedCount] = await Promise.all([
       ProfileApproval.find(filter)
         .populate({
           path: 'memberId',
-          select: 'name employeeId designation departmentId',
+          select: 'name employeeId designation departmentId avatarUrl',
           populate: { path: 'departmentId', select: 'name' }
         })
         .populate('submittedBy', 'email')
         .populate('reviewerId', 'email')
-        .sort(sort)
+        .sort(sort || { submittedAt: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      ProfileApproval.countDocuments(filter)
+      ProfileApproval.countDocuments(filter),
+      ProfileApproval.countDocuments({ status: 'pending' }),
+      ProfileApproval.countDocuments({ status: 'approved' }),
+      ProfileApproval.countDocuments({ status: 'rejected' })
     ]);
 
     return {
       approvals,
+      counts: {
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        total: pendingCount + approvedCount + rejectedCount
+      },
       pagination: formatPaginationMeta(totalItems, page, limit)
     };
   }
@@ -102,6 +111,7 @@ class ProfileApprovalService {
       eventBus.emitEvent(APP_EVENTS.PROFILE_APPROVED, {
         actorId: reviewerContext.actorId,
         memberId: profile.memberId,
+        userId: approval.submittedBy || profile.userId,
         profileId: profile._id,
         approvalId: approval._id,
         context: reviewerContext
@@ -115,6 +125,7 @@ class ProfileApprovalService {
       eventBus.emitEvent(APP_EVENTS.PROFILE_REJECTED, {
         actorId: reviewerContext.actorId,
         memberId: profile.memberId,
+        userId: approval.submittedBy || profile.userId,
         profileId: profile._id,
         approvalId: approval._id,
         reviewNote,
@@ -129,6 +140,7 @@ class ProfileApprovalService {
       eventBus.emitEvent(APP_EVENTS.PROFILE_CHANGES_REQUESTED, {
         actorId: reviewerContext.actorId,
         memberId: profile.memberId,
+        userId: approval.submittedBy || profile.userId,
         profileId: profile._id,
         approvalId: approval._id,
         requestedChanges,

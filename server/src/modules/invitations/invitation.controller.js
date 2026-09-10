@@ -93,7 +93,7 @@ export class InvitationController {
         requestId: req.id
       };
       const result = await invitationService.resendInvitation(req.params.id, inviterContext);
-      return ApiResponse.success(res, result);
+      return ApiResponse.success(res, { message: result.message, data: result });
     } catch (error) {
       next(error);
     }

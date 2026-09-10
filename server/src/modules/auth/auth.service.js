@@ -84,7 +84,12 @@ class AuthService {
     // Fetch team member profile
     const member = await TeamMember.findOne({ userId: user._id, status: { $ne: 'archived' } })
       .populate('roleId')
-      .populate('departmentId');
+      .populate('departmentId')
+      .populate('profileId', 'slug published.avatarUrl draft.avatarUrl published.headline');
+
+    if (member && !member.avatarUrl) {
+      member.avatarUrl = member.profileId?.published?.avatarUrl || member.profileId?.draft?.avatarUrl || '';
+    }
 
     eventBus.emitEvent(APP_EVENTS.USER_LOGGED_IN, {
       actorId: user._id,

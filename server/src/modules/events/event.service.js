@@ -59,9 +59,9 @@ class EventService {
     const totalItems = eligibleEvents.length;
     const paginatedEvents = eligibleEvents.slice(skip, skip + limit);
 
-    // Look up user's registrations and attendee counts
+    // Look up user's registrations, attendee counts, and recent attendee previews
     const eventIds = paginatedEvents.map((e) => e._id);
-    const [myRegistrations, attendeeCounts] = await Promise.all([
+    const [myRegistrations, attendeeCounts, recentRegs] = await Promise.all([
       EventRegistration.find({
         eventId: { $in: eventIds },
         userId: userContext.userId,
@@ -70,8 +70,39 @@ class EventService {
       EventRegistration.aggregate([
         { $match: { eventId: { $in: eventIds }, status: 'registered' } },
         { $group: { _id: '$eventId', count: { $sum: 1 } } }
-      ])
+      ]),
+      EventRegistration.find({
+        eventId: { $in: eventIds },
+        status: 'registered'
+      })
+        .sort({ registeredAt: -1 })
+        .limit(30)
+        .lean()
     ]);
+
+    const recentUserIds = recentRegs.map((r) => r.userId).filter(Boolean);
+    const recentMembers = await TeamMember.find({ userId: { $in: recentUserIds } })
+      .populate('profileId', 'published.avatarUrl')
+      .populate('departmentId', 'name')
+      .lean();
+
+    const memberLookup = new Map(recentMembers.map((m) => [m.userId.toString(), m]));
+    const eventAttendeesMap = new Map();
+    recentRegs.forEach((r) => {
+      const eid = r.eventId.toString();
+      if (!eventAttendeesMap.has(eid)) eventAttendeesMap.set(eid, []);
+      const m = memberLookup.get(r.userId.toString());
+      const arr = eventAttendeesMap.get(eid);
+      if (arr.length < 5) {
+        arr.push({
+          userId: r.userId,
+          name: m?.name || 'Member',
+          designation: m?.designation || 'Team Member',
+          department: m?.departmentId?.name || '',
+          avatarUrl: m?.profileId?.published?.avatarUrl || ''
+        });
+      }
+    });
 
     const regMap = new Map(myRegistrations.map((r) => [r.eventId.toString(), r]));
     const countMap = new Map(attendeeCounts.map((a) => [a._id.toString(), a.count]));
@@ -79,9 +110,11 @@ class EventService {
     const enriched = paginatedEvents.map((ev) => {
       const myReg = regMap.get(ev._id.toString());
       const attendeeCount = countMap.get(ev._id.toString()) || 0;
+      const attendees = eventAttendeesMap.get(ev._id.toString()) || [];
       return {
         ...ev,
         attendeeCount,
+        attendees,
         isRegistered: !!myReg,
         ticketCode: myReg?.ticketCode || null,
         registeredAt: myReg?.registeredAt || null
@@ -358,6 +391,7 @@ class EventService {
 
     const userIds = attendees.map((a) => a.userId?._id).filter(Boolean);
     const members = await TeamMember.find({ userId: { $in: userIds } })
+      .populate('profileId', 'published.avatarUrl')
       .populate('departmentId', 'name')
       .lean();
 
@@ -372,9 +406,10 @@ class EventService {
         user: {
           userId: a.userId?._id,
           email: a.userId?.email,
-          name: m?.name || '',
+          name: m?.name || 'Team Member',
           designation: m?.designation || '',
-          department: m?.departmentId?.name || ''
+          department: m?.departmentId?.name || '',
+          avatarUrl: m?.profileId?.published?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(m?.name || 'Member')}&background=6366f1&color=fff`
         }
       };
     });
@@ -383,6 +418,24 @@ class EventService {
       attendees: formattedAttendees,
       pagination: formatPaginationMeta(totalItems, page, limit)
     };
+  }
+
+  async deleteEvent(eventId, actorId) {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      throw new NotFoundError('Event not found.');
+    }
+
+    await EventRegistration.deleteMany({ eventId });
+    await Event.findByIdAndDelete(eventId);
+
+    eventBus.emitEvent(APP_EVENTS.EVENT_DELETED || 'event.deleted', {
+      eventId,
+      title: event.title,
+      actorId
+    });
+
+    return { message: `Event "${event.title}" has been permanently removed.` };
   }
 }
 

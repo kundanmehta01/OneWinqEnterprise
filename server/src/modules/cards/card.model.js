@@ -30,8 +30,8 @@ const cardSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['unassigned', 'linked', 'blocked', 'lost', 'retired'],
-      default: 'unassigned',
+      enum: ['available', 'activation_pending', 'active', 'suspended', 'deactivated', 'unassigned', 'linked', 'blocked', 'lost', 'retired'],
+      default: 'available',
       index: true
     },
     memberId: {
@@ -45,6 +45,33 @@ const cardSchema = new mongoose.Schema(
       ref: 'EmployeeProfile',
       default: null,
       index: true
+    },
+    activationTokenHash: {
+      type: String,
+      default: null,
+      index: true
+    },
+    activationTokenExpiresAt: {
+      type: Date,
+      default: null
+    },
+    assignedAt: {
+      type: Date,
+      default: null
+    },
+    assignedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    },
+    activatedAt: {
+      type: Date,
+      default: null
+    },
+    activatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
     },
     linkedAt: {
       type: Date,

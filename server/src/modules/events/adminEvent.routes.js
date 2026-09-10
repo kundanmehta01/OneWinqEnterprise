@@ -43,4 +43,11 @@ router.get(
   eventController.getEventAttendees.bind(eventController)
 );
 
+router.delete(
+  '/:id',
+  requirePermission(PERMISSIONS.EVENT_DELETE),
+  validate({ params: eventIdParamSchema }),
+  eventController.deleteEvent.bind(eventController)
+);
+
 export const adminEventRoutes = router;

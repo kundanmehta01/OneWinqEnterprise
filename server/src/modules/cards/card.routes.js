@@ -6,82 +6,141 @@ import { validate } from '../../middlewares/validate.middleware.js';
 import {
   createCardSchema,
   createBulkCardsSchema,
+  assignCardSchema,
+  unassignCardSchema,
   linkCardSchema,
   unlinkCardSchema,
   updateCardStatusSchema,
   cardIdParamSchema,
+  activationTokenParamSchema,
   cardQuerySchema
 } from './card.validation.js';
 import { PERMISSIONS } from '../../constants/permissions.constant.js';
 
-const router = Router();
+// 1. User & Public Activation Router (/cards or /api/v1/cards)
+const activationRouter = Router();
 
-router.use(authenticate);
+// Public: verify activation token & get card details
+activationRouter.get(
+  '/activate/:token',
+  validate({ params: activationTokenParamSchema }),
+  cardController.getActivationDetails.bind(cardController)
+);
 
-// 1. Inventory & Statistics
-router.get(
+// Authenticated: activate the card (enforces ownership)
+activationRouter.post(
+  '/activate/:token',
+  authenticate,
+  validate({ params: activationTokenParamSchema }),
+  cardController.activateCard.bind(cardController)
+);
+
+// 2. Organization Admin Card Management Router (/admin/cards or /api/v1/admin/cards)
+const adminRouter = Router();
+
+adminRouter.use(authenticate);
+
+// Inventory & Statistics
+adminRouter.get(
   '/',
   requirePermission(PERMISSIONS.CARD_READ),
   validate({ query: cardQuerySchema }),
   cardController.getAllCards.bind(cardController)
 );
 
-router.get(
+adminRouter.get(
   '/stats',
   requirePermission(PERMISSIONS.CARD_READ),
   cardController.getCardStats.bind(cardController)
 );
 
-// 2. Link & Unlink Operations
-router.post(
+// Card Assignment & Activation Link Generation
+adminRouter.post(
+  '/assign',
+  requirePermission(PERMISSIONS.CARD_LINK),
+  validate({ body: assignCardSchema }),
+  cardController.assignCard.bind(cardController)
+);
+
+adminRouter.post(
+  '/:id/assign',
+  requirePermission(PERMISSIONS.CARD_LINK),
+  validate({ params: cardIdParamSchema }),
+  cardController.assignCard.bind(cardController)
+);
+
+adminRouter.post(
+  '/unassign',
+  requirePermission(PERMISSIONS.CARD_UNLINK),
+  validate({ body: unassignCardSchema }),
+  cardController.unassignCard.bind(cardController)
+);
+
+adminRouter.post(
+  '/:id/unassign',
+  requirePermission(PERMISSIONS.CARD_UNLINK),
+  validate({ params: cardIdParamSchema }),
+  cardController.unassignCard.bind(cardController)
+);
+
+adminRouter.post(
+  '/:id/activation-link',
+  requirePermission(PERMISSIONS.CARD_LINK),
+  validate({ params: cardIdParamSchema }),
+  cardController.generateActivationLink.bind(cardController)
+);
+
+// Legacy Link & Unlink
+adminRouter.post(
   '/link',
   requirePermission(PERMISSIONS.CARD_LINK),
   validate({ body: linkCardSchema }),
   cardController.linkCard.bind(cardController)
 );
 
-router.post(
+adminRouter.post(
   '/unlink',
   requirePermission(PERMISSIONS.CARD_UNLINK),
   validate({ body: unlinkCardSchema }),
   cardController.unlinkCard.bind(cardController)
 );
 
-// 3. Card Registration (Single & Bulk)
-router.post(
+// Card Registration (Single & Bulk)
+adminRouter.post(
   '/',
   requirePermission(PERMISSIONS.CARD_CREATE),
   validate({ body: createCardSchema }),
   cardController.createCard.bind(cardController)
 );
 
-router.post(
+adminRouter.post(
   '/bulk',
   requirePermission(PERMISSIONS.CARD_CREATE),
   validate({ body: createBulkCardsSchema }),
   cardController.createBulkCards.bind(cardController)
 );
 
-// 4. Single Card Lifecycle
-router.get(
+// Single Card Details, Status & Delete
+adminRouter.get(
   '/:id',
   requirePermission(PERMISSIONS.CARD_READ),
   validate({ params: cardIdParamSchema }),
   cardController.getCardById.bind(cardController)
 );
 
-router.patch(
+adminRouter.patch(
   '/:id/status',
   requirePermission(PERMISSIONS.CARD_UPDATE),
   validate({ params: cardIdParamSchema, body: updateCardStatusSchema }),
   cardController.updateCardStatus.bind(cardController)
 );
 
-router.delete(
+adminRouter.delete(
   '/:id',
   requirePermission(PERMISSIONS.CARD_DELETE),
   validate({ params: cardIdParamSchema }),
   cardController.deleteCard.bind(cardController)
 );
 
-export const cardRoutes = router;
+export const cardRoutes = adminRouter;
+export const cardActivationRoutes = activationRouter;

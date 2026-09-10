@@ -65,6 +65,8 @@ export const APP_EVENTS = {
 
   // Smart & Physical NFC Cards
   CARD_CREATED: 'card.created',
+  CARD_ASSIGNED: 'card.assigned',
+  CARD_ACTIVATED: 'card.activated',
   CARD_LINKED: 'card.linked',
   CARD_UNLINKED: 'card.unlinked',
   CARD_STATUS_CHANGED: 'card.status_changed',

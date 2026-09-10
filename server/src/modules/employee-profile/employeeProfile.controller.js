@@ -37,7 +37,8 @@ export class EmployeeProfileController {
         userAgent: req.auditContext?.userAgent,
         requestId: req.id
       };
-      const result = await employeeProfileService.submitDraftForApproval(req.user._id, req.body?.note, actorContext);
+      const note = req.body?.note || req.body?.reviewNotes || '';
+      const result = await employeeProfileService.submitDraftForApproval(req.user._id, note, actorContext);
       return ApiResponse.success(res, {
         message: result.message,
         data: {

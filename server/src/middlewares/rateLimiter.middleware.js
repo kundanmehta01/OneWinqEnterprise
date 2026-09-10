@@ -19,7 +19,7 @@ export const standardRateLimiter = rateLimit({
 
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: env.AUTH_RATE_LIMIT_MAX_REQUESTS,
+  max: env.NODE_ENV === 'production' ? env.AUTH_RATE_LIMIT_MAX_REQUESTS : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {

@@ -13,7 +13,8 @@ class ConnectionService {
     const { page, limit, skip, sort } = parsePagination(query, 12);
     const filter = {
       userId: { $ne: currentUserId },
-      status: 'active'
+      status: 'active',
+      isSystem: { $ne: true }
     };
 
     if (query.departmentId) {
@@ -252,13 +253,16 @@ class ConnectionService {
     return { message: 'Connection request cancelled.' };
   }
 
-  async getMyConnections(userId, query = {}) {
+  async getMyConnections(userId, query = {}, isSuperAdmin = false) {
     const { page, limit, skip } = parsePagination(query, 15);
 
     const filter = {
-      $or: [{ requesterId: userId }, { recipientId: userId }],
       status: 'accepted'
     };
+
+    if (!isSuperAdmin) {
+      filter.$or = [{ requesterId: userId }, { recipientId: userId }];
+    }
 
     const [connections, totalItems] = await Promise.all([
       Connection.find(filter)
@@ -288,6 +292,7 @@ class ConnectionService {
       const member = memberMap.get(otherId);
 
       return {
+        _id: conn._id,
         connectionId: conn._id,
         connectedAt: conn.connectedAt,
         user: member ? {
@@ -296,7 +301,7 @@ class ConnectionService {
           designation: member.designation,
           department: member.departmentId?.name || '',
           slug: member.profileId?.slug || '',
-          avatarUrl: member.profileId?.published?.avatarUrl || '',
+          avatarUrl: member.profileId?.published?.avatarUrl || member.profileId?.draft?.avatarUrl || member.avatarUrl || '',
           headline: member.profileId?.published?.headline || ''
         } : null
       };
@@ -308,12 +313,17 @@ class ConnectionService {
     };
   }
 
-  async removeConnection(connectionId, userId) {
-    const connection = await Connection.findOneAndDelete({
+  async removeConnection(connectionId, userId, isSuperAdmin = false) {
+    const filter = {
       _id: connectionId,
-      $or: [{ requesterId: userId }, { recipientId: userId }],
       status: 'accepted'
-    });
+    };
+
+    if (!isSuperAdmin) {
+      filter.$or = [{ requesterId: userId }, { recipientId: userId }];
+    }
+
+    const connection = await Connection.findOneAndDelete(filter);
 
     if (!connection) {
       throw new NotFoundError('Active connection not found.');
@@ -351,7 +361,9 @@ class ConnectionService {
     const formattedRequests = requests.map((r) => {
       const m = memberMap.get(r.requesterId.toString());
       return {
+        _id: r._id,
         requestId: r._id,
+        connectionId: r._id,
         note: r.note,
         createdAt: r.createdAt,
         requester: m ? {
@@ -360,7 +372,7 @@ class ConnectionService {
           designation: m.designation,
           department: m.departmentId?.name || '',
           slug: m.profileId?.slug || '',
-          avatarUrl: m.profileId?.published?.avatarUrl || '',
+          avatarUrl: m.profileId?.published?.avatarUrl || m.profileId?.draft?.avatarUrl || m.avatarUrl || '',
           headline: m.profileId?.published?.headline || ''
         } : null
       };
@@ -388,7 +400,7 @@ class ConnectionService {
     const recipientUserIds = requests.map((r) => r.recipientId);
     const members = await TeamMember.find({ userId: { $in: recipientUserIds } })
       .populate('departmentId', 'name')
-      .populate('profileId', 'slug published.avatarUrl published.headline')
+      .populate('profileId', 'slug published.avatarUrl draft.avatarUrl published.headline')
       .lean();
 
     const memberMap = new Map(members.map((m) => [m.userId.toString(), m]));
@@ -396,7 +408,9 @@ class ConnectionService {
     const formattedRequests = requests.map((r) => {
       const m = memberMap.get(r.recipientId.toString());
       return {
+        _id: r._id,
         requestId: r._id,
+        connectionId: r._id,
         note: r.note,
         createdAt: r.createdAt,
         recipient: m ? {
@@ -405,7 +419,7 @@ class ConnectionService {
           designation: m.designation,
           department: m.departmentId?.name || '',
           slug: m.profileId?.slug || '',
-          avatarUrl: m.profileId?.published?.avatarUrl || '',
+          avatarUrl: m.profileId?.published?.avatarUrl || m.profileId?.draft?.avatarUrl || m.avatarUrl || '',
           headline: m.profileId?.published?.headline || ''
         } : null
       };

@@ -57,7 +57,7 @@ export class ConnectionController {
 
   async getMyConnections(req, res, next) {
     try {
-      const result = await connectionService.getMyConnections(req.user._id, req.query);
+      const result = await connectionService.getMyConnections(req.user._id, req.query, req.isSuperAdmin);
       return ApiResponse.success(res, { data: result });
     } catch (error) {
       next(error);
@@ -66,7 +66,7 @@ export class ConnectionController {
 
   async removeConnection(req, res, next) {
     try {
-      const result = await connectionService.removeConnection(req.params.id, req.user._id);
+      const result = await connectionService.removeConnection(req.params.id, req.user._id, req.isSuperAdmin);
       return ApiResponse.success(res, result);
     } catch (error) {
       next(error);

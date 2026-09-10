@@ -110,6 +110,15 @@ export class EventController {
       next(error);
     }
   }
+
+  async deleteEvent(req, res, next) {
+    try {
+      const result = await eventService.deleteEvent(req.params.id, req.user._id);
+      return ApiResponse.success(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const eventController = new EventController();
