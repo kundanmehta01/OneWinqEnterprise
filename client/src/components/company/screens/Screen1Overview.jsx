@@ -82,12 +82,12 @@ export const Screen1Overview = ({ profile, onNavigate }) => {
           </div>
 
           {/* Company Name & Industry */}
-          <div className="space-y-1.5 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold">
+          <div className="space-y-1.5 max-w-2xl mx-auto px-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[11px] sm:text-xs font-semibold">
               <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
               <span>Verified Enterprise Profile</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight font-display">
+            <h2 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight font-display">
               {data.name || 'OneWinq Technologies'}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium max-w-xl mx-auto">
@@ -97,48 +97,59 @@ export const Screen1Overview = ({ profile, onNavigate }) => {
 
           {/* Tagline Quote */}
           {data.tagline && (
-            <p className="text-xs sm:text-sm italic text-slate-600 font-medium px-4 max-w-xl mx-auto">
+            <p className="text-xs sm:text-sm italic text-slate-600 font-medium px-2 max-w-xl mx-auto leading-relaxed">
               "{data.tagline}"
             </p>
           )}
 
           {/* Overview Stats 3-Col Box */}
-          <div className="grid grid-cols-3 gap-3 max-w-xl mx-auto pt-1">
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center transition-all hover:bg-purple-50/50 hover:border-purple-200">
-              <p className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 max-w-xl mx-auto pt-1 items-stretch">
+            {/* Stat 1: Founded */}
+            <div className="bg-slate-50/80 border border-slate-100/90 rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center justify-center text-center transition-all hover:bg-purple-50/50 hover:border-purple-200 min-h-[72px] sm:min-h-[84px]">
+              <p className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight leading-tight line-clamp-2 max-w-full break-words">
                 {stats.foundedYear || '2024'}
               </p>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Founded</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-1 uppercase tracking-wider">
+                Founded
+              </p>
             </div>
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center transition-all hover:bg-purple-50/50 hover:border-purple-200">
-              <p className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+
+            {/* Stat 2: Location */}
+            <div className="bg-slate-50/80 border border-slate-100/90 rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center justify-center text-center transition-all hover:bg-purple-50/50 hover:border-purple-200 min-h-[72px] sm:min-h-[84px]">
+              <p className="text-xs sm:text-base font-bold text-slate-900 tracking-tight leading-tight line-clamp-2 max-w-full break-words">
                 {stats.locationShort || data.location?.city || 'Indore'}
               </p>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Location</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-1 uppercase tracking-wider">
+                Location
+              </p>
             </div>
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center transition-all hover:bg-purple-50/50 hover:border-purple-200">
-              <p className="text-lg sm:text-xl font-bold text-purple-600 tracking-tight">
+
+            {/* Stat 3: Team Size */}
+            <div className="bg-slate-50/80 border border-slate-100/90 rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center justify-center text-center transition-all hover:bg-purple-50/50 hover:border-purple-200 min-h-[72px] sm:min-h-[84px]">
+              <p className="text-xs sm:text-base font-bold text-purple-600 tracking-tight leading-tight line-clamp-2 max-w-full break-words">
                 {stats.teamSize || '25+'}
               </p>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Team Size</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-1 uppercase tracking-wider">
+                Team Size
+              </p>
             </div>
           </div>
 
           {/* Action Buttons: Explore Products & Contact Us */}
-          <div className="grid grid-cols-2 gap-3 max-w-md mx-auto pt-2">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto pt-2">
             <button
               onClick={() => onNavigate(3)}
-              className="flex items-center justify-center gap-2 py-3 px-5 rounded-full btn-purple text-xs sm:text-sm font-bold shadow-md shadow-purple-500/25 transition-all hover:scale-[1.02]"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-5 rounded-full btn-purple text-xs sm:text-sm font-bold shadow-md shadow-purple-500/25 transition-all hover:scale-[1.02]"
             >
-              <Layers className="w-4 h-4" />
-              <span>Our Offerings</span>
+              <Layers className="w-4 h-4 shrink-0" />
+              <span className="truncate">Our Offerings</span>
             </button>
             <button
               onClick={() => onNavigate(8)}
-              className="flex items-center justify-center gap-2 py-3 px-5 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-700 text-xs sm:text-sm font-bold transition-all hover:scale-[1.02]"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-5 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-700 text-xs sm:text-sm font-bold transition-all hover:scale-[1.02]"
             >
-              <Send className="w-4 h-4" />
-              <span>Get in Touch</span>
+              <Send className="w-4 h-4 shrink-0" />
+              <span className="truncate">Get in Touch</span>
             </button>
           </div>
 
