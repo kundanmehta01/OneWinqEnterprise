@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Check,
   Settings as SettingsIcon,
@@ -17,6 +17,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { notificationService } from '../../services/notificationService';
 
 const INITIAL_NOTIFICATIONS = [
   // Today
@@ -148,6 +149,34 @@ export default function Notifications() {
   const [activeTab, setActiveTab] = useState('All');
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [connectionHandled, setConnectionHandled] = useState({});
+  const [apiLoaded, setApiLoaded] = useState(false);
+
+  // Load real notifications from backend; fall back to static data
+  useEffect(() => {
+    notificationService.getMyNotifications({ limit: 30 })
+      .then(({ notifications: items }) => {
+        if (Array.isArray(items) && items.length > 0) {
+          // Normalize backend notification shape
+          const normalized = items.map((n) => ({
+            id: n._id || n.id,
+            period: 'today', // simplify - backend may have createdAt to distinguish
+            title: n.title || n.message || '',
+            desc: n.body || n.description || '',
+            time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '',
+            unread: !n.isRead,
+            category: n.type || n.category || 'System',
+            icon: Bell,
+            iconBg: 'bg-indigo-100 text-indigo-600',
+            type: 'standard'
+          }));
+          setNotifications(normalized);
+          setApiLoaded(true);
+        }
+      })
+      .catch(() => {
+        // Silently fallback to static data
+      });
+  }, []);
 
   // Settings toggles
   const [settings, setSettings] = useState({
@@ -164,8 +193,18 @@ export default function Notifications() {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+    if (apiLoaded) {
+      notificationService.markAllAsRead().catch(() => {});
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+    if (apiLoaded) {
+      notificationService.markAsRead(id).catch(() => {});
+    }
   };
 
   const handleClearAll = () => {

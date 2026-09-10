@@ -111,8 +111,35 @@ export const Events = () => {
   useEffect(() => {
     userEventService.getEvents()
       .then((res) => {
-        if (Array.isArray(res) && res.length > 0) {
-          setEventsList(res);
+        // API may return { events: [...], pagination: {...} } or a plain array
+        const eventsArray = Array.isArray(res)
+          ? res
+          : (Array.isArray(res?.events) ? res.events : []);
+
+        if (eventsArray.length > 0) {
+          // Normalize backend event shape to match our display fields
+          const normalized = eventsArray.map((ev) => {
+            const date = ev.date || ev.startDate || ev.startTime || null;
+            const d = date ? new Date(date) : null;
+            return {
+              id: ev._id || ev.id,
+              title: ev.title,
+              category: ev.type || ev.category || 'Event',
+              categoryColor: 'bg-indigo-50 text-indigo-700',
+              day: d ? String(d.getDate()).padStart(2, '0') : '--',
+              month: d ? d.toLocaleString('en', { month: 'short' }).toUpperCase() : '---',
+              time: ev.time || ev.schedule || '',
+              location: typeof ev.location === 'object'
+                ? [ev.location.city, ev.location.country].filter(Boolean).join(', ')
+                : (ev.location || ev.venue || ''),
+              interested: ev.registeredCount || ev.interestedCount || 0,
+              description: ev.description || '',
+              coverImage: ev.coverImage || ev.image || '',
+              speakers: ev.speakers || [],
+              speakerCount: ev.speakers?.length ? `+${ev.speakers.length} speakers` : ''
+            };
+          });
+          setEventsList(normalized);
         } else {
           setEventsList(mockEvents);
         }
