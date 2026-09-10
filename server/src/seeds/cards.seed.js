@@ -5,17 +5,16 @@ import { logger } from '../config/logger.config.js';
 
 export const seedCards = async () => {
   try {
-    logger.info('  [Cards] Checking and seeding smart NFC cards inventory...');
+    logger.info('  [Cards] Seeding smart NFC cards inventory and assigning to software leadership...');
 
-    const existingCount = await Card.countDocuments();
-    if (existingCount > 0) {
-      logger.info(`  [Cards] ${existingCount} cards already exist in inventory. Skipping seed.`);
-      return;
-    }
+    await Card.deleteMany({});
 
-    // Find sample members to link initial executive cards
-    const rajatMember = await TeamMember.findOne({ employeeId: 'OWQ-001' });
-    const priyaMember = await TeamMember.findOne({ employeeId: 'OWQ-002' });
+    // Find key software team members to link initial hardware cards
+    const rajatMember = await TeamMember.findOne({ employeeId: 'EMP-001' });
+    const priyaMember = await TeamMember.findOne({ employeeId: 'EMP-002' });
+    const rahulMember = await TeamMember.findOne({ employeeId: 'EMP-003' });
+    const anjaliMember = await TeamMember.findOne({ employeeId: 'EMP-008' });
+    const kabirMember = await TeamMember.findOne({ employeeId: 'EMP-014' });
 
     const sampleCards = [
       {
@@ -27,7 +26,7 @@ export const seedCards = async () => {
         memberId: rajatMember ? rajatMember._id : null,
         profileId: rajatMember ? rajatMember.profileId : null,
         linkedAt: rajatMember ? new Date() : null,
-        tapCount: 142,
+        tapCount: 284,
         notes: 'Executive Matte Black Metal Smart NFC Card issued to Founder & CEO'
       },
       {
@@ -39,48 +38,74 @@ export const seedCards = async () => {
         memberId: priyaMember ? priyaMember._id : null,
         profileId: priyaMember ? priyaMember.profileId : null,
         linkedAt: priyaMember ? new Date() : null,
-        tapCount: 89,
-        notes: 'Executive Gold Metal Smart NFC Card issued to Head of Engineering'
+        tapCount: 196,
+        notes: 'Executive 24K Gold Plated Smart NFC Card issued to Chief Technology Officer'
       },
       {
         cardUid: 'OWQ-NFC-89423',
         serialNumber: 'SN-2026-00103',
-        cardType: 'pvc_matte',
+        cardType: 'metal_silver',
         batchNumber: 'BATCH-2026-01',
-        status: 'unassigned',
-        memberId: null,
-        profileId: null,
-        notes: 'Inventory stock - Ready for team member linking'
+        status: rahulMember ? 'linked' : 'unassigned',
+        memberId: rahulMember ? rahulMember._id : null,
+        profileId: rahulMember ? rahulMember.profileId : null,
+        linkedAt: rahulMember ? new Date() : null,
+        tapCount: 142,
+        notes: 'Brushed Silver Stainless Steel Smart Card issued to Staff Cloud Architect'
       },
       {
         cardUid: 'OWQ-NFC-89424',
         serialNumber: 'SN-2026-00104',
-        cardType: 'pvc_glossy',
+        cardType: 'pvc_matte',
         batchNumber: 'BATCH-2026-01',
-        status: 'unassigned',
-        memberId: null,
-        profileId: null,
-        notes: 'Inventory stock - Ready for team member linking'
+        status: anjaliMember ? 'linked' : 'unassigned',
+        memberId: anjaliMember ? anjaliMember._id : null,
+        profileId: anjaliMember ? anjaliMember.profileId : null,
+        linkedAt: anjaliMember ? new Date() : null,
+        tapCount: 89,
+        notes: 'Premium Matte Black PVC Smart Card issued to Principal Product Designer'
       },
       {
         cardUid: 'OWQ-NFC-89425',
         serialNumber: 'SN-2026-00105',
         cardType: 'bamboo_wood',
         batchNumber: 'BATCH-2026-01',
-        status: 'unassigned',
-        memberId: null,
-        profileId: null,
-        notes: 'Eco Bamboo Wooden NFC Card - Inventory stock'
+        status: kabirMember ? 'linked' : 'unassigned',
+        memberId: kabirMember ? kabirMember._id : null,
+        profileId: kabirMember ? kabirMember.profileId : null,
+        linkedAt: kabirMember ? new Date() : null,
+        tapCount: 115,
+        notes: 'Eco Bamboo Wooden Laser-Engraved NFC Card issued to Enterprise Sales Director'
       },
       {
         cardUid: 'OWQ-NFC-89426',
         serialNumber: 'SN-2026-00106',
-        cardType: 'metal_silver',
+        cardType: 'metal_black',
         batchNumber: 'BATCH-2026-01',
         status: 'unassigned',
         memberId: null,
         profileId: null,
-        notes: 'Silver Stainless Steel NFC Card - Inventory stock'
+        notes: 'Stock Inventory - Ready for enterprise member pairing'
+      },
+      {
+        cardUid: 'OWQ-NFC-89427',
+        serialNumber: 'SN-2026-00107',
+        cardType: 'pvc_matte',
+        batchNumber: 'BATCH-2026-01',
+        status: 'unassigned',
+        memberId: null,
+        profileId: null,
+        notes: 'Stock Inventory - Ready for enterprise member pairing'
+      },
+      {
+        cardUid: 'OWQ-NFC-89428',
+        serialNumber: 'SN-2026-00108',
+        cardType: 'pvc_glossy',
+        batchNumber: 'BATCH-2026-01',
+        status: 'unassigned',
+        memberId: null,
+        profileId: null,
+        notes: 'Stock Inventory - Ready for enterprise member pairing'
       }
     ];
 

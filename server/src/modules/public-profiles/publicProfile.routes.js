@@ -6,15 +6,25 @@ const router = Router();
 // Public company profile
 router.get('/company', publicProfileController.getCompanyProfile.bind(publicProfileController));
 
+// Public enterprise team directory
+router.get('/team', publicProfileController.getPublicTeam.bind(publicProfileController));
+
 // Public employee profiles by slug
 router.get('/profiles/:slug', publicProfileController.getEmployeeProfile.bind(publicProfileController));
+router.get('/profile/:slug', publicProfileController.getEmployeeProfile.bind(publicProfileController));
+router.get('/p/:slug', publicProfileController.getEmployeeProfile.bind(publicProfileController));
+
 router.get('/profiles/:slug/qr', publicProfileController.getProfileQrCode.bind(publicProfileController));
+router.get('/profile/:slug/qr', publicProfileController.getProfileQrCode.bind(publicProfileController));
+router.get('/p/:slug/qr', publicProfileController.getProfileQrCode.bind(publicProfileController));
 
 // Public smart / NFC card tap resolver
 router.get('/cards/:cardUid', publicProfileController.resolveCardTap.bind(publicProfileController));
+router.get('/card/:cardUid', publicProfileController.resolveCardTap.bind(publicProfileController));
 router.get('/c/:cardUid', publicProfileController.resolveCardTap.bind(publicProfileController));
 
 // Public telemetry interaction event tracking
 router.post('/events', publicProfileController.recordPublicEvent.bind(publicProfileController));
 
 export const publicProfileRoutes = router;
+

@@ -7,7 +7,7 @@ import { NotFoundError } from '../../errors/index.js';
 class UserDirectoryService {
   async getDepartments() {
     const departments = await Department.find({ isArchived: false })
-      .populate('headOfDepartment', 'name designation employeeId')
+      .populate('headMemberId', 'name designation employeeId')
       .sort({ order: 1, name: 1 })
       .lean();
 
@@ -24,7 +24,7 @@ class UserDirectoryService {
       name: d.name,
       slug: d.slug,
       description: d.description,
-      head: d.headOfDepartment || null,
+      head: d.headMemberId || null,
       memberCount: countMap.get(d._id.toString()) || 0,
       order: d.order
     }));
@@ -32,7 +32,7 @@ class UserDirectoryService {
 
   async getDepartmentById(id) {
     const department = await Department.findOne({ _id: id, isArchived: false })
-      .populate('headOfDepartment', 'name designation employeeId')
+      .populate('headMemberId', 'name designation employeeId')
       .lean();
 
     if (!department) {
@@ -40,7 +40,7 @@ class UserDirectoryService {
     }
 
     const members = await TeamMember.find({ departmentId: id, status: 'active' })
-      .populate('profileId', 'slug published.avatarUrl published.headline published.skills')
+      .populate('profileId', 'slug published.avatarUrl published.headline published.skills published.location')
       .sort({ name: 1 })
       .lean();
 
@@ -53,7 +53,8 @@ class UserDirectoryService {
       slug: m.profileId?.slug || '',
       avatarUrl: m.profileId?.published?.avatarUrl || '',
       headline: m.profileId?.published?.headline || '',
-      skills: m.profileId?.published?.skills || []
+      skills: m.profileId?.published?.skills || [],
+      location: m.profileId?.published?.location || 'Indore, MP'
     }));
 
     return {
@@ -62,7 +63,7 @@ class UserDirectoryService {
         name: department.name,
         slug: department.slug,
         description: department.description,
-        head: department.headOfDepartment || null,
+        head: department.headMemberId || null,
         memberCount: formattedMembers.length
       },
       members: formattedMembers

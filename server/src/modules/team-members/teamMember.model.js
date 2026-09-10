@@ -9,10 +9,15 @@ const teamMemberSchema = new mongoose.Schema(
     },
     employeeId: {
       type: String,
-      required: true,
-      unique: true,
+      required: false,
+      sparse: true,
       trim: true,
       uppercase: true,
+      index: true
+    },
+    isSystem: {
+      type: Boolean,
+      default: false,
       index: true
     },
     name: {
@@ -51,6 +56,10 @@ const teamMemberSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'EmployeeProfile',
       index: true
+    },
+    avatarUrl: {
+      type: String,
+      default: ''
     },
     profileCompletionScore: {
       type: Number,

@@ -60,8 +60,13 @@ class DepartmentService {
       throw new ConflictError(`Department with name '${data.name}' already exists.`);
     }
 
+    const headMemberId = (data.headMemberId || data.headId) ? (data.headMemberId || data.headId) : null;
+    const parentDepartmentId = data.parentDepartmentId ? data.parentDepartmentId : null;
+
     const department = await Department.create({
       ...data,
+      headMemberId,
+      parentDepartmentId,
       slug
     });
 
@@ -97,8 +102,13 @@ class DepartmentService {
     }
 
     if (updateData.description !== undefined) department.description = updateData.description;
-    if (updateData.headMemberId !== undefined) department.headMemberId = updateData.headMemberId;
-    if (updateData.parentDepartmentId !== undefined) department.parentDepartmentId = updateData.parentDepartmentId;
+    if (updateData.headMemberId !== undefined || updateData.headId !== undefined) {
+      const headId = updateData.headMemberId || updateData.headId;
+      department.headMemberId = headId ? headId : null;
+    }
+    if (updateData.parentDepartmentId !== undefined) {
+      department.parentDepartmentId = updateData.parentDepartmentId ? updateData.parentDepartmentId : null;
+    }
     if (updateData.order !== undefined) department.order = updateData.order;
     if (updateData.isActive !== undefined) department.isActive = updateData.isActive;
 

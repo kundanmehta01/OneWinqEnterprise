@@ -15,13 +15,17 @@ export class ApiResponse {
     return ApiResponse.success(res, { statusCode: 201, message, data, meta });
   }
 
-  static paginated(res, { data = [], pagination = {}, message = 'Data retrieved successfully' } = {}) {
-    return res.status(200).json({
+  static paginated(res, { data = [], pagination = {}, message = 'Data retrieved successfully', meta } = {}) {
+    const response = {
       success: true,
       message,
       data,
       pagination
-    });
+    };
+    if (meta) {
+      response.meta = meta;
+    }
+    return res.status(200).json(response);
   }
 
   static noContent(res) {

@@ -124,10 +124,16 @@ export const updateDraftProfileSchema = z.object({
       value: z.string()
     })).optional()
   }).optional(),
-  location: z.object({
-    city: z.string().optional(),
-    country: z.string().optional()
-  }).optional(),
+  location: z.union([
+    z.string().transform((val) => {
+      const parts = val.split(',').map((p) => p.trim());
+      return { city: parts[0] || '', country: parts[1] || '' };
+    }),
+    z.object({
+      city: z.string().optional(),
+      country: z.string().optional()
+    })
+  ]).optional(),
   experience: z.array(experienceSchema).optional(),
   journey: z.array(journeySchema).optional(),
   skills: z.array(skillSchema).optional(),
@@ -152,5 +158,8 @@ export const updateDraftProfileSchema = z.object({
 });
 
 export const submitProfileForApprovalSchema = z.object({
-  note: z.string().max(500).optional()
-});
+  note: z.string().max(500).optional(),
+  reviewNotes: z.string().max(500).optional()
+}).transform((d) => ({
+  note: d.note || d.reviewNotes || ''
+}));

@@ -30,6 +30,13 @@ router.post(
   roleController.createRole.bind(roleController)
 );
 
+router.put(
+  '/:id',
+  requirePermission(PERMISSIONS.ROLE_UPDATE),
+  validate({ params: roleIdParamSchema, body: updateRoleSchema }),
+  roleController.updateRole.bind(roleController)
+);
+
 router.patch(
   '/:id',
   requirePermission(PERMISSIONS.ROLE_UPDATE),

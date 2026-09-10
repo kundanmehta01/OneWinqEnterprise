@@ -23,6 +23,9 @@ class TeamMemberService {
       filter.isDeleted = { $ne: true };
       filter.isArchived = { $ne: true };
     }
+    if (!query.includeSystem) {
+      filter.isSystem = { $ne: true };
+    }
     if (query.departmentId) {
       filter.departmentId = query.departmentId;
     }
@@ -46,7 +49,7 @@ class TeamMemberService {
         .populate('userId', 'email status lastLoginAt')
         .populate('departmentId', 'name slug')
         .populate('roleId', 'name isSystem')
-        .populate('profileId', 'slug visibility completionPercentage approvalStatus')
+        .populate('profileId', 'slug published.avatarUrl draft.avatarUrl published.headline visibility completionPercentage approvalStatus')
         .sort(sort)
         .skip(skip)
         .limit(limit)
@@ -54,8 +57,13 @@ class TeamMemberService {
       TeamMember.countDocuments(filter)
     ]);
 
+    const enrichedMembers = members.map((m) => ({
+      ...m,
+      avatarUrl: m.avatarUrl || m.profileId?.published?.avatarUrl || m.profileId?.draft?.avatarUrl || ''
+    }));
+
     return {
-      members,
+      members: enrichedMembers,
       pagination: formatPaginationMeta(totalItems, page, limit)
     };
   }
@@ -225,6 +233,7 @@ class TeamMemberService {
     }
 
     if (updateData.name) member.name = updateData.name;
+    if (updateData.employeeId) member.employeeId = updateData.employeeId;
     if (updateData.designation) member.designation = updateData.designation;
     if (updateData.joiningDate) member.joiningDate = updateData.joiningDate;
 

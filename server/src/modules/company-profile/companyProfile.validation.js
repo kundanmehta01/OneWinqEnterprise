@@ -5,7 +5,7 @@ export const updateCompanyProfileSchema = z.object({
   tagline: z.string().max(255).optional(),
   description: z.string().optional(),
   industry: z.string().max(100).optional(),
-  website: z.string().url().optional().or(z.literal('')),
+  website: z.string().optional().or(z.literal('')),
   overviewStats: z.object({
     foundedYear: z.string().optional(),
     locationShort: z.string().optional(),
@@ -27,7 +27,7 @@ export const updateCompanyProfileSchema = z.object({
     phone: z.string().optional(),
     supportEmail: z.string().email().optional().or(z.literal('')),
     workingHours: z.string().optional(),
-    directionsUrl: z.string().url().optional().or(z.literal(''))
+    directionsUrl: z.string().optional().or(z.literal(''))
   }).optional(),
   about: z.object({
     aboutCompany: z.string().optional(),
@@ -79,17 +79,17 @@ export const updateCompanyProfileSchema = z.object({
     _id: z.string().optional(),
     title: z.string().min(1),
     type: z.enum(['all', 'photo', 'video', 'news', 'event']).default('photo'),
-    url: z.string().url(),
+    url: z.string().min(1),
     thumbnailUrl: z.string().optional().or(z.literal('')),
-    date: z.string().datetime().optional().nullable().or(z.date().optional()),
+    date: z.any().optional(),
     description: z.string().optional(),
     order: z.number().int().default(0),
     isVisible: z.boolean().default(true)
   })).optional(),
   branding: z.object({
-    logoUrl: z.string().optional(),
-    coverUrl: z.string().optional(),
-    faviconUrl: z.string().optional(),
+    logoUrl: z.string().optional().or(z.literal('')),
+    coverUrl: z.string().optional().or(z.literal('')),
+    faviconUrl: z.string().optional().or(z.literal('')),
     primaryColor: z.string().optional(),
     secondaryColor: z.string().optional(),
     accentColor: z.string().optional(),
@@ -115,7 +115,7 @@ export const updateCompanyProfileSchema = z.object({
   })).optional(),
   socialLinks: z.array(z.object({
     platform: z.string(),
-    url: z.string().url(),
+    url: z.string().min(1),
     order: z.number().int().default(0),
     isVisible: z.boolean().default(true)
   })).optional(),

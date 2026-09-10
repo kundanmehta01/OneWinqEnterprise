@@ -10,7 +10,22 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['INVITATION', 'PROFILE_SUBMITTED', 'PROFILE_APPROVED', 'PROFILE_REJECTED', 'CHANGES_REQUESTED', 'SYSTEM_ALERT'],
+      enum: [
+        'INVITATION',
+        'PROFILE_SUBMITTED',
+        'PROFILE_APPROVED',
+        'PROFILE_REJECTED',
+        'CHANGES_REQUESTED',
+        'SYSTEM_ALERT',
+        'EVENT_CREATED',
+        'EVENT_REGISTERED',
+        'EVENT_MEMBER_REGISTERED',
+        'EVENT_REGISTRATION_CANCELLED',
+        'MEMBER_JOINED',
+        'CARD_LINKED',
+        'CONNECTION_REQUESTED',
+        'CONNECTION_ACCEPTED'
+      ],
       required: true,
       index: true
     },

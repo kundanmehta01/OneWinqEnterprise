@@ -15,7 +15,7 @@ export const PERMISSIONS = {
   COMPANY_PROFILE_READ: 'company_profile.read',
   COMPANY_PROFILE_UPDATE: 'company_profile.update',
 
-  // Employee Profile Management (Admin view / override)
+  // Employee Profile Management
   EMPLOYEE_PROFILE_READ: 'employee_profile.read',
   EMPLOYEE_PROFILE_UPDATE: 'employee_profile.update',
 
@@ -43,29 +43,22 @@ export const PERMISSIONS = {
   ROLE_UPDATE: 'role.update',
   ROLE_DELETE: 'role.delete',
 
-  // Analytics & Observability
+  // Analytics & Dashboard
   ANALYTICS_READ: 'analytics.read',
-  AUDIT_LOG_READ: 'audit_log.read',
   DASHBOARD_READ: 'dashboard.read',
 
   // Organization Settings
   SETTINGS_READ: 'settings.read',
   SETTINGS_UPDATE: 'settings.update',
 
-  // Media
+  // File / Media Upload
   MEDIA_UPLOAD: 'media.upload',
-  MEDIA_DELETE: 'media.delete',
-  MEDIA_READ: 'media.read',
 
-  // Events Management (Admin)
+  // Enterprise Events
   EVENT_READ: 'event.read',
   EVENT_CREATE: 'event.create',
   EVENT_UPDATE: 'event.update',
   EVENT_DELETE: 'event.delete',
-
-  // Support & Helpdesk
-  SUPPORT_READ: 'support.read',
-  SUPPORT_MANAGE: 'support.manage',
 
   // Smart & Physical NFC Cards
   CARD_READ: 'card.read',

@@ -1,57 +1,106 @@
 import { Department } from '../modules/departments/department.model.js';
+import { TeamMember } from '../modules/team-members/teamMember.model.js';
 import { logger } from '../config/logger.config.js';
 
 export const seedDepartments = async () => {
-  logger.info('Seeding departments...');
+  logger.info('Seeding software company departments...');
 
   const departments = [
     {
       name: 'Executive Leadership',
       slug: 'executive-leadership',
-      description: 'Senior strategy, executive management, and organization direction',
+      description: 'Corporate strategy, enterprise vision, board governance & executive operations',
+      leadName: 'Priya Sharma',
       order: 1,
       isActive: true
     },
     {
-      name: 'Engineering & Technology',
-      slug: 'engineering-technology',
-      description: 'Software architecture, platform infrastructure, and backend/frontend engineering',
+      name: 'Engineering',
+      slug: 'engineering',
+      description: 'Cloud infrastructure, microservices, mobile apps, security & distributed systems',
+      leadName: 'Rahul Verma',
       order: 2,
       isActive: true
     },
     {
-      name: 'Product & Design',
-      slug: 'product-design',
-      description: 'Product management, user research, UI/UX design, and design systems',
+      name: 'Product',
+      slug: 'product',
+      description: 'Product roadmap, technical specifications, user research & feature prioritization',
+      leadName: 'Aditi Nair',
       order: 3,
       isActive: true
     },
     {
-      name: 'People & Human Resources',
-      slug: 'people-human-resources',
-      description: 'Talent acquisition, employee development, culture, and workplace operations',
+      name: 'Design',
+      slug: 'design',
+      description: 'Enterprise design systems, product UX/UI, visual branding & interactive prototypes',
+      leadName: 'Sneha Joshi',
       order: 4,
       isActive: true
     },
     {
-      name: 'Marketing & Growth',
-      slug: 'marketing-growth',
-      description: 'Brand management, demand generation, product marketing, and public relations',
+      name: 'Marketing',
+      slug: 'marketing',
+      description: 'Developer relations, product-led growth, digital demand generation & brand storytelling',
+      leadName: 'Arjun Mehta',
       order: 5,
       isActive: true
     },
     {
-      name: 'Sales & Customer Success',
-      slug: 'sales-customer-success',
-      description: 'Enterprise partnerships, customer onboarding, account management, and support',
+      name: 'Sales',
+      slug: 'sales',
+      description: 'Enterprise B2B SaaS sales, strategic partnerships & client account management',
+      leadName: 'Neha Patel',
       order: 6,
+      isActive: true
+    },
+    {
+      name: 'Human Resources',
+      slug: 'human-resources',
+      description: 'Global talent acquisition, engineering recruiting, people operations & culture',
+      leadName: 'Vikram Singh',
+      order: 7,
+      isActive: true
+    },
+    {
+      name: 'Customer Support',
+      slug: 'customer-support',
+      description: '24/7 technical customer support, solutions architecture & enterprise client onboarding',
+      leadName: 'Kabir Sengupta',
+      order: 8,
+      isActive: true
+    },
+    {
+      name: 'Finance',
+      slug: 'finance',
+      description: 'Corporate finance, SaaS accounting, revenue forecasting, treasury & compliance',
+      leadName: 'Sameer Kulkarni',
+      order: 9,
       isActive: true
     }
   ];
 
   for (const dept of departments) {
-    await Department.findOneAndUpdate({ slug: dept.slug }, dept, { upsert: true, new: true });
+    let headMemberId = null;
+    if (dept.leadName) {
+      const head = await TeamMember.findOne({ name: { $regex: new RegExp(dept.leadName, 'i') } });
+      if (head) {
+        headMemberId = head._id;
+      }
+    }
+
+    const { leadName, ...deptData } = dept;
+    const doc = await Department.findOneAndUpdate(
+      { slug: dept.slug },
+      { ...deptData, ...(headMemberId ? { headMemberId } : {}) },
+      { upsert: true, new: true }
+    );
+
+    // If head member was found, make sure their departmentId points to this department
+    if (headMemberId) {
+      await TeamMember.findByIdAndUpdate(headMemberId, { departmentId: doc._id });
+    }
   }
 
-  logger.info(`✅ Seeded ${departments.length} departments successfully.`);
+  logger.info(`✅ Seeded ${departments.length} enterprise departments with leadership successfully.`);
 };

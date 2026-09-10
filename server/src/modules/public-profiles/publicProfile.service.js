@@ -9,6 +9,32 @@ import { APP_EVENTS } from '../../constants/events.constant.js';
 import { env } from '../../config/env.config.js';
 
 class PublicProfileService {
+  async getPublicTeamMembers() {
+    const members = await TeamMember.find({ status: 'active', isArchived: false })
+      .populate('departmentId', 'name slug')
+      .populate({
+        path: 'profileId',
+        select: 'slug published avatarUrl'
+      })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    return members.map((m) => {
+      const pub = m.profileId?.published || {};
+      return {
+        _id: m._id,
+        name: m.name,
+        designation: m.designation,
+        department: m.departmentId?.name || '',
+        departmentSlug: m.departmentId?.slug || '',
+        avatarUrl: pub.avatarUrl || m.avatarUrl || '',
+        bio: pub.bio || pub.headline || '',
+        slug: m.profileId?.slug || '',
+        isVerified: true
+      };
+    });
+  }
+
   async getPublicProfileBySlug(slug, clientContext = {}) {
     const profile = await EmployeeProfile.findOne({
       slug: slug.toLowerCase(),

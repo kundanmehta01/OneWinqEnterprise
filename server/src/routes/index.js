@@ -11,19 +11,17 @@ import { templateRoutes } from '../modules/templates/template.routes.js';
 import { companyProfileRoutes } from '../modules/company-profile/companyProfile.routes.js';
 import { profileApprovalRoutes } from '../modules/profile-approvals/profileApproval.routes.js';
 import { analyticsRoutes } from '../modules/analytics/analytics.routes.js';
-import { auditLogRoutes } from '../modules/audit-logs/auditLog.routes.js';
 import { notificationRoutes } from '../modules/notifications/notification.routes.js';
 import { settingsRoutes } from '../modules/settings/settings.routes.js';
 import { dashboardRoutes } from '../modules/dashboard/dashboard.routes.js';
-import { mediaRoutes } from '../modules/media/media.routes.js';
 import { userDashboardRoutes } from '../modules/user-dashboard/userDashboard.routes.js';
 import { userSettingsRoutes } from '../modules/user-settings/userSettings.routes.js';
 import { connectionRoutes } from '../modules/connections/connection.routes.js';
 import { eventRoutes } from '../modules/events/event.routes.js';
 import { adminEventRoutes } from '../modules/events/adminEvent.routes.js';
 import { userDirectoryRoutes } from '../modules/user-directory/userDirectory.routes.js';
-import { supportRoutes } from '../modules/support/support.routes.js';
-import { cardRoutes } from '../modules/cards/card.routes.js';
+import { cardRoutes, cardActivationRoutes } from '../modules/cards/card.routes.js';
+import { uploadRoutes } from '../modules/upload/upload.routes.js';
 
 const apiRouter = Router();
 
@@ -52,6 +50,7 @@ apiRouter.use('/me/dashboard', userDashboardRoutes);
 apiRouter.use('/me/profile', employeeProfileRoutes);
 apiRouter.use('/me/settings', userSettingsRoutes);
 apiRouter.use('/me/notifications', notificationRoutes);
+apiRouter.use('/notifications', notificationRoutes);
 
 // 5. Professional Networking & Connections (/network)
 apiRouter.use('/network', connectionRoutes);
@@ -59,13 +58,18 @@ apiRouter.use('/network', connectionRoutes);
 // 6. Enterprise Events (/events)
 apiRouter.use('/events', eventRoutes);
 
-// 7. Organization Explorer for Employees (/user)
+// 7. Smart / Physical NFC Card Activation (/cards, /me/cards)
+apiRouter.use('/cards', cardActivationRoutes);
+apiRouter.use('/me/cards', cardActivationRoutes);
+
+// 8. Organization Explorer for Employees (/user)
 apiRouter.use('/user', userDirectoryRoutes);
 
-// 8. Helpdesk & Support (/support)
-apiRouter.use('/support', supportRoutes);
+// 9. Direct File Uploads (Images for profiles, events, company branding)
+apiRouter.use('/upload', uploadRoutes);
+apiRouter.use('/admin/media/upload', uploadRoutes);
 
-// 9. Admin / Management Experience (/admin)
+// 10. Admin / Management Experience (/admin)
 apiRouter.use('/admin/dashboard', dashboardRoutes);
 apiRouter.use('/admin/team', teamMemberRoutes);
 apiRouter.use('/admin/departments', departmentRoutes);
@@ -78,8 +82,6 @@ apiRouter.use('/admin/approvals', profileApprovalRoutes);
 apiRouter.use('/admin/events', adminEventRoutes);
 apiRouter.use('/admin/cards', cardRoutes);
 apiRouter.use('/admin/analytics', analyticsRoutes);
-apiRouter.use('/admin/audit-logs', auditLogRoutes);
 apiRouter.use('/admin/settings', settingsRoutes);
-apiRouter.use('/admin/media', mediaRoutes);
 
 export const v1Routes = apiRouter;

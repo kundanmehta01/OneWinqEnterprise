@@ -66,3 +66,16 @@ desktop.ini
 .eslintcache
 .stylelintcache
 *.tsbuildinfo
+scratch/
+test_*.mjs
+test_*.js
+server/test_*.mjs
+server/test_*.js
+
+# Work Tracker files
+generate_work_tracker.py
+GoogleAppsScript_WorkTracker.js
+scratch_section_test.xlsx
+scratch_test.xlsx
+Work_Tracker.csv
+Work_Tracker.xlsx

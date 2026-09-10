@@ -16,7 +16,7 @@ export const seedSuperAdmin = async () => {
   const execDept = await Department.findOne({ slug: 'executive-leadership' });
   const founderTemplate = (await Template.findOne({ category: 'founder' })) || (await Template.findOne({ isDefault: true }));
 
-  // 1. Company Master Super Admin Account (Root Organization Account)
+  // 1. Supreme Enterprise Super Admin Account (OneWinq Enterprise)
   const superAdminEmail = 'superadmin@onewinq.com';
   const superAdminPassword = 'OneWinq@Admin2026!';
 
@@ -31,6 +31,27 @@ export const seedSuperAdmin = async () => {
       emailVerifiedAt: new Date()
     });
   }
+
+  let adminMember = await TeamMember.findOne({ userId: superAdminUser._id });
+  if (!adminMember) {
+    await TeamMember.create({
+      userId: superAdminUser._id,
+      name: 'OneWinq Enterprise',
+      designation: 'Supreme Organization Administrator',
+      departmentId: null,
+      roleId: superAdminRole._id,
+      status: 'active',
+      isSystem: true,
+      joiningDate: new Date('2024-01-01')
+    });
+  } else {
+    adminMember.employeeId = undefined;
+    adminMember.name = 'OneWinq Enterprise';
+    adminMember.designation = 'Supreme Organization Administrator';
+    adminMember.isSystem = true;
+    await adminMember.save();
+  }
+
 
   // 2. Founder & CEO Personal Account (Rajat Chaturvedi)
   const ceoEmail = 'rajat@onewinq.in';

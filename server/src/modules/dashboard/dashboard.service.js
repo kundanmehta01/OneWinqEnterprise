@@ -2,20 +2,26 @@ import { TeamMember } from '../team-members/teamMember.model.js';
 import { Department } from '../departments/department.model.js';
 import { ProfileApproval } from '../profile-approvals/profileApproval.model.js';
 import { Invitation } from '../invitations/invitation.model.js';
-import { AuditLog } from '../audit-logs/auditLog.model.js';
 import { analyticsService } from '../analytics/analytics.service.js';
 
 class DashboardService {
   async getExecutiveDashboard() {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
     const [
       totalMembers,
       activeMembers,
       pendingInvites,
       totalDepartments,
       pendingApprovalsCount,
-      recentAuditLogs,
+      recentJoinedMembers,
       recentPendingApprovals,
       completionAgg,
+      completedMembersCount,
+      inProgressMembersCount,
+      memberGrowthAgg,
       analyticsMetrics
     ] = await Promise.all([
       TeamMember.countDocuments({ isArchived: false }),
@@ -23,7 +29,12 @@ class DashboardService {
       Invitation.countDocuments({ status: 'pending', expiresAt: { $gt: new Date() } }),
       Department.countDocuments({ isArchived: false }),
       ProfileApproval.countDocuments({ status: 'pending' }),
-      AuditLog.find().sort({ timestamp: -1 }).limit(5).populate('actorId', 'email').lean(),
+      TeamMember.find({ status: 'active', isArchived: false })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate('roleId', 'name')
+        .populate('departmentId', 'name')
+        .lean(),
       ProfileApproval.find({ status: 'pending' })
         .sort({ submittedAt: -1 })
         .limit(5)
@@ -33,6 +44,18 @@ class DashboardService {
       TeamMember.aggregate([
         { $match: { isArchived: false, status: 'active' } },
         { $group: { _id: null, avgScore: { $avg: '$profileCompletionScore' } } }
+      ]),
+      TeamMember.countDocuments({ isArchived: false, profileCompletionScore: { $gte: 80 } }),
+      TeamMember.countDocuments({ isArchived: false, profileCompletionScore: { $gt: 0, $lt: 80 } }),
+      TeamMember.aggregate([
+        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
       ]),
       analyticsService.getAggregatedMetrics({ range: '7d' })
     ]);
@@ -68,6 +91,27 @@ class DashboardService {
       { $sort: { memberCount: -1 } }
     ]);
 
+    const profileCompletionBreakdown = {
+      completed: completedMembersCount,
+      inProgress: inProgressMembersCount,
+      pendingApproval: pendingApprovalsCount,
+      total: totalMembers
+    };
+
+    // Generate daily growth timeline for past 7 days
+    const growthMap = new Map(memberGrowthAgg.map((g) => [g._id, g.count]));
+    const growthTrends = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateKey = d.toISOString().slice(0, 10);
+      const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      growthTrends.push({
+        date: label,
+        count: growthMap.get(dateKey) || 0
+      });
+    }
+
     return {
       overview: {
         totalMembers,
@@ -75,14 +119,23 @@ class DashboardService {
         pendingInvites,
         totalDepartments,
         pendingApprovalsCount,
+        achievementsCount: 0,
+        updatesCount: 0,
         averageProfileCompletion
       },
+      profileCompletionBreakdown,
+      growthTrends,
       analytics: analyticsMetrics.kpis,
       analyticsTrends: analyticsMetrics.trends,
       topProfiles: analyticsMetrics.topViewedProfiles,
       departmentBreakdown,
       recentPendingApprovals,
-      recentActivity: recentAuditLogs
+      recentActivity: recentJoinedMembers.map((m) => ({
+        type: 'MEMBER_JOINED',
+        title: `${m.name} joined as ${m.designation || 'Team Member'}`,
+        department: m.departmentId?.name || 'General',
+        timestamp: m.createdAt
+      }))
     };
   }
 }

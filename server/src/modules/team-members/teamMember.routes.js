@@ -54,6 +54,13 @@ router.patch(
   teamMemberController.updateTeamMember.bind(teamMemberController)
 );
 
+router.put(
+  '/:id',
+  requirePermission(PERMISSIONS.TEAM_UPDATE),
+  validate({ params: teamMemberIdParamSchema, body: updateTeamMemberSchema }),
+  teamMemberController.updateTeamMember.bind(teamMemberController)
+);
+
 router.delete(
   '/:id',
   requirePermission(PERMISSIONS.TEAM_DELETE),
