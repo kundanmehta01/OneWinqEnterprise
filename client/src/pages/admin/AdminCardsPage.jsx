@@ -51,6 +51,7 @@ export const AdminCardsPage = () => {
   // Activation Link Popup Modal
   const [activationModalData, setActivationModalData] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCardId, setCopiedCardId] = useState(null);
 
   // Form states
   const [newCardData, setNewCardData] = useState({
@@ -265,6 +266,13 @@ export const AdminCardsPage = () => {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const handleCopyCardActivationLink = (url, cardId) => {
+    navigator.clipboard.writeText(url);
+    setCopiedCardId(cardId);
+    showToast('success', 'Activation link copied to clipboard!');
+    setTimeout(() => setCopiedCardId(null), 2500);
+  };
+
   const getCardTypeLabel = (type) => {
     switch (type) {
       case 'metal_black':
@@ -360,7 +368,7 @@ export const AdminCardsPage = () => {
       {/* 1. Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">NFC Card Management</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Manage Cards</h1>
           <p className="text-xs text-slate-500 mt-1">
             Manage physical smart cards across the lifecycle: Available &rarr; Activation Pending &rarr; Active.
           </p>
@@ -516,7 +524,7 @@ export const AdminCardsPage = () => {
               <thead>
                 <tr className="border-b border-slate-100 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                   <th className="py-3 px-3">Card ID / Serial</th>
-                  <th className="py-3 px-3">Material & Batch</th>
+                  <th className="py-3 px-3">Activation Link</th>
                   <th className="py-3 px-3">Owner / Member</th>
                   <th className="py-3 px-3">Status</th>
                   <th className="py-3 px-3">Taps</th>
@@ -540,13 +548,82 @@ export const AdminCardsPage = () => {
                           </div>
                           <div>
                             <p className="font-bold text-slate-900 font-mono">{card.cardUid}</p>
-                            <p className="text-[10px] text-slate-400 font-mono">{card.serialNumber || 'SN--'}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">
+                              {card.serialNumber || 'SN--'} &bull; {getCardTypeLabel(card.cardType)}
+                            </p>
                           </div>
                         </div>
                       </td>
                       <td className="py-3.5 px-3">
-                        <p className="font-medium text-slate-800">{getCardTypeLabel(card.cardType)}</p>
-                        <p className="text-[10px] text-slate-400">{card.batchNumber || 'Standard Batch'}</p>
+                        {isPending ? (
+                          card.activationUrl || card.activationToken ? (
+                            <div className="flex items-center gap-1.5 max-w-[210px]">
+                              <span
+                                className="font-mono text-[10px] text-purple-700 bg-purple-50/80 border border-purple-200/80 px-2 py-1 rounded-lg truncate select-all cursor-text max-w-[135px]"
+                                title={`${window.location.origin}${card.activationUrl || `/card/activate/${card.activationToken}`}`}
+                              >
+                                {card.activationUrl || `/card/activate/${card.activationToken}`}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleCopyCardActivationLink(
+                                    `${window.location.origin}${card.activationUrl || `/card/activate/${card.activationToken}`}`,
+                                    card._id
+                                  )
+                                }
+                                className="p-1 rounded-lg hover:bg-purple-100 text-purple-600 transition-colors shrink-0 cursor-pointer"
+                                title="Copy Link"
+                              >
+                                {copiedCardId === card._id ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                              <a
+                                href={card.activationUrl || `/card/activate/${card.activationToken}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1 rounded-lg hover:bg-purple-100 text-slate-400 hover:text-purple-600 transition-colors shrink-0"
+                                title="Open Link"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => generateLinkMutation.mutate(card._id)}
+                              disabled={generateLinkMutation.isPending}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[11px] font-semibold transition-colors cursor-pointer"
+                              title="Generate Single-Use Activation Link"
+                            >
+                              <Sparkles className="w-3 h-3 text-amber-600" />
+                              <span>Generate Link</span>
+                            </button>
+                          )
+                        ) : isActive ? (
+                          <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Activated</span>
+                            {card.profile?.slug && (
+                              <a
+                                href={`/p/${card.profile.slug}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-purple-600 hover:underline inline-flex items-center ml-0.5"
+                                title="View Digital Profile"
+                              >
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            )}
+                          </div>
+                        ) : isAvailable ? (
+                          <span className="text-[11px] text-slate-400 italic">Not Assigned</span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">—</span>
+                        )}
                       </td>
                       <td className="py-3.5 px-3">
                         {member ? (

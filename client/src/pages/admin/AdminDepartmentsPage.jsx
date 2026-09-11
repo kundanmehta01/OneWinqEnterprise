@@ -14,10 +14,12 @@ import {
   Loader2,
   AlertCircle,
   Check,
-  Shield
+  Shield,
+  Palette
 } from 'lucide-react';
 import { departmentApi } from '../../api/departmentApi';
 import { teamApi } from '../../api/teamApi';
+import { templateApi } from '../../api/templateApi';
 import { KpiCard } from '../../components/common/KpiCard';
 import { StatusBadge } from '../../components/common/BadgePill';
 
@@ -34,7 +36,8 @@ export const AdminDepartmentsPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    headMemberId: ''
+    headMemberId: '',
+    templateId: ''
   });
 
   const { data: deptResponse, isLoading } = useQuery({
@@ -59,6 +62,17 @@ export const AdminDepartmentsPage = () => {
     }
   });
 
+  const { data: templateResponse } = useQuery({
+    queryKey: ['admin-templates-list'],
+    queryFn: async () => {
+      const res = await templateApi.getAll();
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res?.data)) return res.data;
+      if (Array.isArray(res?.templates)) return res.templates;
+      return [];
+    }
+  });
+
   const departmentsList = Array.isArray(deptResponse)
     ? deptResponse
     : Array.isArray(deptResponse?.data)
@@ -66,6 +80,11 @@ export const AdminDepartmentsPage = () => {
     : [];
   // teamMembers used only for head lookup — member counts come from backend
   const teamMembers = Array.isArray(teamResponse) ? teamResponse : [];
+  const templatesList = Array.isArray(templateResponse)
+    ? templateResponse
+    : Array.isArray(templateResponse?.data)
+    ? templateResponse.data
+    : [];
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
@@ -73,14 +92,15 @@ export const AdminDepartmentsPage = () => {
       const payload = {
         name: data.name.trim(),
         description: data.description ? data.description.trim() : '',
-        headMemberId: data.headMemberId ? data.headMemberId : null
+        headMemberId: data.headMemberId ? data.headMemberId : null,
+        templateId: data.templateId ? data.templateId : null
       };
       return await departmentApi.create(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-departments'] });
       setIsCreateModalOpen(false);
-      setFormData({ name: '', description: '', headMemberId: '' });
+      setFormData({ name: '', description: '', headMemberId: '', templateId: '' });
       setSuccessToast('Department created successfully!');
       setTimeout(() => setSuccessToast(''), 3000);
     },
@@ -95,7 +115,8 @@ export const AdminDepartmentsPage = () => {
       const payload = {
         name: data.name.trim(),
         description: data.description !== undefined ? data.description.trim() : '',
-        headMemberId: data.headMemberId ? data.headMemberId : null
+        headMemberId: data.headMemberId ? data.headMemberId : null,
+        templateId: data.templateId !== undefined ? (data.templateId || null) : null
       };
       return await departmentApi.update(id, payload);
     },
@@ -130,11 +151,13 @@ export const AdminDepartmentsPage = () => {
     setActiveMenuId(null);
     setErrorMessage('');
     const headId = dept.headMemberId?._id || dept.headMemberId || dept.headId?._id || dept.headId || '';
+    const templateId = dept.templateId?._id || dept.templateId || '';
     setEditingDept({
       _id: dept._id,
       name: dept.name || '',
       description: dept.description || '',
-      headMemberId: headId
+      headMemberId: headId,
+      templateId
     });
   };
 
@@ -306,6 +329,7 @@ export const AdminDepartmentsPage = () => {
                     <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                       <th className="py-3 px-3">Department</th>
                       <th className="py-3 px-3">Department Head</th>
+                      <th className="py-3 px-3">Assigned Template</th>
                       <th className="py-3 px-3">Members</th>
                       <th className="py-3 px-3">Status</th>
                       <th className="py-3 px-3 text-right">Actions</th>
@@ -346,6 +370,18 @@ export const AdminDepartmentsPage = () => {
                               </div>
                             ) : (
                               <span className="text-slate-400 italic text-[11px]">Unassigned</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-3">
+                            {d.templateId ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-50 border border-purple-200/70 text-purple-700 font-bold text-[11px] whitespace-nowrap shadow-2xs">
+                                <Palette className="w-3 h-3 text-purple-600 shrink-0" />
+                                <span>{typeof d.templateId === 'object' ? d.templateId.name : 'Custom Template'}</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-slate-400 italic text-[11px]">
+                                Auto (Default)
+                              </span>
                             )}
                           </td>
                           <td className="py-3.5 px-3">
@@ -505,6 +541,27 @@ export const AdminDepartmentsPage = () => {
                 </select>
               </div>
 
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Assigned Profile Template
+                </label>
+                <select
+                  value={formData.templateId}
+                  onChange={(e) => setFormData({ ...formData, templateId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-purple-600 text-slate-900 text-xs font-medium"
+                >
+                  <option value="">Auto-Assign (Based on Department Category)</option>
+                  {templatesList.map((tpl) => (
+                    <option key={tpl._id} value={tpl._id}>
+                      {tpl.name} ({tpl.category})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Members in this department will automatically inherit this profile template.
+                </p>
+              </div>
+
               {errorMessage && (
                 <div className="flex items-center gap-2 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -594,6 +651,27 @@ export const AdminDepartmentsPage = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Assigned Profile Template
+                </label>
+                <select
+                  value={editingDept.templateId || ''}
+                  onChange={(e) => setEditingDept({ ...editingDept, templateId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-purple-600 text-slate-900 text-xs font-medium"
+                >
+                  <option value="">Auto-Assign (Based on Department Category)</option>
+                  {templatesList.map((tpl) => (
+                    <option key={tpl._id} value={tpl._id}>
+                      {tpl.name} ({tpl.category})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Updating this automatically synchronizes the template for all members in this department.
+                </p>
               </div>
 
               {errorMessage && (

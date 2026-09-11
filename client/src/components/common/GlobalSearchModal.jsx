@@ -37,13 +37,13 @@ export const GlobalSearchModal = ({ isOpen, onClose }) => {
   const quickNav = [
     { title: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard, category: 'Navigation' },
     { title: 'Company Profile', path: '/admin/company-profile', icon: Building2, category: 'Organization' },
-    { title: 'Team Members', path: '/admin/team', icon: Users, category: 'Organization' },
+    { title: 'Manage Users', path: '/admin/team', icon: Users, category: 'Organization' },
     { title: 'Departments', path: '/admin/departments', icon: FolderTree, category: 'Organization' },
     { title: 'Roles & Permissions', path: '/admin/roles', icon: Shield, category: 'Organization' },
     { title: 'Invitations', path: '/admin/invitations', icon: Users, category: 'Organization' },
     { title: 'Templates', path: '/admin/templates', icon: FileText, category: 'Profile' },
     { title: 'Analytics', path: '/admin/analytics', icon: BarChart2, category: 'Analytics' },
-    { title: 'NFC Cards', path: '/admin/cards', icon: CreditCard, category: 'Hardware' },
+    { title: 'Manage Cards', path: '/admin/cards', icon: CreditCard, category: 'Hardware' },
     { title: 'Events', path: '/admin/events', icon: Calendar, category: 'Events' },
     { title: 'General Settings', path: '/admin/settings', icon: Settings, category: 'Settings' }
   ];

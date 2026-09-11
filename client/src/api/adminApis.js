@@ -3,7 +3,7 @@ import api from './axios';
 export const templateApi = {
   getAll: async (params = {}) => {
     const res = await api.get('/admin/templates', { params });
-    return res.data;
+    return res?.data ?? res;
   },
   getById: async (id) => {
     const res = await api.get(`/admin/templates/${id}`);

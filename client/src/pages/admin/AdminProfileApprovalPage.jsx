@@ -18,6 +18,188 @@ import { approvalApi } from '../../api/approvalApi';
 import { KpiCard } from '../../components/common/KpiCard';
 import { Pagination } from '../../components/common/Pagination';
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  } catch (e) {
+    return dateStr;
+  }
+};
+
+const renderFormattedDiffValue = (val, field = '', isOld = false) => {
+  if (val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0)) {
+    return <span className="text-slate-400 italic text-[11px]">None</span>;
+  }
+
+  let parsed = val;
+  if (typeof val === 'string' && (val.trim().startsWith('[') || val.trim().startsWith('{'))) {
+    try {
+      parsed = JSON.parse(val);
+    } catch (e) {}
+  }
+
+  // Handle Arrays
+  if (Array.isArray(parsed)) {
+    const fLower = (field || '').toLowerCase();
+
+    // 1. Skills
+    if (fLower.includes('skill')) {
+      return (
+        <div className="flex flex-wrap gap-1 mt-1">
+          {parsed.map((item, i) => {
+            const skillName = typeof item === 'object' ? item?.name : String(item);
+            return (
+              <span
+                key={i}
+                className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                  isOld
+                    ? 'bg-rose-50 border-rose-200 text-rose-700 line-through'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                }`}
+              >
+                {skillName}
+              </span>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // 2. Experience
+    if (fLower.includes('experience')) {
+      return (
+        <div className="space-y-1.5 mt-1 text-left">
+          {parsed.map((item, i) => {
+            if (typeof item !== 'object' || !item) return <div key={i}>{String(item)}</div>;
+            const start = formatDate(item.startDate);
+            const end = item.isCurrent ? 'Present' : formatDate(item.endDate);
+            const dateRange = start ? `${start} – ${end || 'Present'}` : '';
+
+            return (
+              <div
+                key={i}
+                className={`p-2 rounded-xl border text-[11px] space-y-0.5 ${
+                  isOld
+                    ? 'bg-rose-50/50 border-rose-200/70 text-rose-900'
+                    : 'bg-emerald-50/50 border-emerald-200/70 text-emerald-950'
+                }`}
+              >
+                <div className="font-bold flex items-center justify-between gap-2">
+                  <span className={isOld ? 'line-through text-rose-700' : 'text-slate-900'}>
+                    {item.title || 'Role Title'}
+                  </span>
+                  {dateRange && <span className="text-[10px] text-slate-400 font-medium shrink-0">{dateRange}</span>}
+                </div>
+                <div className="text-[10px] text-slate-600 flex items-center gap-2">
+                  {item.company && <span className="font-medium text-slate-700">{item.company}</span>}
+                  {item.location && <span>• {item.location}</span>}
+                </div>
+                {item.description && (
+                  <p className="text-[10px] text-slate-500 line-clamp-2 pt-0.5 italic">
+                    "{item.description}"
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // 3. Projects
+    if (fLower.includes('project')) {
+      return (
+        <div className="space-y-1.5 mt-1 text-left">
+          {parsed.map((item, i) => {
+            if (typeof item !== 'object' || !item) return <div key={i}>{String(item)}</div>;
+            return (
+              <div
+                key={i}
+                className={`p-2 rounded-xl border text-[11px] space-y-0.5 ${
+                  isOld
+                    ? 'bg-rose-50/50 border-rose-200/70 text-rose-900'
+                    : 'bg-emerald-50/50 border-emerald-200/70 text-emerald-950'
+                }`}
+              >
+                <div className="font-bold flex items-center justify-between gap-2">
+                  <span className={isOld ? 'line-through text-rose-700' : 'text-slate-900'}>
+                    {item.title || item.name || 'Project Name'}
+                  </span>
+                  {item.liveUrl && (
+                    <span className="text-[10px] text-indigo-600 font-mono underline truncate max-w-[140px]">
+                      {item.liveUrl}
+                    </span>
+                  )}
+                </div>
+                {item.description && (
+                  <p className="text-[10px] text-slate-500 line-clamp-2">
+                    {item.description}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // 4. Social Links
+    if (fLower.includes('social') || fLower.includes('link')) {
+      return (
+        <div className="space-y-1 mt-1 text-left">
+          {parsed.map((item, i) => {
+            if (typeof item !== 'object' || !item) return <div key={i}>{String(item)}</div>;
+            return (
+              <div key={i} className="text-[11px] flex items-center gap-2 p-1.5 rounded-lg bg-white border border-slate-100">
+                <span className="font-bold text-slate-700 capitalize text-[10px] min-w-[50px]">{item.platform || 'Link'}:</span>
+                <span className={`text-[10px] font-mono truncate ${isOld ? 'line-through text-rose-600' : 'text-indigo-600'}`}>
+                  {item.url}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // Fallback Array of items:
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {parsed.map((item, i) => (
+          <span key={i} className="text-[10px] text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+            {typeof item === 'object' ? (item.name || item.title || JSON.stringify(item)) : String(item)}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  // Handle Object (not array)
+  if (typeof parsed === 'object' && parsed !== null) {
+    if (parsed.title || parsed.name) {
+      return (
+        <div className="text-[11px] font-medium text-slate-800">
+          <span className={isOld ? 'line-through text-rose-600' : 'text-emerald-700'}>{parsed.title || parsed.name}</span>
+          {parsed.company && <span className="text-slate-500 text-[10px] block">{parsed.company}</span>}
+        </div>
+      );
+    }
+  }
+
+  // Primitive Text / Number / Boolean
+  return (
+    <span
+      className={`text-[11px] block break-words leading-relaxed ${
+        isOld ? 'text-rose-600 line-through' : 'text-emerald-800 font-medium'
+      }`}
+    >
+      {String(parsed)}
+    </span>
+  );
+};
+
 export const AdminProfileApprovalPage = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'approved', 'rejected', 'all'
@@ -415,34 +597,65 @@ export const AdminProfileApprovalPage = () => {
                     </span>
                   </div>
 
-                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                  <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200">
                     {(currentApproval.diffSummary || []).length === 0 ? (
                       <div className="text-center py-6 text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
                         Profile content updated with draft changes
                       </div>
                     ) : (
-                      (currentApproval.diffSummary || []).map((diff, idx) => (
-                        <div key={idx} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-xs space-y-1">
-                          <p className="font-semibold text-purple-900 text-[11px] capitalize">
-                            {diff.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
-                          </p>
-                          <div className="flex items-center justify-between gap-2 pt-0.5">
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[10px] text-slate-400 block">Old Value</span>
-                              <span className="text-rose-600 line-through text-[11px] truncate block font-mono">
-                                {typeof diff.oldValue === 'object' ? JSON.stringify(diff.oldValue) : String(diff.oldValue || '--')}
+                      (currentApproval.diffSummary || []).map((diff, idx) => {
+                        const isComplex =
+                          (typeof diff.oldValue === 'object' && diff.oldValue !== null) ||
+                          (typeof diff.newValue === 'object' && diff.newValue !== null) ||
+                          (typeof diff.oldValue === 'string' && diff.oldValue.startsWith('[')) ||
+                          (typeof diff.newValue === 'string' && diff.newValue.startsWith('['));
+
+                        return (
+                          <div key={idx} className="p-3 rounded-2xl border border-slate-200/80 bg-white shadow-2xs space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-slate-900 text-xs capitalize flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
+                                {diff.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
+                              </span>
+                              <span className="text-[10px] text-purple-700 font-semibold bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
+                                Modified
                               </span>
                             </div>
-                            <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                            <div className="flex-1 min-w-0 text-right">
-                              <span className="text-[10px] text-slate-400 block">New Value</span>
-                              <span className="text-emerald-700 font-semibold text-[11px] truncate block font-mono">
-                                {typeof diff.newValue === 'object' ? JSON.stringify(diff.newValue) : String(diff.newValue || '--')}
-                              </span>
-                            </div>
+
+                            {isComplex ? (
+                              <div className="space-y-2 pt-1">
+                                <div className="p-2.5 rounded-xl bg-rose-50/40 border border-rose-100">
+                                  <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider block mb-1">
+                                    Previous Value
+                                  </span>
+                                  {renderFormattedDiffValue(diff.oldValue, diff.field, true)}
+                                </div>
+                                <div className="p-2.5 rounded-xl bg-emerald-50/40 border border-emerald-100">
+                                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">
+                                    Updated Value
+                                  </span>
+                                  {renderFormattedDiffValue(diff.newValue, diff.field, false)}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2 pt-1 items-start">
+                                <div className="p-2 rounded-xl bg-rose-50/40 border border-rose-100">
+                                  <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider block mb-0.5">
+                                    Previous
+                                  </span>
+                                  {renderFormattedDiffValue(diff.oldValue, diff.field, true)}
+                                </div>
+                                <div className="p-2 rounded-xl bg-emerald-50/40 border border-emerald-100">
+                                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block mb-0.5">
+                                    Updated
+                                  </span>
+                                  {renderFormattedDiffValue(diff.newValue, diff.field, false)}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
