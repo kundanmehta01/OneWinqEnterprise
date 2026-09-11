@@ -60,11 +60,22 @@ class UserDashboardService {
         member.departmentId.headMemberId
           ? TeamMember.findById(member.departmentId.headMemberId).select('name designation').lean()
           : null,
-        TeamMember.find({ departmentId: deptId, status: 'active', userId: { $ne: userId } })
+        TeamMember.find({
+          departmentId: deptId,
+          status: 'active',
+          isSystem: { $ne: true },
+          isDeleted: { $ne: true },
+          userId: { $ne: userId }
+        })
           .populate('profileId', 'slug published.avatarUrl published.headline')
           .limit(4)
           .lean(),
-        TeamMember.countDocuments({ departmentId: deptId, status: 'active' })
+        TeamMember.countDocuments({
+          departmentId: deptId,
+          status: 'active',
+          isSystem: { $ne: true },
+          isDeleted: { $ne: true }
+        })
       ]);
 
       departmentWidget = {
@@ -156,6 +167,8 @@ class UserDashboardService {
     const [activeColleagues, myConnections] = await Promise.all([
       TeamMember.find({
         status: 'active',
+        isSystem: { $ne: true },
+        isDeleted: { $ne: true },
         userId: { $ne: userId, $exists: true }
       })
         .populate('departmentId', 'name')

@@ -10,7 +10,12 @@ import { env } from '../../config/env.config.js';
 
 class PublicProfileService {
   async getPublicTeamMembers() {
-    const members = await TeamMember.find({ status: 'active', isArchived: false })
+    const members = await TeamMember.find({
+      status: 'active',
+      isArchived: false,
+      isDeleted: { $ne: true },
+      isSystem: { $ne: true }
+    })
       .populate('departmentId', 'name slug')
       .populate({
         path: 'profileId',

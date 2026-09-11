@@ -35,6 +35,7 @@ import { userProfileApi } from '../../api/userProfileApi';
 import { ImageUploadInput } from '../../components/common/ImageUploadInput';
 import { useAuthStore } from '../../stores/authStore';
 import { Building2 } from 'lucide-react';
+import { TemplateRenderer } from '../../components/templates/TemplateRenderer';
 
 export const EmployeeSelfProfilePage = () => {
   const { isSuperAdmin } = useAuthStore();
@@ -98,7 +99,6 @@ export const EmployeeSelfProfilePage = () => {
     workEmail: '',
     location: '',
     avatarUrl: '',
-    coverUrl: '',
     collaborationNote: '',
     skills: [],
     experience: [],
@@ -122,7 +122,6 @@ export const EmployeeSelfProfilePage = () => {
         workEmail: draft.workEmail ?? published.workEmail ?? '',
         location: draft.location ?? published.location ?? '',
         avatarUrl: draft.avatarUrl ?? published.avatarUrl ?? '',
-        coverUrl: draft.coverUrl ?? published.coverUrl ?? '',
         collaborationNote: draft.collaborationNote ?? published.collaborationNote ?? '',
         skills: draft.skills?.length ? draft.skills : published.skills || [],
         experience: draft.experience?.length ? draft.experience : published.experience || [],
@@ -573,9 +572,12 @@ END:VCARD`;
 
               {/* Avatar Upload */}
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Profile Photo (Avatar)
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Profile Photo (Avatar)
+                  </label>
+                  <span className="text-[11px] text-purple-600 font-semibold">User Photo</span>
+                </div>
                 <ImageUploadInput
                   value={formData.avatarUrl}
                   onChange={(val) => setFormData({ ...formData, avatarUrl: val })}
@@ -583,23 +585,7 @@ END:VCARD`;
                   placeholder="https://... or upload local image"
                 />
                 <p className="text-[11px] text-slate-400">
-                  Recommended: Square portrait image (500x500px). Auto-centered and fitted.
-                </p>
-              </div>
-
-              {/* Cover Banner Upload */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Profile Cover Banner
-                </label>
-                <ImageUploadInput
-                  value={formData.coverUrl}
-                  onChange={(val) => setFormData({ ...formData, coverUrl: val })}
-                  folder="covers"
-                  placeholder="https://... or upload local cover image"
-                />
-                <p className="text-[11px] text-slate-400">
-                  Recommended: 1200x400px panoramic enterprise banner.
+                  Recommended: Square portrait image (500x500px). The profile banner is managed globally by company organization branding.
                 </p>
               </div>
 
@@ -1028,68 +1014,49 @@ END:VCARD`;
 
         {/* Right Column: Live Digital Card Preview (4 Cols) */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4 sticky top-24">
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-4 sticky top-24">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900">Live Card Preview</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-900">Live Dynamic Template</span>
+                <span className="text-[10px] text-purple-700 font-bold bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full capitalize">
+                  {profileData?.template?.name || profileData?.template?.key || 'Default'}
+                </span>
+              </div>
               <span className="text-[10px] text-purple-600 font-semibold bg-purple-50 px-2 py-0.5 rounded-full">
                 Interactive
               </span>
             </div>
 
-            {/* Digital Business Card Simulator */}
-            <div className="rounded-2xl border border-slate-200/90 bg-white overflow-hidden shadow-md shadow-slate-100">
-              {/* Cover */}
-              <div className="h-28 bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-800 relative overflow-hidden">
-                {formData.coverUrl && (
-                  <img
-                    src={formData.coverUrl}
-                    alt="Cover"
-                    className="w-full h-full object-cover object-center opacity-90"
-                  />
-                )}
-              </div>
-
-              {/* Avatar & Content */}
-              <div className="px-5 pb-5 -mt-10 relative">
-                <div className="w-16 h-16 rounded-2xl bg-white p-1 shadow-lg shadow-purple-900/10 mb-3">
-                  <div className="w-full h-full rounded-xl bg-purple-100 overflow-hidden flex items-center justify-center font-bold text-purple-700">
-                    {formData.avatarUrl ? (
-                      <img
-                        src={formData.avatarUrl}
-                        alt="Avatar"
-                        className="w-full h-full object-cover object-center"
-                      />
-                    ) : (
-                      <span>{memberName.substring(0, 2).toUpperCase()}</span>
-                    )}
-                  </div>
-                </div>
-
-                <h3 className="text-sm font-bold text-slate-900">{memberName}</h3>
-                <p className="text-xs text-purple-600 font-medium line-clamp-1">{designation}</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">OneWinq Enterprise</p>
-
-                {formData.bio && (
-                  <p className="text-[11px] text-slate-600 mt-2.5 line-clamp-3 bg-slate-50 p-2 rounded-xl">
-                    {formData.bio}
-                  </p>
-                )}
-
-                {/* Quick Contact Buttons */}
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <button
-                    onClick={handleDownloadVCard}
-                    className="py-2 px-3 rounded-xl bg-purple-600 text-white text-[11px] font-semibold text-center hover:bg-purple-700 transition-colors"
-                  >
-                    Save Contact
-                  </button>
-                  <button
-                    onClick={() => setIsQrModalOpen(true)}
-                    className="py-2 px-3 rounded-xl bg-slate-100 text-slate-700 text-[11px] font-semibold text-center hover:bg-slate-200 transition-colors"
-                  >
-                    Share Profile
-                  </button>
-                </div>
+            {/* Live Template Renderer Clean Container */}
+            <div className="w-full rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
+              {/* Scrollable Viewport */}
+              <div className="max-h-[620px] overflow-y-auto p-2 sm:p-3 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+                <TemplateRenderer
+                  templateKey={profileData?.template?.key}
+                  isCompact={true}
+                  profile={{
+                    ...profileData,
+                    name: memberName,
+                    designation,
+                    headline: formData.headline || profileData?.headline,
+                    bio: formData.bio || profileData?.bio,
+                    avatarUrl: formData.avatarUrl || profileData?.avatarUrl,
+                    coverUrl: profileData?.coverUrl,
+                    workEmail: formData.workEmail || profileData?.workEmail,
+                    phone: formData.phone || profileData?.phone,
+                    location: { city: formData.location || profileData?.location?.city || '' },
+                    skills: formData.skills || profileData?.skills || [],
+                    experience: formData.experience || profileData?.experience || [],
+                    projects: formData.projects || profileData?.projects || [],
+                    socialLinks: formData.socialLinks || profileData?.socialLinks || [],
+                    template: profileData?.template || { key: 'default' },
+                    department: profileData?.memberId?.departmentId || profileData?.department || { name: 'Enterprise' }
+                  }}
+                  onConnectClick={() => {}}
+                  onQrClick={() => setIsQrModalOpen(true)}
+                  onDownloadVCard={handleDownloadVCard}
+                  onShareClick={handleCopyPublicLink}
+                />
               </div>
             </div>
 
@@ -1099,7 +1066,7 @@ END:VCARD`;
                 Dynamic NFC Smart Tap
               </p>
               <p className="text-[11px] text-purple-800">
-                Any tap on your OneWinq NFC Card or QR code instantly opens this verified profile for clients & partners.
+                Assigned template resolves dynamically based on your department & role. Any NFC card tap will render this layout.
               </p>
             </div>
           </div>

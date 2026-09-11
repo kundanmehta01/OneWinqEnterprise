@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { MapPin, Mail, Phone, Globe, Clock, ArrowLeft, Send, CheckCircle2, Navigation } from 'lucide-react';
 
-export const Screen8Contact = ({ profile, onBack }) => {
+export const Screen8Contact = ({
+  profile,
+  onBack,
+  isEditable = false,
+  onUpdateField = () => {}
+}) => {
   const contact = profile?.contact || {};
   const location = profile?.location || {};
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -32,8 +37,9 @@ export const Screen8Contact = ({ profile, onBack }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={onBack}
-            className="w-10 h-10 rounded-full bg-slate-50 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-700 transition-colors"
+            className="w-10 h-10 rounded-full bg-slate-50 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -42,89 +48,152 @@ export const Screen8Contact = ({ profile, onBack }) => {
             <p className="text-xs text-slate-500">Corporate Headquarters, Support & Direct Message</p>
           </div>
         </div>
+
+        {isEditable && (
+          <span className="text-[10px] text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1 rounded-full font-bold">
+            Directly Editable
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Contact Details Column */}
         <div className="space-y-3.5">
-          {fullAddress && (
-            <div className="clean-card p-5 bg-white border border-slate-100 rounded-3xl flex items-start gap-4 shadow-2xs">
-              <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 mt-0.5 shadow-2xs">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <div className="space-y-1 flex-1">
-                <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Head Office</p>
-                <p className="text-sm font-bold text-slate-900 leading-snug">{fullAddress}</p>
-              </div>
+          {/* Head Office Address */}
+          <div className="clean-card p-5 bg-white border border-slate-100 rounded-3xl flex items-start gap-4 shadow-2xs">
+            <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 mt-0.5 shadow-2xs">
+              <MapPin className="w-5 h-5" />
             </div>
-          )}
-
-          {contact.email && (
-            <a
-              href={`mailto:${contact.email}`}
-              className="clean-card clean-card-hover p-5 bg-white border border-slate-100 rounded-3xl flex items-center gap-4 group shadow-2xs"
-            >
-              <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-2xs">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div className="space-y-0.5 flex-1 min-w-0">
-                <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Corporate Email</p>
-                <p className="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors truncate">
-                  {contact.email}
-                </p>
-              </div>
-            </a>
-          )}
-
-          {contact.phone && (
-            <a
-              href={`tel:${contact.phone}`}
-              className="clean-card clean-card-hover p-5 bg-white border border-slate-100 rounded-3xl flex items-center gap-4 group shadow-2xs"
-            >
-              <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-2xs">
-                <Phone className="w-5 h-5" />
-              </div>
-              <div className="space-y-0.5 flex-1 min-w-0">
-                <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Direct Line</p>
-                <p className="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors truncate">
-                  {contact.phone}
-                </p>
-              </div>
-            </a>
-          )}
-
-          {profile?.website && (
-            <a
-              href={profile.website}
-              target="_blank"
-              rel="noreferrer"
-              className="clean-card clean-card-hover p-5 bg-white border border-slate-100 rounded-3xl flex items-center gap-4 group shadow-2xs"
-            >
-              <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-2xs">
-                <Globe className="w-5 h-5" />
-              </div>
-              <div className="space-y-0.5 flex-1 min-w-0">
-                <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Official Portal</p>
-                <p className="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors truncate">
-                  {profile.website}
-                </p>
-              </div>
-            </a>
-          )}
-
-          {contact.workingHours && (
-            <div className="clean-card p-5 bg-white border border-slate-100 rounded-3xl flex items-center gap-4 shadow-2xs">
-              <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-2xs">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div className="space-y-0.5 flex-1">
-                <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Business Hours</p>
-                <p className="text-sm font-bold text-slate-900">
-                  {contact.workingHours}
-                </p>
-              </div>
+            <div className="space-y-1 flex-1">
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Head Office</p>
+              {isEditable ? (
+                <div className="space-y-1.5 pt-1">
+                  <input
+                    type="text"
+                    value={location.address || ''}
+                    onChange={(e) => onUpdateField('location.address', e.target.value)}
+                    placeholder="Street Address"
+                    className="w-full text-xs text-slate-800 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 outline-none"
+                  />
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <input
+                      type="text"
+                      value={location.city || ''}
+                      onChange={(e) => onUpdateField('location.city', e.target.value)}
+                      placeholder="City"
+                      className="w-full text-xs text-slate-800 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 outline-none"
+                    />
+                    <input
+                      type="text"
+                      value={location.state || ''}
+                      onChange={(e) => onUpdateField('location.state', e.target.value)}
+                      placeholder="State"
+                      className="w-full text-xs text-slate-800 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 outline-none"
+                    />
+                    <input
+                      type="text"
+                      value={location.country || ''}
+                      onChange={(e) => onUpdateField('location.country', e.target.value)}
+                      placeholder="Country"
+                      className="w-full text-xs text-slate-800 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 outline-none"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm font-bold text-slate-900 leading-snug">{fullAddress || 'Address not specified'}</p>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Corporate Email */}
+          <div className="clean-card p-5 bg-white border border-slate-100 rounded-3xl flex items-center gap-4 shadow-2xs">
+            <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-2xs">
+              <Mail className="w-5 h-5" />
+            </div>
+            <div className="space-y-0.5 flex-1 min-w-0">
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Corporate Email</p>
+              {isEditable ? (
+                <input
+                  type="email"
+                  value={contact.email || ''}
+                  onChange={(e) => onUpdateField('contact.email', e.target.value)}
+                  placeholder="contact@onewinq.com"
+                  className="w-full text-sm font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 outline-none"
+                />
+              ) : (
+                <a href={`mailto:${contact.email}`} className="text-sm font-bold text-slate-900 hover:text-purple-600 transition-colors truncate block">
+                  {contact.email || 'None'}
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Direct Line */}
+          <div className="clean-card p-5 bg-white border border-slate-100 rounded-3xl flex items-center gap-4 shadow-2xs">
+            <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-2xs">
+              <Phone className="w-5 h-5" />
+            </div>
+            <div className="space-y-0.5 flex-1 min-w-0">
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Direct Line</p>
+              {isEditable ? (
+                <input
+                  type="tel"
+                  value={contact.phone || ''}
+                  onChange={(e) => onUpdateField('contact.phone', e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="w-full text-sm font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 outline-none"
+                />
+              ) : (
+                <a href={`tel:${contact.phone}`} className="text-sm font-bold text-slate-900 hover:text-purple-600 transition-colors truncate block">
+                  {contact.phone || 'None'}
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Official Website */}
+          <div className="clean-card p-5 bg-white border border-slate-100 rounded-3xl flex items-center gap-4 shadow-2xs">
+            <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-2xs">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div className="space-y-0.5 flex-1 min-w-0">
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Official Portal</p>
+              {isEditable ? (
+                <input
+                  type="url"
+                  value={profile?.website || ''}
+                  onChange={(e) => onUpdateField('website', e.target.value)}
+                  placeholder="https://onewinq.com"
+                  className="w-full text-sm font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 outline-none"
+                />
+              ) : (
+                <a href={profile?.website} target="_blank" rel="noreferrer" className="text-sm font-bold text-slate-900 hover:text-purple-600 transition-colors truncate block">
+                  {profile?.website || 'None'}
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Business Hours */}
+          <div className="clean-card p-5 bg-white border border-slate-100 rounded-3xl flex items-center gap-4 shadow-2xs">
+            <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0 shadow-2xs">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div className="space-y-0.5 flex-1">
+              <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Business Hours</p>
+              {isEditable ? (
+                <input
+                  type="text"
+                  value={contact.workingHours || ''}
+                  onChange={(e) => onUpdateField('contact.workingHours', e.target.value)}
+                  placeholder="Mon - Fri: 9:00 AM - 6:00 PM IST"
+                  className="w-full text-sm font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 outline-none"
+                />
+              ) : (
+                <p className="text-sm font-bold text-slate-900">{contact.workingHours || 'Mon - Fri: 9:00 AM - 6:00 PM'}</p>
+              )}
+            </div>
+          </div>
 
           <a
             href={contact.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress || 'OneWinq')}`}
@@ -191,7 +260,7 @@ export const Screen8Contact = ({ profile, onBack }) => {
               </div>
               <button
                 type="submit"
-                className="w-full py-3.5 px-5 rounded-full btn-purple text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-3.5 px-5 rounded-full btn-purple text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 <span>Send Message</span>
@@ -203,3 +272,4 @@ export const Screen8Contact = ({ profile, onBack }) => {
     </div>
   );
 };
+

@@ -13,7 +13,7 @@ class UserDirectoryService {
 
     const deptIds = departments.map((d) => d._id);
     const memberCounts = await TeamMember.aggregate([
-      { $match: { departmentId: { $in: deptIds }, status: 'active' } },
+      { $match: { departmentId: { $in: deptIds }, status: 'active', isArchived: false, isDeleted: { $ne: true }, isSystem: { $ne: true } } },
       { $group: { _id: '$departmentId', count: { $sum: 1 } } }
     ]);
 
@@ -39,7 +39,13 @@ class UserDirectoryService {
       throw new NotFoundError('Department not found.');
     }
 
-    const members = await TeamMember.find({ departmentId: id, status: 'active' })
+    const members = await TeamMember.find({
+      departmentId: id,
+      status: 'active',
+      isArchived: false,
+      isDeleted: { $ne: true },
+      isSystem: { $ne: true }
+    })
       .populate('profileId', 'slug published.avatarUrl published.headline published.skills published.location')
       .sort({ name: 1 })
       .lean();
@@ -72,7 +78,12 @@ class UserDirectoryService {
 
   async getTeamDirectory(query = {}) {
     const { page, limit, skip, sort } = parsePagination(query, 12);
-    const filter = { status: 'active' };
+    const filter = {
+      status: 'active',
+      isArchived: false,
+      isDeleted: { $ne: true },
+      isSystem: { $ne: true }
+    };
 
     if (query.departmentId) {
       filter.departmentId = query.departmentId;

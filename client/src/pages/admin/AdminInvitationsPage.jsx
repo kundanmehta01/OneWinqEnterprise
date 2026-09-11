@@ -39,12 +39,24 @@ export const AdminInvitationsPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successToast, setSuccessToast] = useState('');
 
+  const getRoleDefaultDesignation = (roleName) => {
+    if (!roleName) return 'Team Member';
+    const r = roleName.toLowerCase();
+    if (r.includes('hr') || r.includes('people') || r.includes('talent')) return 'HR Administrator';
+    if (r.includes('super') || r.includes('founder') || r.includes('executive')) return 'Executive Director';
+    if (r.includes('content')) return 'Content Administrator';
+    if (r === 'admin') return 'System Administrator';
+    if (r.includes('sales') || r.includes('bd')) return 'Enterprise Account Executive';
+    if (r.includes('engineering') || r.includes('dev')) return 'Software Engineer';
+    return 'Team Member';
+  };
+
   const [inviteForm, setInviteForm] = useState({
     name: '',
     email: '',
     roleId: '',
     departmentId: '',
-    designation: 'Team Member'
+    designation: ''
   });
 
   const { data: invitationsResponse, isLoading } = useQuery({
@@ -501,7 +513,15 @@ export const AdminInvitationsPage = () => {
                     <label className="block font-semibold text-slate-700 mb-1">Assigned Role</label>
                     <select
                       value={inviteForm.roleId}
-                      onChange={(e) => setInviteForm({ ...inviteForm, roleId: e.target.value })}
+                      onChange={(e) => {
+                        const newRoleId = e.target.value;
+                        const roleObj = roles.find((r) => r._id === newRoleId);
+                        let autoDesig = inviteForm.designation;
+                        if (!autoDesig || autoDesig === 'Team Member' || ['HR Administrator', 'Executive Director', 'System Administrator', 'Content Administrator'].includes(autoDesig)) {
+                          autoDesig = getRoleDefaultDesignation(roleObj?.name);
+                        }
+                        setInviteForm({ ...inviteForm, roleId: newRoleId, designation: autoDesig });
+                      }}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-purple-600 text-slate-900"
                     >
                       <option value="">Default (Viewer / Member)</option>

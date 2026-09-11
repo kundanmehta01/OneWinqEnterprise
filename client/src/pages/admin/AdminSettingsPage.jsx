@@ -95,10 +95,10 @@ export const AdminSettingsPage = () => {
               <h2 className="text-sm font-bold text-slate-900">Regional & Platform Preferences</h2>
             </div>
             <a
-              href="/admin/company-profile"
+              href="/admin/organization"
               className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-1"
             >
-              <span>Manage Company Profile Studio →</span>
+              <span>Manage Organization Studio →</span>
             </a>
           </div>
 

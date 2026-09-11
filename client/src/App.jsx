@@ -89,7 +89,7 @@ const AdminIndexRedirect = () => {
   if (perms.includes('invitation.read') || perms.includes('invitation.create')) return <Navigate to="/admin/invitations" replace />;
   if (perms.includes('company_profile.read') || perms.includes('company_profile.update')) return <Navigate to="/admin/company-profile" replace />;
   if (perms.includes('template.read')) return <Navigate to="/admin/templates" replace />;
-  if (perms.includes('event.manage')) return <Navigate to="/admin/events" replace />;
+  if (perms.includes('event.read') || perms.includes('event.create') || perms.includes('event.update')) return <Navigate to="/admin/events" replace />;
   if (perms.includes('analytics.read')) return <Navigate to="/admin/analytics" replace />;
   if (perms.includes('card.read')) return <Navigate to="/admin/cards" replace />;
   if (perms.includes('role.read')) return <Navigate to="/admin/roles" replace />;
@@ -193,6 +193,14 @@ export const App = () => {
           }
         />
         <Route
+          path="organization"
+          element={
+            <AdminPermissionRoute permission={['company_profile.read', 'company_profile.update']}>
+              <CompanyProfileStudioPage />
+            </AdminPermissionRoute>
+          }
+        />
+        <Route
           path="team"
           element={
             <AdminPermissionRoute permission="team.read">
@@ -259,7 +267,7 @@ export const App = () => {
         <Route
           path="events"
           element={
-            <AdminPermissionRoute permission="event.manage">
+            <AdminPermissionRoute permission={['event.read', 'event.create', 'event.update']}>
               <AdminEventsPage />
             </AdminPermissionRoute>
           }

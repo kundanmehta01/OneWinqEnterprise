@@ -81,15 +81,15 @@ export const AdminLayout = () => {
     {
       items: [
         { to: '/admin/dashboard', label: 'Dashboard Overview', icon: LayoutDashboard, permission: 'dashboard.read' },
-        { to: '/admin/events', label: 'Manage Events', icon: Calendar, permission: 'event.manage' }
+        { to: '/admin/events', label: 'Manage Events', icon: Calendar, permission: ['event.read', 'event.create', 'event.update'] }
       ]
     },
     {
       sectionTitle: 'ORGANIZATION & HARDWARE',
       items: [
-        { to: '/admin/cards', label: 'NFC Smart Cards', icon: CreditCard, permission: 'card.read' },
-        { to: '/admin/company-profile', label: 'Company Profile Studio', icon: Building2, permission: ['company_profile.read', 'company_profile.update'] },
-        { to: '/admin/team', label: 'Team Directory', icon: Users, permission: 'team.read' },
+        { to: '/admin/cards', label: 'Manage Cards', icon: CreditCard, permission: 'card.read' },
+        { to: '/admin/organization', label: 'Organization Studio', icon: Building2, permission: ['company_profile.read', 'company_profile.update'] },
+        { to: '/admin/team', label: 'Manage Users', icon: Users, permission: 'team.read' },
         { to: '/admin/departments', label: 'Departments', icon: FolderTree, permission: 'department.read' },
         { to: '/admin/roles', label: 'Roles & Permissions', icon: Shield, permission: 'role.read' },
         { to: '/admin/invitations', label: 'Invitations', icon: Send, permission: ['invitation.read', 'invitation.create'] }
@@ -159,13 +159,16 @@ export const AdminLayout = () => {
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                        isActive
+                    className={({ isActive }) => {
+                      const isOrgStudioActive = (item.to === '/admin/organization' || item.to === '/admin/company-profile') &&
+                        (location.pathname.startsWith('/admin/organization') || location.pathname.startsWith('/admin/company-profile'));
+                      const active = isActive || isOrgStudioActive;
+                      return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                        active
                           ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-200'
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`
-                    }
+                      }`;
+                    }}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     <span>{item.label}</span>
@@ -342,11 +345,16 @@ export const AdminLayout = () => {
                       key={item.to}
                       to={item.to}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium ${
-                          isActive ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-600'
-                        }`
-                      }
+                      className={({ isActive }) => {
+                        const isOrgStudioActive = (item.to === '/admin/organization' || item.to === '/admin/company-profile') &&
+                          (location.pathname.startsWith('/admin/organization') || location.pathname.startsWith('/admin/company-profile'));
+                        const active = isActive || isOrgStudioActive;
+                        return `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium ${
+                          active
+                            ? 'bg-indigo-600 text-white font-semibold'
+                            : 'text-slate-600 hover:bg-slate-50'
+                        }`;
+                      }}
                     >
                       <Icon className="w-4 h-4" />
                       <span>{item.label}</span>

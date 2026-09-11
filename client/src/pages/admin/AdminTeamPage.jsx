@@ -112,17 +112,31 @@ export const AdminTeamPage = () => {
     currentPage: page
   };
 
+  const getRoleDefaultDesignation = (roleName) => {
+    if (!roleName) return 'Team Member';
+    const r = roleName.toLowerCase();
+    if (r.includes('hr') || r.includes('people') || r.includes('talent')) return 'HR Administrator';
+    if (r.includes('super') || r.includes('founder') || r.includes('executive')) return 'Executive Director';
+    if (r.includes('content')) return 'Content Administrator';
+    if (r === 'admin') return 'System Administrator';
+    if (r.includes('sales') || r.includes('bd')) return 'Enterprise Account Executive';
+    if (r.includes('engineering') || r.includes('dev')) return 'Software Engineer';
+    return 'Team Member';
+  };
+
   // Add Member Mutation
   const addMemberMutation = useMutation({
     mutationFn: async (payload) => {
       setErrorMessage('');
+      const targetRole = roles.find((r) => r._id === payload.roleId) || roles.find((r) => r.name !== 'Super Admin') || roles[0];
+      const fallbackDesig = getRoleDefaultDesignation(targetRole?.name);
       const cleanPayload = {
         name: payload.name.trim(),
         email: payload.email.trim(),
         employeeId: payload.employeeId ? payload.employeeId.trim() : undefined,
-        designation: payload.designation ? payload.designation.trim() : 'Team Member',
+        designation: payload.designation && payload.designation.trim() !== 'Team Member' ? payload.designation.trim() : fallbackDesig,
         departmentId: payload.departmentId ? payload.departmentId : undefined,
-        roleId: payload.roleId ? payload.roleId : (roles.find(r => r.name !== 'Super Admin')?._id || roles[0]?._id)
+        roleId: payload.roleId ? payload.roleId : targetRole?._id
       };
       return await teamApi.create(cleanPayload);
     },
@@ -227,10 +241,10 @@ export const AdminTeamPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-display">
-            Team Directory & Roles
+            Manage Users
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Manage organization members, departments, and granular system roles.
+            Manage organization members, departments, and assigned roles.
           </p>
         </div>
 
@@ -626,7 +640,15 @@ export const AdminTeamPage = () => {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Assigned Role</label>
                   <select
                     value={formData.roleId}
-                    onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                    onChange={(e) => {
+                      const newRoleId = e.target.value;
+                      const roleObj = roles.find((r) => r._id === newRoleId);
+                      let autoDesig = formData.designation;
+                      if (!autoDesig || autoDesig === 'Team Member' || ['HR Administrator', 'Executive Director', 'System Administrator', 'Content Administrator'].includes(autoDesig)) {
+                        autoDesig = getRoleDefaultDesignation(roleObj?.name);
+                      }
+                      setFormData({ ...formData, roleId: newRoleId, designation: autoDesig });
+                    }}
                     className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-purple-600 text-slate-900"
                   >
                     <option value="">Default (Viewer / Member)</option>
@@ -750,7 +772,15 @@ export const AdminTeamPage = () => {
                   </label>
                   <select
                     value={editingMember.roleId}
-                    onChange={(e) => setEditingMember({ ...editingMember, roleId: e.target.value })}
+                    onChange={(e) => {
+                      const newRoleId = e.target.value;
+                      const roleObj = roles.find((r) => r._id === newRoleId);
+                      let autoDesig = editingMember.designation;
+                      if (!autoDesig || autoDesig === 'Team Member' || ['HR Administrator', 'Executive Director', 'System Administrator', 'Content Administrator'].includes(autoDesig)) {
+                        autoDesig = getRoleDefaultDesignation(roleObj?.name);
+                      }
+                      setEditingMember({ ...editingMember, roleId: newRoleId, designation: autoDesig });
+                    }}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-purple-600 text-slate-900 text-xs font-semibold"
                   >
                     {roles.map((r) => (
