@@ -44,7 +44,13 @@ class UserDashboardService {
         status: 'pending'
       }),
       member.profileId
-        ? AnalyticsEvent.countDocuments({ targetId: member.profileId._id, eventType: 'page_view' })
+        ? AnalyticsEvent.countDocuments({
+            $or: [
+              { targetId: member._id, eventType: { $in: ['PROFILE_VIEW', 'page_view'] } },
+              { targetId: member.profileId._id, eventType: { $in: ['PROFILE_VIEW', 'page_view'] } },
+              { slug: member.profileId.slug, eventType: { $in: ['PROFILE_VIEW', 'page_view'] } }
+            ]
+          })
         : 0,
       EventRegistration.countDocuments({
         userId,
@@ -180,30 +186,37 @@ class UserDashboardService {
       }).lean()
     ]);
 
-    const acceptedSet = new Set();
-    const pendingSet = new Set();
+    const connectionMap = new Map();
     myConnections.forEach((conn) => {
-      const otherId = conn.requesterId.toString() === userId.toString() ? conn.recipientId.toString() : conn.requesterId.toString();
-      if (conn.status === 'accepted') acceptedSet.add(otherId);
-      if (conn.status === 'pending') pendingSet.add(otherId);
+      const isRequester = conn.requesterId.toString() === userId.toString();
+      const otherId = isRequester ? conn.recipientId.toString() : conn.requesterId.toString();
+      let state = 'none';
+      if (conn.status === 'accepted') {
+        state = 'connected';
+      } else if (conn.status === 'pending') {
+        state = isRequester ? 'pending_sent' : 'pending_received';
+      } else if (conn.status === 'declined') {
+        state = 'declined';
+      }
+      connectionMap.set(otherId, { state, connectionId: conn._id });
     });
 
-    const recentlyActivePeople = activeColleagues.map((c) => ({
-      _id: c._id,
-      userId: c.userId,
-      name: c.name,
-      designation: c.designation,
-      department: c.departmentId?.name || '',
-      avatarUrl: c.profileId?.published?.avatarUrl || '',
-      slug: c.profileId?.slug || '',
-      location: c.profileId?.published?.location || 'Indore, MP',
-      skills: c.profileId?.published?.skills || [],
-      connectionStatus: acceptedSet.has(c.userId?.toString())
-        ? 'connected'
-        : pendingSet.has(c.userId?.toString())
-        ? 'pending'
-        : 'none'
-    }));
+    const recentlyActivePeople = activeColleagues.map((c) => {
+      const connInfo = connectionMap.get(c.userId?.toString()) || { state: 'none', connectionId: null };
+      return {
+        _id: c._id,
+        userId: c.userId,
+        name: c.name,
+        designation: c.designation,
+        department: c.departmentId?.name || '',
+        avatarUrl: c.profileId?.published?.avatarUrl || '',
+        slug: c.profileId?.slug || '',
+        location: c.profileId?.published?.location || 'Indore, MP',
+        skills: c.profileId?.published?.skills || [],
+        connectionStatus: connInfo.state,
+        connectionId: connInfo.connectionId
+      };
+    });
 
     // 7. My NFC Card Widget
     let nfcCardWidget = null;
@@ -232,7 +245,7 @@ class UserDashboardService {
         companyName: company?.name || 'OneWinq Enterprise',
         slug: member.profileId?.slug || '',
         avatarUrl: member.profileId?.published?.avatarUrl || '',
-        coverUrl: member.profileId?.published?.coverUrl || '',
+        coverUrl: company?.branding?.coverUrl || '',
         headline: member.profileId?.published?.headline || '',
         bio: member.profileId?.published?.bio || '',
         location: member.profileId?.published?.location || 'Indore, MP',

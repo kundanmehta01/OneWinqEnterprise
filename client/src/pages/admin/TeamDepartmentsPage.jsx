@@ -8,26 +8,18 @@ import {
   Grid,
   List,
   MapPin,
-  Sparkles,
-  ExternalLink,
-  MoreVertical,
   ChevronRight,
   Code2,
   Box,
   Palette,
   Megaphone,
-  UserCheck,
   TrendingUp,
   Target,
   Settings2,
   Server,
   FileText,
-  Building2,
-  Shield,
-  Layers,
   Check,
-  Copy,
-  UserPlus
+  Copy
 } from 'lucide-react';
 import { userDirectoryApi } from '../../api/userDirectoryApi';
 import { connectionApi } from '../../api/connectionApi';

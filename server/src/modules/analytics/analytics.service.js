@@ -31,28 +31,28 @@ class AnalyticsService {
 
   parseTimeRange(range = '7d', customStart, customEnd) {
     const end = customEnd ? new Date(customEnd) : new Date();
-    let start = new Date();
+    let start = new Date(end);
 
     if (range === 'today') {
-      start.setHours(0, 0, 0, 0);
+      start.setUTCHours(0, 0, 0, 0);
     } else if (range === '7d') {
-      start.setDate(end.getDate() - 6);
-      start.setHours(0, 0, 0, 0);
+      start.setUTCDate(end.getUTCDate() - 6);
+      start.setUTCHours(0, 0, 0, 0);
     } else if (range === '30d') {
-      start.setDate(end.getDate() - 29);
-      start.setHours(0, 0, 0, 0);
+      start.setUTCDate(end.getUTCDate() - 29);
+      start.setUTCHours(0, 0, 0, 0);
     } else if (range === '90d') {
-      start.setDate(end.getDate() - 89);
-      start.setHours(0, 0, 0, 0);
+      start.setUTCDate(end.getUTCDate() - 89);
+      start.setUTCHours(0, 0, 0, 0);
     } else if (range === 'month' || range === 'this_month') {
-      start = new Date(end.getFullYear(), end.getMonth(), 1);
+      start = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1, 0, 0, 0, 0));
     } else if (range === 'year' || range === 'this_year') {
-      start = new Date(end.getFullYear(), 0, 1);
+      start = new Date(Date.UTC(end.getUTCFullYear(), 0, 1, 0, 0, 0, 0));
     } else if (range === 'custom' && customStart) {
       start = new Date(customStart);
     } else {
-      start.setDate(end.getDate() - 6);
-      start.setHours(0, 0, 0, 0);
+      start.setUTCDate(end.getUTCDate() - 6);
+      start.setUTCHours(0, 0, 0, 0);
     }
 
     return { start, end };
@@ -83,8 +83,10 @@ class AnalyticsService {
     };
 
     eventCounts.forEach((item) => {
-      if (kpiMap[item._id] !== undefined) {
-        kpiMap[item._id] = item.count;
+      let type = (item._id || '').toUpperCase();
+      if (type === 'PAGE_VIEW') type = 'PROFILE_VIEW';
+      if (kpiMap[type] !== undefined) {
+        kpiMap[type] += item.count;
       }
     });
 
@@ -107,13 +109,14 @@ class AnalyticsService {
     const dateMap = {};
     timeline.forEach((item) => {
       const date = item._id.date;
+      const type = (item._id.type || '').toUpperCase();
       if (!dateMap[date]) {
         dateMap[date] = { date, views: 0, shares: 0, scans: 0, clicks: 0 };
       }
-      if (item._id.type === 'PROFILE_VIEW') dateMap[date].views += item.count;
-      if (item._id.type === 'PROFILE_SHARE') dateMap[date].shares += item.count;
-      if (item._id.type === 'QR_SCAN') dateMap[date].scans += item.count;
-      if (item._id.type === 'PROFILE_LINK_CLICK' || item._id.type === 'CONTACT_CLICK') {
+      if (type === 'PROFILE_VIEW' || type === 'PAGE_VIEW') dateMap[date].views += item.count;
+      if (type === 'PROFILE_SHARE') dateMap[date].shares += item.count;
+      if (type === 'QR_SCAN') dateMap[date].scans += item.count;
+      if (type === 'PROFILE_LINK_CLICK' || type === 'CONTACT_CLICK') {
         dateMap[date].clicks += item.count;
       }
     });
@@ -122,7 +125,13 @@ class AnalyticsService {
 
     // 3. Top Viewed Profiles
     const topProfilesAgg = await AnalyticsEvent.aggregate([
-      { $match: { ...matchFilter, eventType: 'PROFILE_VIEW', targetId: { $ne: null } } },
+      {
+        $match: {
+          ...matchFilter,
+          eventType: { $in: ['PROFILE_VIEW', 'profile_view', 'PAGE_VIEW', 'page_view'] },
+          targetId: { $ne: null }
+        }
+      },
       { $group: { _id: '$targetId', views: { $sum: 1 } } },
       { $sort: { views: -1 } },
       { $limit: 5 }
@@ -277,21 +286,25 @@ class AnalyticsService {
           { device: 'Desktop', count: 0, percentage: 0, color: '#38bdf8' }
         ];
 
-    // 9. Ensure continuous trend date series
+    // 9. Ensure continuous trend date series using UTC calendar days
     const finalTrends = [];
     const currDate = new Date(start);
     while (currDate <= end) {
-      const dateKey = currDate.toISOString().slice(0, 10);
-      const label = currDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const year = currDate.getUTCFullYear();
+      const month = String(currDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(currDate.getUTCDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+      const label = currDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
       const record = dateMap[dateKey] || { views: 0, shares: 0, scans: 0, clicks: 0 };
       finalTrends.push({
         date: label,
+        dateKey,
         views: record.views,
         shares: record.shares,
         scans: record.scans,
         clicks: record.clicks
       });
-      currDate.setDate(currDate.getDate() + 1);
+      currDate.setUTCDate(currDate.getUTCDate() + 1);
     }
 
     return {

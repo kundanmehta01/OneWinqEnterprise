@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, LayoutDashboard, Building2, Users, FolderTree, Shield, FileText, CheckSquare, BarChart2, CreditCard, Calendar, Settings, X, ChevronRight } from 'lucide-react';
+import { Search, LayoutDashboard, Building2, Users, FolderTree, Shield, FileText, BarChart2, CreditCard, Calendar, Settings, X, ChevronRight } from 'lucide-react';
 
 export const GlobalSearchModal = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState('');

@@ -2,31 +2,16 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  ShieldCheck,
   Building2,
-  Mail,
   Phone,
-  MapPin,
-  Calendar,
-  Briefcase,
-  Layers,
-  Trophy,
-  Share2,
   QrCode,
-  Download,
   Send,
   CheckCircle2,
   AlertCircle,
   Loader2,
-  ExternalLink,
   Copy,
-  Sparkles,
   UserCheck,
-  Globe,
-  ArrowRight,
-  ChevronRight,
-  X,
-  MessageSquare
+  X
 } from 'lucide-react';
 import { userProfileApi } from '../api/userProfileApi';
 import { TemplateRenderer } from '../components/templates/TemplateRenderer';

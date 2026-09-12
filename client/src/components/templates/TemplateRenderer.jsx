@@ -4,6 +4,7 @@ import { HRTemplate } from './HRTemplate';
 import { EngineeringTemplate } from './EngineeringTemplate';
 import { SalesTemplate } from './SalesTemplate';
 import { MarketingTemplate } from './MarketingTemplate';
+import { ProductTemplate } from './ProductTemplate';
 import { DefaultTemplate } from './DefaultTemplate';
 
 /**
@@ -39,12 +40,16 @@ export const TemplateRenderer = ({
   };
 
   switch (key) {
+    case 'product':
+    case 'product-profile':
+    case 'manager':
+    case 'management':
+      return <ProductTemplate {...props} />;
+
     case 'executive':
     case 'founder':
     case 'ceo':
     case 'leadership':
-    case 'manager':
-    case 'management':
       return <ExecutiveTemplate {...props} />;
 
     case 'hr':

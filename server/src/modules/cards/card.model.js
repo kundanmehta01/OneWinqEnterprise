@@ -46,6 +46,10 @@ const cardSchema = new mongoose.Schema(
       default: null,
       index: true
     },
+    activationToken: {
+      type: String,
+      default: null
+    },
     activationTokenHash: {
       type: String,
       default: null,

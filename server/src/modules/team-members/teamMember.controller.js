@@ -23,14 +23,21 @@ export class TeamMemberController {
     }
   }
 
+  _getActorContext(req) {
+    return {
+      actorId: req.user?._id,
+      isSuperAdmin: req.isSuperAdmin,
+      roleName: req.roleName,
+      permissions: req.permissions,
+      ipAddress: req.auditContext?.ipAddress,
+      userAgent: req.auditContext?.userAgent,
+      requestId: req.id
+    };
+  }
+
   async createTeamMember(req, res, next) {
     try {
-      const actorContext = {
-        actorId: req.user._id,
-        ipAddress: req.auditContext?.ipAddress,
-        userAgent: req.auditContext?.userAgent,
-        requestId: req.id
-      };
+      const actorContext = this._getActorContext(req);
       const result = await teamMemberService.createTeamMember(req.body, actorContext);
       return ApiResponse.created(res, {
         message: 'Team member created successfully',
@@ -43,12 +50,7 @@ export class TeamMemberController {
 
   async updateTeamMember(req, res, next) {
     try {
-      const actorContext = {
-        actorId: req.user._id,
-        ipAddress: req.auditContext?.ipAddress,
-        userAgent: req.auditContext?.userAgent,
-        requestId: req.id
-      };
+      const actorContext = this._getActorContext(req);
       const member = await teamMemberService.updateTeamMember(req.params.id, req.body, actorContext);
       return ApiResponse.success(res, {
         message: 'Team member updated successfully',
@@ -74,12 +76,7 @@ export class TeamMemberController {
 
   async deleteTeamMember(req, res, next) {
     try {
-      const actorContext = {
-        actorId: req.user._id,
-        ipAddress: req.auditContext?.ipAddress,
-        userAgent: req.auditContext?.userAgent,
-        requestId: req.id
-      };
+      const actorContext = this._getActorContext(req);
       const reason = req.body?.reason || req.query?.reason || '';
       const result = await teamMemberService.deleteTeamMember(req.params.id, actorContext, reason);
       return ApiResponse.success(res, result);
@@ -94,12 +91,7 @@ export class TeamMemberController {
 
   async restoreTeamMember(req, res, next) {
     try {
-      const actorContext = {
-        actorId: req.user._id,
-        ipAddress: req.auditContext?.ipAddress,
-        userAgent: req.auditContext?.userAgent,
-        requestId: req.id
-      };
+      const actorContext = this._getActorContext(req);
       const member = await teamMemberService.restoreTeamMember(req.params.id, actorContext);
       return ApiResponse.success(res, {
         message: 'Team member restored successfully',

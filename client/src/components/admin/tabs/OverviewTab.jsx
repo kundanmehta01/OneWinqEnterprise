@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, MapPin, Users, Image as ImageIcon, Sparkles, Building2 } from 'lucide-react';
+import { Calendar, MapPin, Users, Image as ImageIcon } from 'lucide-react';
 import { useCompanyProfileStore } from '../../../stores/companyProfileStore';
 import { ImageUploadInput } from '../../common/ImageUploadInput';
 

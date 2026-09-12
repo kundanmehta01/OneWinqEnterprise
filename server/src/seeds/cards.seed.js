@@ -1,6 +1,5 @@
 import { Card } from '../modules/cards/card.model.js';
 import { TeamMember } from '../modules/team-members/teamMember.model.js';
-import { EmployeeProfile } from '../modules/employee-profile/employeeProfile.model.js';
 import { logger } from '../config/logger.config.js';
 
 export const seedCards = async () => {

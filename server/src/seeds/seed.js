@@ -33,11 +33,11 @@ const runSeed = async () => {
     // 2. System Roles
     await seedRoles();
 
-    // 3. Departments
-    await seedDepartments();
-
-    // 4. Templates
+    // 3. Templates (Required before Departments for template binding)
     await seedTemplates();
+
+    // 4. Departments (With template bindings)
+    await seedDepartments();
 
     // 5. Organization Settings & Company Profile
     await seedOrganization();

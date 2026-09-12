@@ -13,12 +13,9 @@ import {
   X,
   Sparkles,
   Loader2,
-  Trash2,
   Edit3,
   Ban,
-  UserCheck,
-  Building2,
-  FileText
+  UserCheck
 } from 'lucide-react';
 import { eventApi } from '../../api/eventApi';
 import { departmentApi } from '../../api/departmentApi';

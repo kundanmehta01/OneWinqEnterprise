@@ -6,6 +6,8 @@ import { TeamMember } from '../team-members/teamMember.model.js';
 import { Role } from '../roles/role.model.js';
 import { Department } from '../departments/department.model.js';
 import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
+import { Template } from '../templates/template.model.js';
+import { templateResolverService } from '../templates/templateResolver.service.js';
 import { templateService } from '../templates/template.service.js';
 import { generateRandomToken, hashToken, generateAccessToken, generateRefreshToken } from '../../utils/token.util.js';
 import { hashPassword } from '../../utils/hash.util.js';
@@ -16,6 +18,7 @@ import { emailService } from '../../integrations/email/email.service.js';
 import { eventBus } from '../../events/appEventBus.js';
 import { APP_EVENTS } from '../../constants/events.constant.js';
 import { env } from '../../config/env.config.js';
+import { assertCanAssignRole } from '../../utils/rbacHierarchy.util.js';
 
 class InvitationService {
   async getAllInvitations(query = {}) {
@@ -87,6 +90,9 @@ class InvitationService {
         throw new NotFoundError('Selected role not found', ERROR_CODES.ROLE_NOT_FOUND);
       }
     }
+
+    // Generic Hierarchy & Privilege Escalation Protection
+    assertCanAssignRole(inviterContext, role);
 
     // Verify department if provided
     let department = null;
@@ -230,13 +236,34 @@ class InvitationService {
         joiningDate: new Date()
       });
 
+      // Resolve dynamic template (Role -> Designation -> Department -> Fallback)
+      const inviteRole = invitation.roleId ? await Role.findById(invitation.roleId) : null;
+      const inviteDept = invitation.departmentId ? await Department.findById(invitation.departmentId).populate('templateId') : null;
+      let assignedTemplate = null;
+      const resolved = await templateResolverService.resolveTemplateForMember({
+        role: inviteRole,
+        department: inviteDept,
+        designation: invitation.designation
+      });
+      if (resolved?._id) {
+        assignedTemplate = await Template.findById(resolved._id);
+      } else if (resolved?.category || resolved?.key) {
+        const cat = resolved.category || resolved.key;
+        assignedTemplate = await Template.findOne({
+          $or: [{ category: cat }, { slug: `${cat}-profile` }, { slug: cat }]
+        });
+      }
+      if (!assignedTemplate) {
+        assignedTemplate = defaultTemplate;
+      }
+
       // Create EmployeeProfile for existing user
       const profile = await EmployeeProfile.create({
         memberId: member._id,
         userId: existingUser._id,
         slug,
-        templateId: defaultTemplate._id,
-        templateVersion: defaultTemplate.version,
+        templateId: assignedTemplate._id,
+        templateVersion: assignedTemplate.version || defaultTemplate.version,
         visibility: 'public',
         approvalStatus: 'approved',
         published: {
@@ -346,13 +373,34 @@ class InvitationService {
       joiningDate: new Date()
     });
 
+    // Resolve dynamic template (Role -> Designation -> Department -> Fallback)
+    const inviteRole = invitation.roleId ? await Role.findById(invitation.roleId) : null;
+    const inviteDept = invitation.departmentId ? await Department.findById(invitation.departmentId).populate('templateId') : null;
+    let assignedTemplate = null;
+    const resolved = await templateResolverService.resolveTemplateForMember({
+      role: inviteRole,
+      department: inviteDept,
+      designation: invitation.designation
+    });
+    if (resolved?._id) {
+      assignedTemplate = await Template.findById(resolved._id);
+    } else if (resolved?.category || resolved?.key) {
+      const cat = resolved.category || resolved.key;
+      assignedTemplate = await Template.findOne({
+        $or: [{ category: cat }, { slug: `${cat}-profile` }, { slug: cat }]
+      });
+    }
+    if (!assignedTemplate) {
+      assignedTemplate = defaultTemplate;
+    }
+
     // 3. Create EmployeeProfile
     const profile = await EmployeeProfile.create({
       memberId: member._id,
       userId: user._id,
       slug,
-      templateId: defaultTemplate._id,
-      templateVersion: defaultTemplate.version,
+      templateId: assignedTemplate._id,
+      templateVersion: assignedTemplate.version || defaultTemplate.version,
       visibility: 'public',
       approvalStatus: 'approved',
       published: {

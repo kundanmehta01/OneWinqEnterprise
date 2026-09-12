@@ -5,6 +5,7 @@ export const createDepartmentSchema = z.object({
   description: z.string().max(500).optional().or(z.literal('')),
   headMemberId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Head Member ID').optional().nullable().or(z.literal('')),
   parentDepartmentId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Parent Department ID').optional().nullable().or(z.literal('')),
+  templateId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Template ID').optional().nullable().or(z.literal('')),
   order: z.number().int().optional()
 });
 
@@ -13,6 +14,7 @@ export const updateDepartmentSchema = z.object({
   description: z.string().max(500).optional().or(z.literal('')),
   headMemberId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Head Member ID').optional().nullable().or(z.literal('')),
   parentDepartmentId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Parent Department ID').optional().nullable().or(z.literal('')),
+  templateId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Template ID').optional().nullable().or(z.literal('')),
   order: z.number().int().optional(),
   isActive: z.boolean().optional()
 });

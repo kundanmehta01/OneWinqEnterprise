@@ -147,16 +147,19 @@ const profileDataSchema = new mongoose.Schema(
     phone: { type: String, default: '' },
     workEmail: { type: String, default: '' },
     avatarUrl: { type: String, default: '' },
-    coverUrl: { type: String, default: '' },
     collaborationNote: {
       type: String,
       default: 'Open for collaboration, speaking opportunities and new ideas.'
     },
     overviewStats: {
-      connectionsCount: { type: String, default: '248+' },
-      projectsCount: { type: String, default: '25+' },
-      yearsOfExperience: { type: String, default: '8+' },
-      servicesCount: { type: String, default: '5+' },
+      connectionsCount: { type: String, default: '' },
+      connections: { type: String, default: '' },
+      projectsCount: { type: String, default: '' },
+      projects: { type: String, default: '' },
+      yearsOfExperience: { type: String, default: '' },
+      years: { type: String, default: '' },
+      servicesCount: { type: String, default: '' },
+      services: { type: String, default: '' },
       customMetrics: [
         {
           label: { type: String, default: '' },
@@ -167,6 +170,19 @@ const profileDataSchema = new mongoose.Schema(
     location: {
       city: { type: String, default: '' },
       country: { type: String, default: '' }
+    },
+    about: {
+      title: { type: String, default: '' },
+      introduction: { type: String, default: '' },
+      expertise: [{ type: String }],
+      experienceSummary: { type: String, default: '' }
+    },
+    connectAndContact: {
+      title: { type: String, default: "Let's Connect" },
+      note: { type: String, default: 'Open for collaboration, speaking opportunities and new ideas.' },
+      workEmail: { type: String, default: '' },
+      phone: { type: String, default: '' },
+      ctaButtonText: { type: String, default: 'Connect With Me' }
     },
     experience: [experienceItemSchema],
     journey: [journeyItemSchema],

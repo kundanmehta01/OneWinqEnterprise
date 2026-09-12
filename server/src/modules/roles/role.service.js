@@ -1,10 +1,11 @@
 import { Role } from './role.model.js';
 import { Permission } from '../permissions/permission.model.js';
 import { TeamMember } from '../team-members/teamMember.model.js';
-import { NotFoundError, ConflictError, BadRequestError } from '../../errors/index.js';
+import { NotFoundError, ConflictError, BadRequestError, ForbiddenError } from '../../errors/index.js';
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
 import { eventBus } from '../../events/appEventBus.js';
 import { APP_EVENTS } from '../../constants/events.constant.js';
+import { assertCanDefineRole } from '../../utils/rbacHierarchy.util.js';
 
 class RoleService {
   async getAllRoles({ includeInactive = false } = {}) {
@@ -29,6 +30,9 @@ class RoleService {
   }
 
   async createRole({ name, description, permissions }, actorContext = {}) {
+    // Privilege Escalation Guard
+    assertCanDefineRole(actorContext, permissions);
+
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
     const existingRole = await Role.findOne({ $or: [{ name }, { slug }] });
@@ -71,11 +75,18 @@ class RoleService {
       throw new NotFoundError('Role not found', ERROR_CODES.ROLE_NOT_FOUND);
     }
 
+    if (role.isSystem && !actorContext.isSuperAdmin) {
+      throw new ForbiddenError('Only Super Administrators can modify system roles', ERROR_CODES.INSUFFICIENT_PERMISSIONS);
+    }
+
     if (role.isSystem && updateData.name && updateData.name !== role.name) {
       throw new BadRequestError('Cannot rename system roles', ERROR_CODES.IMMUTABLE_SYSTEM_ROLE);
     }
 
     if (updateData.permissions && updateData.permissions.length > 0) {
+      // Privilege Escalation Guard
+      assertCanDefineRole(actorContext, updateData.permissions);
+
       const validPermissions = await Permission.find({ code: { $in: updateData.permissions } }).select('code').lean();
       const validCodes = new Set(validPermissions.map((p) => p.code));
       const invalid = updateData.permissions.filter((code) => !validCodes.has(code));

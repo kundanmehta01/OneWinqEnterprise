@@ -1,5 +1,4 @@
 import { Template } from './template.model.js';
-import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
 import { NotFoundError, ConflictError, BadRequestError } from '../../errors/index.js';
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
 import { eventBus } from '../../events/appEventBus.js';
@@ -95,8 +94,8 @@ class TemplateService {
       template.isDefault = true;
     }
 
-    // Version history snapshot if layout or sections changed
-    const hasVisualChanges = updateData.layoutConfig || updateData.sectionOrder || updateData.availableSections;
+    // Version history snapshot if layout, sections, or predefined details changed
+    const hasVisualChanges = updateData.layoutConfig || updateData.predefinedDetails || updateData.sectionOrder || updateData.availableSections;
     if (hasVisualChanges) {
       template.versionHistory.push({
         version: template.version,
@@ -113,6 +112,7 @@ class TemplateService {
     if (updateData.description !== undefined) template.description = updateData.description;
     if (updateData.previewImageUrl !== undefined) template.previewImageUrl = updateData.previewImageUrl;
     if (updateData.layoutConfig) template.layoutConfig = { ...template.layoutConfig, ...updateData.layoutConfig };
+    if (updateData.predefinedDetails) template.predefinedDetails = { ...template.predefinedDetails, ...updateData.predefinedDetails };
     if (updateData.availableSections) template.availableSections = updateData.availableSections;
     if (updateData.sectionOrder) template.sectionOrder = updateData.sectionOrder;
     if (updateData.isActive !== undefined) template.isActive = updateData.isActive;

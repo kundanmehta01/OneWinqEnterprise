@@ -47,7 +47,21 @@ const templateSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['founder', 'ceo', 'leadership', 'employee', 'manager', 'custom'],
+      enum: [
+        'founder',
+        'ceo',
+        'leadership',
+        'executive',
+        'employee',
+        'manager',
+        'management',
+        'engineering',
+        'hr',
+        'sales',
+        'marketing',
+        'custom',
+        'company'
+      ],
       default: 'employee',
       index: true
     },
@@ -76,8 +90,19 @@ const templateSchema = new mongoose.Schema(
       fontHeading: { type: String, default: 'Inter' },
       fontBody: { type: String, default: 'Inter' },
       showBadges: { type: Boolean, default: true },
+      showBadge: { type: Boolean, default: true },
+      showQuote: { type: Boolean, default: true },
       showQrCode: { type: Boolean, default: true },
       customCss: { type: String, default: '' }
+    },
+    predefinedDetails: {
+      headline: { type: String, default: '' },
+      bio: { type: String, default: '' },
+      collaborationNote: { type: String, default: '' },
+      ctaButtonText: { type: String, default: 'Get in Touch' },
+      badgeLabel: { type: String, default: '' },
+      quote: { type: String, default: '' },
+      skills: [{ type: String, trim: true }]
     },
     availableSections: [
       {

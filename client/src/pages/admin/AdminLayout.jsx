@@ -14,21 +14,15 @@ import {
   Settings,
   Search,
   Bell,
-  Mail,
   ChevronDown,
   Menu,
   X,
   LogOut,
-  Sparkles,
   Crown,
   User,
   ExternalLink,
   CreditCard,
-  Calendar,
-  Layers,
-  ArrowRight,
-  ShieldAlert,
-  ArrowLeft
+  Calendar
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { GlobalSearchModal } from '../../components/common/GlobalSearchModal';

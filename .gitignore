@@ -71,6 +71,10 @@ test_*.mjs
 test_*.js
 server/test_*.mjs
 server/test_*.js
+data/
+.db_data/
+server/data/
+server/.db_data/
 
 # Work Tracker files
 generate_work_tracker.py

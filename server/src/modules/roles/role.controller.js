@@ -21,14 +21,21 @@ export class RoleController {
     }
   }
 
+  _getActorContext(req) {
+    return {
+      actorId: req.user?._id,
+      isSuperAdmin: req.isSuperAdmin,
+      roleName: req.roleName,
+      permissions: req.permissions,
+      ipAddress: req.auditContext?.ipAddress,
+      userAgent: req.auditContext?.userAgent,
+      requestId: req.id
+    };
+  }
+
   async createRole(req, res, next) {
     try {
-      const actorContext = {
-        actorId: req.user._id,
-        ipAddress: req.auditContext?.ipAddress,
-        userAgent: req.auditContext?.userAgent,
-        requestId: req.id
-      };
+      const actorContext = this._getActorContext(req);
       const role = await roleService.createRole(req.body, actorContext);
       return ApiResponse.created(res, {
         message: 'Role created successfully',
@@ -41,12 +48,7 @@ export class RoleController {
 
   async updateRole(req, res, next) {
     try {
-      const actorContext = {
-        actorId: req.user._id,
-        ipAddress: req.auditContext?.ipAddress,
-        userAgent: req.auditContext?.userAgent,
-        requestId: req.id
-      };
+      const actorContext = this._getActorContext(req);
       const role = await roleService.updateRole(req.params.id, req.body, actorContext);
       return ApiResponse.success(res, {
         message: 'Role updated successfully',
@@ -59,12 +61,7 @@ export class RoleController {
 
   async deleteRole(req, res, next) {
     try {
-      const actorContext = {
-        actorId: req.user._id,
-        ipAddress: req.auditContext?.ipAddress,
-        userAgent: req.auditContext?.userAgent,
-        requestId: req.id
-      };
+      const actorContext = this._getActorContext(req);
       const result = await roleService.deleteRole(req.params.id, actorContext);
       return ApiResponse.success(res, result);
     } catch (error) {

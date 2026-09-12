@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2, Eye, EyeOff, Layers, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, Layers } from 'lucide-react';
 import { useCompanyProfileStore } from '../../../stores/companyProfileStore';
 import { ImageUploadInput } from '../../common/ImageUploadInput';
 

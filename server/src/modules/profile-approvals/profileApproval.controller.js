@@ -15,6 +15,15 @@ export class ProfileApprovalController {
     }
   }
 
+  async getStats(req, res, next) {
+    try {
+      const stats = await profileApprovalService.getApprovalStats();
+      return ApiResponse.success(res, { data: stats });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getApprovalById(req, res, next) {
     try {
       const approval = await profileApprovalService.getApprovalById(req.params.id);

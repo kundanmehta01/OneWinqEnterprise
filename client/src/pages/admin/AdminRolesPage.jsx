@@ -4,7 +4,6 @@ import {
   Shield,
   ShieldCheck,
   UserX,
-  SlidersHorizontal,
   Search,
   Plus,
   Check,
@@ -14,8 +13,7 @@ import {
   Loader2,
   Trash2,
   AlertCircle,
-  CheckCircle2,
-  Power
+  CheckCircle2
 } from 'lucide-react';
 import { roleApi } from '../../api/roleApi';
 import { KpiCard } from '../../components/common/KpiCard';

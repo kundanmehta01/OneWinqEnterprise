@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wifi, Battery, Signal, ChevronLeft, Menu, Sparkles, ShieldCheck } from 'lucide-react';
+import { Wifi, Battery, Signal, ChevronLeft, Menu, Sparkles } from 'lucide-react';
 import { usePreviewStore } from '../../stores/previewStore';
 import { Screen1Overview } from './screens/Screen1Overview';
 import { Screen2About } from './screens/Screen2About';
@@ -99,7 +99,7 @@ export const CompanyMobileFrame = ({ profile, className = '', isStandalone = fal
           </div>
 
           {/* Bottom Dock Navigation */}
-          <CompanyDockNav />
+          <CompanyDockNav theme="dark" />
 
           {/* Home Indicator Bar */}
           <div className="pb-1.5 pt-0.5 bg-[#04060f] flex justify-center">

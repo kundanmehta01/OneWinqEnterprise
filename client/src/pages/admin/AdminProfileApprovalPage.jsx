@@ -6,13 +6,10 @@ import {
   XCircle,
   Users,
   Search,
-  SlidersHorizontal,
   Eye,
   X,
   Calendar,
-  ArrowRight,
-  Loader2,
-  AlertCircle
+  Loader2
 } from 'lucide-react';
 import { approvalApi } from '../../api/approvalApi';
 import { KpiCard } from '../../components/common/KpiCard';
@@ -210,6 +207,14 @@ export const AdminProfileApprovalPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const { data: statsResponse } = useQuery({
+    queryKey: ['admin-approval-stats'],
+    queryFn: async () => {
+      const res = await approvalApi.getStats();
+      return res;
+    }
+  });
+
   const { data: approvalsResponse, isLoading } = useQuery({
     queryKey: ['admin-approvals', activeTab, page, pageSize, search],
     queryFn: async () => {
@@ -244,17 +249,12 @@ export const AdminProfileApprovalPage = () => {
     return name.toLowerCase().includes(q) || email.toLowerCase().includes(q) || designation.toLowerCase().includes(q);
   });
 
-  const counts = approvalsResponse?.meta?.counts || {
-    pending: rawList.filter((a) => a.status === 'pending').length,
-    approved: rawList.filter((a) => a.status === 'approved').length,
-    rejected: rawList.filter((a) => a.status === 'rejected').length,
-    total: rawList.length
-  };
+  const statsCounts = statsResponse?.data || statsResponse || approvalsResponse?.meta?.counts;
 
-  const pendingCount = counts.pending ?? 0;
-  const approvedCount = counts.approved ?? 0;
-  const rejectedCount = counts.rejected ?? 0;
-  const totalCount = counts.total ?? rawList.length;
+  const pendingCount = statsCounts?.pending ?? rawList.filter((a) => a.status === 'pending').length;
+  const approvedCount = statsCounts?.approved ?? rawList.filter((a) => a.status === 'approved').length;
+  const rejectedCount = statsCounts?.rejected ?? rawList.filter((a) => a.status === 'rejected').length;
+  const totalCount = statsCounts?.total ?? (pendingCount + approvedCount + rejectedCount);
 
   const approvalMutation = useMutation({
     mutationFn: async ({ id, status, reviewNote }) => {
@@ -263,6 +263,7 @@ export const AdminProfileApprovalPage = () => {
     },
     onSuccess: (res, vars) => {
       queryClient.invalidateQueries({ queryKey: ['admin-approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-approval-stats'] });
       setActionMessage(`Request successfully marked as ${vars.status}!`);
       setTimeout(() => setActionMessage(null), 3500);
       setSelectedApproval(null);

@@ -1,5 +1,6 @@
 import { Department } from './department.model.js';
 import { TeamMember } from '../team-members/teamMember.model.js';
+import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
 import { NotFoundError, ConflictError, BadRequestError } from '../../errors/index.js';
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
 import { eventBus } from '../../events/appEventBus.js';
@@ -18,6 +19,7 @@ class DepartmentService {
     const departments = await Department.find(filter)
       .populate('headMemberId', 'name designation employeeId')
       .populate('parentDepartmentId', 'name slug')
+      .populate('templateId', 'name slug category layoutConfig')
       .sort({ order: 1, name: 1 })
       .lean();
 
@@ -42,6 +44,7 @@ class DepartmentService {
     const department = await Department.findById(id)
       .populate('headMemberId', 'name designation employeeId')
       .populate('parentDepartmentId', 'name slug')
+      .populate('templateId', 'name slug category layoutConfig')
       .lean();
 
     if (!department) {
@@ -62,11 +65,13 @@ class DepartmentService {
 
     const headMemberId = (data.headMemberId || data.headId) ? (data.headMemberId || data.headId) : null;
     const parentDepartmentId = data.parentDepartmentId ? data.parentDepartmentId : null;
+    const templateId = data.templateId ? data.templateId : null;
 
     const department = await Department.create({
       ...data,
       headMemberId,
       parentDepartmentId,
+      templateId,
       slug
     });
 
@@ -109,10 +114,35 @@ class DepartmentService {
     if (updateData.parentDepartmentId !== undefined) {
       department.parentDepartmentId = updateData.parentDepartmentId ? updateData.parentDepartmentId : null;
     }
+    if (updateData.templateId !== undefined) {
+      department.templateId = updateData.templateId ? updateData.templateId : null;
+    }
     if (updateData.order !== undefined) department.order = updateData.order;
     if (updateData.isActive !== undefined) department.isActive = updateData.isActive;
 
     await department.save();
+
+    // Cascading synchronization: when department template changes, update all active members in this department
+    if (updateData.templateId !== undefined && department.templateId) {
+      try {
+        const membersInDept = await TeamMember.find({
+          departmentId: id,
+          isArchived: false,
+          status: { $ne: 'archived' }
+        }).select('profileId');
+
+        const profileIds = membersInDept.map((m) => m.profileId).filter(Boolean);
+        if (profileIds.length > 0) {
+          await EmployeeProfile.updateMany(
+            { _id: { $in: profileIds } },
+            { templateId: department.templateId }
+          );
+        }
+      } catch (cascadeErr) {
+        // Non-blocking cascade failure logging
+        console.error('[DepartmentService] Failed to cascade template update to profiles:', cascadeErr);
+      }
+    }
 
     eventBus.emitEvent(APP_EVENTS.DEPARTMENT_UPDATED, {
       actorId: actorContext.actorId,

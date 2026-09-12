@@ -3,15 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Bell,
   CheckCheck,
-  Check,
   X,
   Clock,
-  Sparkles,
   ShieldCheck,
   Calendar,
   CreditCard,
   UserCheck,
-  AlertCircle,
   Loader2
 } from 'lucide-react';
 import { notificationApi } from '../../api/notificationApi';

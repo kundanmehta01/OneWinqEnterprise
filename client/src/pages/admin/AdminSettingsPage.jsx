@@ -6,10 +6,7 @@ import {
   Lock,
   Globe,
   CheckCircle2,
-  Save,
-  Building,
-  KeyRound,
-  Bell
+  Save
 } from 'lucide-react';
 import { settingsApi } from '../../api/settingsApi';
 
