@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, Lock, Mail, ShieldCheck, ArrowRight, UserCheck, AlertCircle, Loader2 } from 'lucide-react';
+import { Sparkles, Lock, Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
 export const AdminLoginPage = () => {

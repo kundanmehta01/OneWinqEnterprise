@@ -6,8 +6,7 @@ import { validate } from '../../middlewares/validate.middleware.js';
 import {
   createEventSchema,
   updateEventSchema,
-  eventIdParamSchema,
-  eventQuerySchema
+  eventIdParamSchema
 } from './event.validation.js';
 import { PERMISSIONS } from '../../constants/permissions.constant.js';
 

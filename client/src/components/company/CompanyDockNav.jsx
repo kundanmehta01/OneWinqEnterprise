@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Search, Plus, UserCheck, Menu, Sparkles } from 'lucide-react';
+import { Home, Search, Plus, UserCheck, Menu } from 'lucide-react';
 import { usePreviewStore } from '../../stores/previewStore';
 
 export const CompanyDockNav = () => {

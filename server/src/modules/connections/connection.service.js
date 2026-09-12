@@ -1,7 +1,6 @@
 import { Connection } from './connection.model.js';
 import { User } from '../users/user.model.js';
 import { TeamMember } from '../team-members/teamMember.model.js';
-import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
 import { notificationService } from '../notifications/notification.service.js';
 import { eventBus } from '../../events/appEventBus.js';
 import { APP_EVENTS } from '../../constants/events.constant.js';
@@ -160,7 +159,7 @@ class ConnectionService {
 
     await notificationService.createNotification({
       recipientId,
-      type: 'connection_request',
+      type: 'CONNECTION_REQUESTED',
       title: 'New Connection Request',
       message: `${requesterName} sent you a connection request.`,
       data: {
@@ -197,7 +196,7 @@ class ConnectionService {
 
     await notificationService.createNotification({
       recipientId: connection.requesterId,
-      type: 'connection_accepted',
+      type: 'CONNECTION_ACCEPTED',
       title: 'Connection Accepted',
       message: `${recipientName} accepted your connection request.`,
       data: {
@@ -239,11 +238,14 @@ class ConnectionService {
     return { message: 'Connection request declined.' };
   }
 
-  async cancelConnectionRequest(connectionId, requesterId) {
+  async cancelConnectionRequest(idOrRecipientId, requesterId) {
     const connection = await Connection.findOneAndDelete({
-      _id: connectionId,
       requesterId,
-      status: 'pending'
+      status: 'pending',
+      $or: [
+        { _id: idOrRecipientId },
+        { recipientId: idOrRecipientId }
+      ]
     });
 
     if (!connection) {

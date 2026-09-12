@@ -14,13 +14,7 @@ import {
   ArrowRight,
   Send,
   Layers,
-  Image as ImageIcon,
   Camera,
-  Edit3,
-  Plus,
-  Trash2,
-  Check,
-  UploadCloud,
   X
 } from 'lucide-react';
 import { ImageUploadInput } from '../../common/ImageUploadInput';

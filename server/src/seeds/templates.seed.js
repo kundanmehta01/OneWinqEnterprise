@@ -65,6 +65,36 @@ export const seedTemplates = async () => {
       version: 1
     },
     {
+      name: 'Product Profile',
+      slug: 'product-profile',
+      category: 'product',
+      description: 'Roadmap & feature execution template for product managers, product owners and tech leads',
+      layoutConfig: {
+        headerStyle: 'cover_left',
+        colorPalette: {
+          primary: '#6366f1',
+          secondary: '#312e81',
+          accent: '#818cf8',
+          background: '#0f172a',
+          text: '#f8fafc'
+        },
+        fontHeading: 'Outfit',
+        fontBody: 'Inter',
+        showBadges: true,
+        showQrCode: true
+      },
+      availableSections: [
+        { sectionKey: 'projects', title: 'Shipped Initiatives & Roadmaps', isRequired: true, defaultOrder: 1 },
+        { sectionKey: 'skills', title: 'Product Competencies & Methodologies', isRequired: true, defaultOrder: 2 },
+        { sectionKey: 'experience', title: 'Product Leadership Journey', isRequired: true, defaultOrder: 3 },
+        { sectionKey: 'socialLinks', title: 'Product & Professional Links', isRequired: true, defaultOrder: 4 }
+      ],
+      sectionOrder: ['projects', 'skills', 'experience', 'socialLinks'],
+      isDefault: false,
+      isActive: true,
+      version: 1
+    },
+    {
       name: 'Employee Profile',
       slug: 'employee-profile',
       category: 'employee',
@@ -204,6 +234,126 @@ export const seedTemplates = async () => {
       sectionOrder: ['skills'],
       isDefault: false,
       isActive: false,
+      version: 1
+    },
+    {
+      name: 'Engineering Profile',
+      slug: 'engineering-profile',
+      category: 'engineering',
+      description: 'Technical template for software engineers, devops and system architects',
+      layoutConfig: {
+        headerStyle: 'centered',
+        colorPalette: {
+          primary: '#10b981',
+          secondary: '#065f46',
+          accent: '#34d399',
+          background: '#0f172a',
+          text: '#f8fafc'
+        },
+        fontHeading: 'Inter',
+        fontBody: 'Inter',
+        showBadges: true,
+        showQrCode: true
+      },
+      availableSections: [
+        { sectionKey: 'skills', title: 'Tech Stack & Core Languages', isRequired: true, defaultOrder: 1 },
+        { sectionKey: 'projects', title: 'Featured Repositories & Architecture', isRequired: true, defaultOrder: 2 },
+        { sectionKey: 'experience', title: 'Engineering History', isRequired: true, defaultOrder: 3 },
+        { sectionKey: 'socialLinks', title: 'Code & Professional Links', isRequired: true, defaultOrder: 4 }
+      ],
+      sectionOrder: ['skills', 'projects', 'experience', 'socialLinks'],
+      isDefault: false,
+      isActive: true,
+      version: 1
+    },
+    {
+      name: 'Human Resources Profile',
+      slug: 'hr-profile',
+      category: 'hr',
+      description: 'People-first corporate template for HR, culture leaders and talent acquisition',
+      layoutConfig: {
+        headerStyle: 'centered',
+        colorPalette: {
+          primary: '#0891b2',
+          secondary: '#164e63',
+          accent: '#06b6d4',
+          background: '#ffffff',
+          text: '#0f172a'
+        },
+        fontHeading: 'Outfit',
+        fontBody: 'Inter',
+        showBadges: true,
+        showQrCode: true
+      },
+      availableSections: [
+        { sectionKey: 'bio', title: 'People Philosophy', isRequired: true, defaultOrder: 1 },
+        { sectionKey: 'experience', title: 'HR & People Operations', isRequired: true, defaultOrder: 2 },
+        { sectionKey: 'skills', title: 'Talent & Culture Competencies', isRequired: true, defaultOrder: 3 },
+        { sectionKey: 'socialLinks', title: 'Connect & Network', isRequired: true, defaultOrder: 4 }
+      ],
+      sectionOrder: ['bio', 'experience', 'skills', 'socialLinks'],
+      isDefault: false,
+      isActive: true,
+      version: 1
+    },
+    {
+      name: 'Enterprise Sales Profile',
+      slug: 'sales-profile',
+      category: 'sales',
+      description: 'High-conversion template for account executives, revenue leaders and dealmakers',
+      layoutConfig: {
+        headerStyle: 'cover_left',
+        colorPalette: {
+          primary: '#2563eb',
+          secondary: '#1e3a8a',
+          accent: '#3b82f6',
+          background: '#ffffff',
+          text: '#0f172a'
+        },
+        fontHeading: 'Outfit',
+        fontBody: 'Inter',
+        showBadges: true,
+        showQrCode: true
+      },
+      availableSections: [
+        { sectionKey: 'achievements', title: 'Revenue & Quota Milestones', isRequired: true, defaultOrder: 1 },
+        { sectionKey: 'experience', title: 'Commercial Leadership', isRequired: true, defaultOrder: 2 },
+        { sectionKey: 'projects', title: 'Key Enterprise Deals', isRequired: true, defaultOrder: 3 },
+        { sectionKey: 'socialLinks', title: 'Direct Meeting & Booking Links', isRequired: true, defaultOrder: 4 }
+      ],
+      sectionOrder: ['achievements', 'experience', 'projects', 'socialLinks'],
+      isDefault: false,
+      isActive: true,
+      version: 1
+    },
+    {
+      name: 'Marketing & Creative Profile',
+      slug: 'marketing-profile',
+      category: 'marketing',
+      description: 'Visual storytelling template for brand strategists, growth leads and designers',
+      layoutConfig: {
+        headerStyle: 'cover_left',
+        colorPalette: {
+          primary: '#ec4899',
+          secondary: '#831843',
+          accent: '#f472b6',
+          background: '#ffffff',
+          text: '#0f172a'
+        },
+        fontHeading: 'Outfit',
+        fontBody: 'Inter',
+        showBadges: true,
+        showQrCode: true
+      },
+      availableSections: [
+        { sectionKey: 'projects', title: 'Creative Campaigns & Portfolios', isRequired: true, defaultOrder: 1 },
+        { sectionKey: 'skills', title: 'Creative & Growth Tooling', isRequired: true, defaultOrder: 2 },
+        { sectionKey: 'experience', title: 'Brand & Creative Journey', isRequired: true, defaultOrder: 3 },
+        { sectionKey: 'socialLinks', title: 'Portfolio & Channels', isRequired: true, defaultOrder: 4 }
+      ],
+      sectionOrder: ['projects', 'skills', 'experience', 'socialLinks'],
+      isDefault: false,
+      isActive: true,
       version: 1
     }
   ];

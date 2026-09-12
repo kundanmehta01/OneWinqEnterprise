@@ -32,7 +32,7 @@ import { TeamDepartmentsPage } from './pages/admin/TeamDepartmentsPage';
 import { UserEventsPage } from './pages/user/UserEventsPage';
 import { EmployeeSettingsPage } from './pages/user/EmployeeSettingsPage';
 
-import { PERMISSIONS, ADMIN_PERMISSIONS, hasAdminAccess } from './utils/permissions';
+import { hasAdminAccess } from './utils/permissions';
 
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
@@ -112,12 +112,12 @@ export const App = () => {
       <Route path="/company" element={<PublicCompanyPage />} />
       <Route path="/p/company" element={<PublicCompanyPage />} />
 
-      {/* 2. Public Employee Digital Profile & NFC Tap Flow */}
+      {/* 2. Public Employee Digital Profile & NFC Tap Flow — canonical: /p/:slug */}
       <Route path="/p/:slug" element={<PublicEmployeeProfilePage />} />
       <Route path="/profile/:slug" element={<PublicEmployeeProfilePage />} />
       <Route path="/profiles/:slug" element={<PublicEmployeeProfilePage />} />
 
-      {/* 2.1 Public Smart / NFC Card Tap Resolver */}
+      {/* 2.1 Public Smart / NFC Card Tap Resolver — canonical: /c/:cardUid */}
       <Route path="/c/:cardUid" element={<PublicCardTapPage />} />
       <Route path="/card/:cardUid" element={<PublicCardTapPage />} />
       <Route path="/cards/:cardUid" element={<PublicCardTapPage />} />
@@ -194,11 +194,7 @@ export const App = () => {
         />
         <Route
           path="organization"
-          element={
-            <AdminPermissionRoute permission={['company_profile.read', 'company_profile.update']}>
-              <CompanyProfileStudioPage />
-            </AdminPermissionRoute>
-          }
+          element={<Navigate to="/admin/company-profile" replace />}
         />
         <Route
           path="team"

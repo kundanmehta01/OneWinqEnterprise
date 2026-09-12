@@ -17,7 +17,6 @@ import {
   LogOut,
   ExternalLink,
   ShieldAlert,
-  Sparkles,
   ArrowRight
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';

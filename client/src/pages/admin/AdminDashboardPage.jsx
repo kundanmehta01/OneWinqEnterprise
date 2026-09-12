@@ -5,17 +5,12 @@ import {
   Users,
   Building2,
   FileText,
-  Trophy,
-  Megaphone,
   Calendar,
   ChevronDown,
-  ArrowRight,
   FolderTree,
   FileEdit,
   ShieldCheck,
-  Send,
-  Sparkles,
-  CheckCircle2
+  Send
 } from 'lucide-react';
 import { dashboardApi } from '../../api/dashboardApi';
 import { KpiCard } from '../../components/common/KpiCard';

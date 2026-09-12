@@ -66,8 +66,8 @@ export const connectDB = async (uri = env.MONGODB_URI) => {
 
         await seedPermissions();
         await seedRoles();
-        await seedDepartments();
         await seedTemplates();
+        await seedDepartments();
         await seedOrganization();
         await seedSuperAdmin();
         await seedSampleMembers();

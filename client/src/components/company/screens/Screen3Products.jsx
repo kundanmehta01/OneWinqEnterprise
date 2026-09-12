@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, SmartphoneNfc, Bot, Layout, ArrowLeft, ArrowRight, Package, Plus, Trash2, Camera, Edit3, X, UploadCloud } from 'lucide-react';
+import { CreditCard, SmartphoneNfc, Bot, Layout, ArrowLeft, ArrowRight, Package, Plus, Trash2, Camera, X, UploadCloud } from 'lucide-react';
 import { ImageUploadInput } from '../../common/ImageUploadInput';
 
 export const Screen3Products = ({

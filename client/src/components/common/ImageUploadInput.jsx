@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
   UploadCloud,
-  Image as ImageIcon,
   Link as LinkIcon,
   X,
   CheckCircle2,

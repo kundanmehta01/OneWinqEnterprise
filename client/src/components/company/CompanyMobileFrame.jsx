@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wifi, Battery, Signal, ChevronLeft, Menu, Sparkles, ShieldCheck } from 'lucide-react';
+import { Wifi, Battery, Signal, ChevronLeft, Menu, Sparkles } from 'lucide-react';
 import { usePreviewStore } from '../../stores/previewStore';
 import { Screen1Overview } from './screens/Screen1Overview';
 import { Screen2About } from './screens/Screen2About';

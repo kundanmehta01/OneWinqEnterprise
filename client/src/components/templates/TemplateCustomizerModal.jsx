@@ -2,23 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Palette,
-  Sliders,
-  Type,
-  Sparkles,
   Plus,
   X,
   Check,
-  RotateCcw,
   Layout,
   Eye,
   Loader2,
   Tag,
-  MessageSquare,
-  Bookmark,
-  Building2,
-  ChevronRight,
   ShieldCheck,
-  QrCode,
   ToggleLeft,
   ToggleRight,
   Quote

@@ -41,6 +41,13 @@ router.patch(
   templateController.updateTemplate.bind(templateController)
 );
 
+router.put(
+  '/:id',
+  requirePermission(PERMISSIONS.TEMPLATE_UPDATE),
+  validate({ params: templateIdParamSchema, body: updateTemplateSchema }),
+  templateController.updateTemplate.bind(templateController)
+);
+
 router.post(
   '/:id/duplicate',
   requirePermission(PERMISSIONS.TEMPLATE_CREATE),

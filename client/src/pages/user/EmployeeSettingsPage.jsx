@@ -8,10 +8,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  LogOut,
-  Lock,
-  Eye,
-  Check
+  LogOut
 } from 'lucide-react';
 import { userSettingsApi } from '../../api/userSettingsApi';
 import { authApi } from '../../api/authApi';

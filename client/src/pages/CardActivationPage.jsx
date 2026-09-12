@@ -2,15 +2,12 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
-  CreditCard,
   CheckCircle2,
   AlertTriangle,
   Lock,
   ArrowRight,
   Sparkles,
   ShieldCheck,
-  User,
-  Building2,
   Loader2,
   LogOut,
   LogIn,

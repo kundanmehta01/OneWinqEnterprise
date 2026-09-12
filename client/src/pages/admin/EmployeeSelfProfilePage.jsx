@@ -3,38 +3,29 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   User,
   Sparkles,
-  ShieldCheck,
   Eye,
   Send,
   Save,
   QrCode,
-  Share2,
   Copy,
   CheckCircle2,
   AlertCircle,
   Briefcase,
-  GraduationCap,
   Layers,
   Globe,
   Plus,
   Trash2,
-  ExternalLink,
-  MapPin,
-  Mail,
   Phone,
-  Calendar,
   Award,
-  TrendingUp,
   X,
   Loader2,
-  FileText,
   Clock,
-  Check
+  Check,
+  Building2
 } from 'lucide-react';
 import { userProfileApi } from '../../api/userProfileApi';
 import { ImageUploadInput } from '../../components/common/ImageUploadInput';
 import { useAuthStore } from '../../stores/authStore';
-import { Building2 } from 'lucide-react';
 import { TemplateRenderer } from '../../components/templates/TemplateRenderer';
 
 export const EmployeeSelfProfilePage = () => {

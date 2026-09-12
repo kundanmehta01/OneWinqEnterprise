@@ -23,14 +23,21 @@ export class InvitationController {
     }
   }
 
+  _getInviterContext(req) {
+    return {
+      actorId: req.user?._id,
+      isSuperAdmin: req.isSuperAdmin,
+      roleName: req.roleName,
+      permissions: req.permissions,
+      ipAddress: req.auditContext?.ipAddress,
+      userAgent: req.auditContext?.userAgent,
+      requestId: req.id
+    };
+  }
+
   async createInvitation(req, res, next) {
     try {
-      const inviterContext = {
-        actorId: req.user._id,
-        ipAddress: req.auditContext?.ipAddress,
-        userAgent: req.auditContext?.userAgent,
-        requestId: req.id
-      };
+      const inviterContext = this._getInviterContext(req);
       const invitation = await invitationService.createInvitation(req.body, inviterContext);
       return ApiResponse.created(res, {
         message: `Invitation successfully sent to ${req.body.email}`,

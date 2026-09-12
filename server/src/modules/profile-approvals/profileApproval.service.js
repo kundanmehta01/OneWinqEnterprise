@@ -49,6 +49,20 @@ class ProfileApprovalService {
     };
   }
 
+  async getApprovalStats() {
+    const [pendingCount, approvedCount, rejectedCount] = await Promise.all([
+      ProfileApproval.countDocuments({ status: 'pending' }),
+      ProfileApproval.countDocuments({ status: 'approved' }),
+      ProfileApproval.countDocuments({ status: 'rejected' })
+    ]);
+    return {
+      pending: pendingCount,
+      approved: approvedCount,
+      rejected: rejectedCount,
+      total: pendingCount + approvedCount + rejectedCount
+    };
+  }
+
   async getApprovalById(id) {
     const approval = await ProfileApproval.findById(id)
       .populate({

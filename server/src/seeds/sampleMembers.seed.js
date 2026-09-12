@@ -5,8 +5,6 @@ import { Department } from '../modules/departments/department.model.js';
 import { EmployeeProfile } from '../modules/employee-profile/employeeProfile.model.js';
 import { Template } from '../modules/templates/template.model.js';
 import { ProfileApproval } from '../modules/profile-approvals/profileApproval.model.js';
-import { AnalyticsEvent } from '../modules/analytics/analyticsEvent.model.js';
-import { Connection } from '../modules/connections/connection.model.js';
 import { hashPassword } from '../utils/hash.util.js';
 import { logger } from '../config/logger.config.js';
 
@@ -34,6 +32,7 @@ export const seedSampleMembers = async () => {
   const defaultTemplate = (await Template.findOne({ slug: 'employee-profile' })) || (await Template.findOne({ isDefault: true }));
   const execTemplate = (await Template.findOne({ slug: 'executive-profile' })) || defaultTemplate;
   const mgrTemplate = (await Template.findOne({ slug: 'manager-profile' })) || defaultTemplate;
+  const prodTemplate = (await Template.findOne({ slug: 'product-profile' })) || defaultTemplate;
 
   const defaultPasswordHash = await hashPassword('Member@2026!');
 
@@ -233,7 +232,7 @@ export const seedSampleMembers = async () => {
       joinedDate: new Date('2024-02-15'),
       avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop',
       cover: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=400&fit=crop',
-      templateId: mgrTemplate?._id,
+      templateId: prodTemplate?._id,
       headline: 'VP of Product | Ex-Microsoft | Enterprise SaaS Strategy, Roadmaps & Growth',
       bio: 'Leading product vision, customer discovery, and telemetry-driven feature iterations for OneWinq enterprise identity platforms.',
       skills: [
@@ -280,7 +279,7 @@ export const seedSampleMembers = async () => {
       joinedDate: new Date('2024-03-20'),
       avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop',
       cover: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&h=400&fit=crop',
-      templateId: defaultTemplate?._id,
+      templateId: prodTemplate?._id,
       headline: 'Technical Product Manager | API Integrations, Developer Experience & Webhooks',
       bio: 'Bridging engineering capabilities with enterprise business requirements. Championing developer API experiences and ecosystem integrations.',
       skills: [

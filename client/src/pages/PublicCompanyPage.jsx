@@ -1,22 +1,14 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Sparkles,
-  ShieldCheck,
   Menu,
   X,
   Lock,
-  ArrowRight,
-  Phone,
-  Mail,
-  MapPin,
-  ChevronRight,
-  Smartphone,
-  ExternalLink,
+  ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { companyApi } from '../api/companyApi';
-import { usePreviewStore, SCREEN_NAMES } from '../stores/previewStore';
+import { usePreviewStore } from '../stores/previewStore';
 import { MediaLightboxModal } from '../components/company/MediaLightboxModal';
 import { Screen1Overview } from '../components/company/screens/Screen1Overview';
 import { Screen2About } from '../components/company/screens/Screen2About';

@@ -5,7 +5,6 @@ import {
   UserPlus,
   UserCheck,
   Search,
-  Filter,
   CheckCircle2,
   AlertCircle,
   Clock,
@@ -15,7 +14,6 @@ import {
   Send,
   Loader2,
   Trash2,
-  Sparkles,
   Building2
 } from 'lucide-react';
 import { connectionApi } from '../../api/connectionApi';
@@ -143,6 +141,7 @@ export const ColleagueNetworkPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['network-people'] });
       queryClient.invalidateQueries({ queryKey: ['outgoing-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
       setSelectedRecipient(null);
       setConnectionNote('');
       showToast('success', 'Connection request sent!');
@@ -157,6 +156,8 @@ export const ColleagueNetworkPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incoming-requests'] });
       queryClient.invalidateQueries({ queryKey: ['my-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['network-people'] });
+      queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
       showToast('success', 'Connection accepted! You are now connected.');
     }
   });
@@ -165,6 +166,8 @@ export const ColleagueNetworkPage = () => {
     mutationFn: (connectionId) => connectionApi.declineRequest(connectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incoming-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['network-people'] });
+      queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
       showToast('success', 'Connection declined.');
     }
   });
@@ -173,7 +176,12 @@ export const ColleagueNetworkPage = () => {
     mutationFn: (connectionId) => connectionApi.cancelRequest(connectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['outgoing-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['network-people'] });
+      queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
       showToast('success', 'Connection request cancelled.');
+    },
+    onError: (err) => {
+      showToast('error', err?.response?.data?.message || 'Failed to cancel request.');
     }
   });
 
@@ -322,8 +330,9 @@ export const ColleagueNetworkPage = () => {
                   person.avatarUrl ||
                   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&fit=crop';
                 const headline = person.profileId?.published?.headline || person.designation || 'Team Member';
-                const isConnected = person.connectionStatus === 'accepted';
-                const isPending = person.connectionStatus === 'pending';
+                const isConnected = person.connectionStatus === 'accepted' || person.connectionStatus === 'connected';
+                const isPendingSent = person.connectionStatus === 'pending_sent' || person.connectionStatus === 'pending';
+                const isPendingReceived = person.connectionStatus === 'pending_received';
 
                 return (
                   <div
@@ -369,14 +378,35 @@ export const ColleagueNetworkPage = () => {
                         <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl">
                           <Check className="w-3.5 h-3.5" /> Connected
                         </span>
-                      ) : isPending ? (
-                        <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1 rounded-xl">
-                          Pending
-                        </span>
+                      ) : isPendingSent ? (
+                        <button
+                          onClick={() => cancelRequestMutation.mutate(person.connectionId || person.userId || person._id)}
+                          disabled={cancelRequestMutation.isPending}
+                          className="group flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-rose-50 text-amber-700 hover:text-rose-700 border border-amber-200 hover:border-rose-200 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+                          title="Click to cancel connection request"
+                        >
+                          <span className="flex items-center gap-1.5 group-hover:hidden">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Sent</span>
+                          </span>
+                          <span className="hidden items-center gap-1.5 group-hover:flex text-rose-600">
+                            <X className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Cancel</span>
+                          </span>
+                        </button>
+                      ) : isPendingReceived ? (
+                        <button
+                          onClick={() => acceptRequestMutation.mutate(person.connectionId)}
+                          disabled={acceptRequestMutation.isPending}
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Accept</span>
+                        </button>
                       ) : (
                         <button
                           onClick={() => setSelectedRecipient(person)}
-                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs"
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
                         >
                           <UserPlus className="w-3.5 h-3.5" />
                           <span>Connect</span>

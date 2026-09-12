@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocation, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
-  Sparkles,
   Building2,
   Save,
   RotateCcw,
@@ -13,7 +12,6 @@ import {
   ChevronRight,
   Menu,
   X,
-  Lock,
   Edit3
 } from 'lucide-react';
 import { companyApi } from '../../api/companyApi';

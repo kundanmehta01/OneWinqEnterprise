@@ -32,6 +32,12 @@ const departmentSchema = new mongoose.Schema(
       default: null,
       index: true
     },
+    templateId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Template',
+      default: null,
+      index: true
+    },
     order: {
       type: Number,
       default: 0

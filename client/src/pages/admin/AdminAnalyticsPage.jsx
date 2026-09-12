@@ -1,19 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  BarChart2,
   Calendar,
   Download,
   Eye,
-  Share2,
   QrCode,
   Link as LinkIcon,
   Users,
-  ChevronDown,
-  Info,
-  TrendingUp,
-  Loader2,
-  ArrowUpRight
+  Info
 } from 'lucide-react';
 import { analyticsApi } from '../../api/analyticsApi';
 import { KpiCard } from '../../components/common/KpiCard';
@@ -74,7 +68,7 @@ export const AdminAnalyticsPage = () => {
     return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   }, [selectedRange]);
 
-  const filterPills = ['Overview', 'Profile Views', 'Profile Shares', 'QR Scans', 'Link Clicks'];
+  const filterPills = ['Overview', 'Profile Views', 'QR Scans', 'Link Clicks'];
 
   // Calculate SVG Trend points
   const maxTrendViews = Math.max(1, ...trends.map((t) => t.views || 0));
@@ -176,8 +170,8 @@ export const AdminAnalyticsPage = () => {
         ))}
       </div>
 
-      {/* 3. 5 Dynamic KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* 3. 4 Dynamic KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           icon={Eye}
           iconBg="bg-indigo-50 text-indigo-600"
@@ -186,19 +180,6 @@ export const AdminAnalyticsPage = () => {
           trend={trends.length > 0 ? `${trends[trends.length - 1]?.views || 0} today` : '0'}
           trendType="up"
           trendLabel="in selected window"
-          sparklineData={trends.map((t) => t.views || 0)}
-          sparklineColor="#6366f1"
-        />
-        <KpiCard
-          icon={Share2}
-          iconBg="bg-emerald-50 text-emerald-600"
-          title="Profile Shares"
-          value={kpis.totalShares.toLocaleString()}
-          trend={trends.length > 0 ? `${trends[trends.length - 1]?.shares || 0} today` : '0'}
-          trendType="up"
-          trendLabel="in selected window"
-          sparklineData={trends.map((t) => t.shares || 0)}
-          sparklineColor="#10b981"
         />
         <KpiCard
           icon={QrCode}
@@ -208,8 +189,6 @@ export const AdminAnalyticsPage = () => {
           trend={trends.length > 0 ? `${trends[trends.length - 1]?.scans || 0} today` : '0'}
           trendType="up"
           trendLabel="in selected window"
-          sparklineData={trends.map((t) => t.scans || 0)}
-          sparklineColor="#f59e0b"
         />
         <KpiCard
           icon={LinkIcon}
@@ -219,8 +198,6 @@ export const AdminAnalyticsPage = () => {
           trend={trends.length > 0 ? `${trends[trends.length - 1]?.clicks || 0} today` : '0'}
           trendType="up"
           trendLabel="in selected window"
-          sparklineData={trends.map((t) => t.clicks || 0)}
-          sparklineColor="#38bdf8"
         />
         <KpiCard
           icon={Users}
@@ -230,8 +207,6 @@ export const AdminAnalyticsPage = () => {
           trend="Live"
           trendType="up"
           trendLabel="enterprise directory"
-          sparklineData={[kpis.activeMembers, kpis.activeMembers]}
-          sparklineColor="#8b5cf6"
         />
       </div>
 

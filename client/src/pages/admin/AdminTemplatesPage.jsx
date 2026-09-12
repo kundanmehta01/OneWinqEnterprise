@@ -8,7 +8,6 @@ import {
   SlidersHorizontal,
   Eye,
   Layers,
-  Sparkles,
   Loader2,
   Smartphone,
   Monitor,
@@ -21,11 +20,7 @@ import {
   LayoutGrid,
   Columns,
   X,
-  QrCode,
-  ArrowRight,
-  ShieldCheck,
-  Building2,
-  Briefcase
+  ArrowRight
 } from 'lucide-react';
 import { templateApi } from '../../api/templateApi';
 import { KpiCard } from '../../components/common/KpiCard';

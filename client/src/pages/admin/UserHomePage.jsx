@@ -4,24 +4,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Sparkles,
   Users,
-  Building2,
   Calendar,
   Share2,
-  ExternalLink,
   UserPlus,
   Check,
   ChevronRight,
   MapPin,
   Clock,
   Layers,
-  ArrowRight,
   Eye,
   CreditCard,
   User,
   Heart,
   Bell,
   CheckCircle2,
-  Copy
+  X
 } from 'lucide-react';
 import { userDashboardApi } from '../../api/userDashboardApi';
 import { connectionApi } from '../../api/connectionApi';
@@ -51,7 +48,28 @@ export const UserHomePage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['network-people'] });
+      queryClient.invalidateQueries({ queryKey: ['outgoing-requests'] });
       showToast('Connection request sent!');
+    },
+    onError: (err) => {
+      showToast(err?.response?.data?.message || 'Failed to send request.');
+    }
+  });
+
+  // Cancel Request mutation
+  const cancelMutation = useMutation({
+    mutationFn: async (connectionIdOrRecipientId) => {
+      return await connectionApi.cancelRequest(connectionIdOrRecipientId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['network-people'] });
+      queryClient.invalidateQueries({ queryKey: ['outgoing-requests'] });
+      showToast('Connection request cancelled.');
+    },
+    onError: (err) => {
+      showToast(err?.response?.data?.message || 'Failed to cancel request.');
     }
   });
 
@@ -403,15 +421,34 @@ export const UserHomePage = () => {
                 <span className="w-full py-1.5 px-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold flex items-center justify-center gap-1">
                   <Check className="w-3.5 h-3.5" /> Connected
                 </span>
-              ) : person.connectionStatus === 'pending' ? (
-                <span className="w-full py-1.5 px-3 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold flex items-center justify-center">
-                  Pending
-                </span>
+              ) : (person.connectionStatus === 'pending_sent' || person.connectionStatus === 'pending') ? (
+                <button
+                  onClick={() => cancelMutation.mutate(person.connectionId || person.userId)}
+                  disabled={cancelMutation.isPending}
+                  className="group w-full py-1.5 px-3 rounded-xl bg-amber-50 hover:bg-rose-50 text-amber-700 hover:text-rose-700 border border-amber-200 hover:border-rose-200 text-xs font-semibold transition-all shadow-2xs flex items-center justify-center cursor-pointer"
+                  title="Click to cancel connection request"
+                >
+                  <span className="flex items-center gap-1.5 group-hover:hidden">
+                    <Clock className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Sent</span>
+                  </span>
+                  <span className="hidden items-center gap-1.5 group-hover:flex text-rose-600">
+                    <X className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Cancel</span>
+                  </span>
+                </button>
+              ) : person.connectionStatus === 'pending_received' ? (
+                <NavLink
+                  to="/app/network"
+                  className="w-full py-1.5 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold flex items-center justify-center transition-all"
+                >
+                  Respond
+                </NavLink>
               ) : (
                 <button
                   onClick={() => connectMutation.mutate(person.userId)}
                   disabled={connectMutation.isPending}
-                  className="w-full py-1.5 px-3 rounded-xl bg-white hover:bg-indigo-50 text-indigo-600 hover:text-indigo-700 border border-indigo-200 hover:border-indigo-300 text-xs font-semibold transition-all shadow-2xs"
+                  className="w-full py-1.5 px-3 rounded-xl bg-white hover:bg-indigo-50 text-indigo-600 hover:text-indigo-700 border border-indigo-200 hover:border-indigo-300 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                 >
                   Connect
                 </button>

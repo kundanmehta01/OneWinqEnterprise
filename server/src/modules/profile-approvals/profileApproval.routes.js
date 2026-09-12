@@ -17,6 +17,12 @@ router.get(
 );
 
 router.get(
+  '/stats',
+  requirePermission(PERMISSIONS.PROFILE_APPROVAL_READ),
+  profileApprovalController.getStats.bind(profileApprovalController)
+);
+
+router.get(
   '/:id',
   requirePermission(PERMISSIONS.PROFILE_APPROVAL_READ),
   validate({ params: approvalIdParamSchema }),

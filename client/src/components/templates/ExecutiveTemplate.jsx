@@ -1,23 +1,13 @@
 import React from 'react';
 import {
-  ShieldCheck,
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
   Briefcase,
   Award,
   ExternalLink,
   Sparkles,
   Globe,
-  Quote,
-  TrendingUp,
-  Crown,
-  Share2,
-  Download,
-  QrCode
+  Quote
 } from 'lucide-react';
+import { DigitalHeroCard } from './DigitalHeroCard';
 
 export const ExecutiveTemplate = ({
   profile,
@@ -27,119 +17,20 @@ export const ExecutiveTemplate = ({
   onShareClick,
   isCompact = false
 }) => {
-  const companyBranding = profile.companyBranding || {};
-  const coverUrl = profile.coverUrl;
-  const orgLogoUrl = profile.orgLogoUrl || companyBranding.logoUrl;
-  const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#4f46e5';
-  const accentColor = profile.template?.layoutConfig?.colorPalette?.accent || '#818cf8';
-  const badgeText = profile.badgeLabel || profile.template?.predefinedDetails?.badgeLabel || '';
-  const showBadge = profile.template?.layoutConfig?.showBadge !== false;
   const showQuote = profile.template?.layoutConfig?.showQuote !== false;
   const roleQuote = profile.templateQuote || profile.template?.predefinedDetails?.quote || '';
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn">
-      {/* 1. EXECUTIVE HERO BANNER */}
-      <div className="relative rounded-3xl bg-slate-900 text-white overflow-hidden border border-slate-800 shadow-2xl">
-        {/* Cover Banner Background */}
-        <div className={`relative w-full overflow-hidden ${isCompact ? 'h-36 sm:h-44' : 'h-56 sm:h-72'}`}>
-          {coverUrl ? (
-            <img
-              src={coverUrl}
-              alt="Organization Banner"
-              className="w-full h-full object-cover object-center opacity-40 mix-blend-luminosity"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-900 via-slate-900 to-purple-950 opacity-90" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
-        </div>
-
-        {/* Executive Profile Header Overlay */}
-        <div className={`px-4 sm:px-12 pb-8 ${isCompact ? '-mt-16' : '-mt-24 sm:-mt-32'} relative z-10`}>
-          <div className={`flex flex-col gap-6 ${isCompact ? 'items-center text-center' : 'md:flex-row items-center md:items-end justify-between'}`}>
-            {/* Left: Avatar & Identity */}
-            <div className={`flex flex-col gap-5 min-w-0 flex-1 ${isCompact ? 'items-center text-center' : 'sm:flex-row items-center sm:items-end text-center sm:text-left'}`}>
-              <div className="relative group shrink-0">
-                <div className={`${isCompact ? 'w-24 h-24 sm:w-28 sm:h-28' : 'w-32 h-32 sm:w-40 sm:h-40'} rounded-3xl bg-slate-800 p-1.5 sm:p-2 shadow-2xl ring-4 ring-indigo-500/30 overflow-hidden`}>
-                  {profile.avatarUrl ? (
-                    <img
-                      src={profile.avatarUrl}
-                      alt={profile.name}
-                      className="w-full h-full object-cover object-center rounded-2xl"
-                    />
-                  ) : (
-                    <div className="w-full h-full rounded-2xl bg-indigo-700 flex items-center justify-center text-3xl font-black">
-                      {profile.name?.slice(0, 2).toUpperCase() || 'EX'}
-                    </div>
-                  )}
-                </div>
-                <div className="absolute -bottom-2 -right-2 bg-amber-500 text-slate-950 p-2 rounded-xl ring-4 ring-slate-900 shadow-lg" title="Executive Leadership">
-                  <Crown className="w-4 h-4" />
-                </div>
-              </div>
-
-              <div className="space-y-2 min-w-0 flex-1">
-                {showBadge && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold max-w-full">
-                    <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span className="truncate">{badgeText || 'Executive Leadership'} • {profile.department?.name || 'Executive'}</span>
-                  </div>
-                )}
-                <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white font-display break-words leading-tight">
-                  {profile.name}
-                </h1>
-                <p className="text-sm sm:text-base text-indigo-200 font-medium">
-                  {profile.designation}
-                </p>
-                <div className="flex items-center justify-center sm:justify-start gap-4 text-xs text-slate-400">
-                  {profile.companyName && (
-                    <span className="flex items-center gap-1.5 text-slate-300 font-semibold">
-                      <Building2 className="w-3.5 h-3.5 text-indigo-400" /> {profile.companyName}
-                    </span>
-                  )}
-                  {profile.location?.city && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                      {[profile.location.city, profile.location.country].filter(Boolean).join(', ')}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Executive Action Controls */}
-            <div className="flex items-center gap-2.5 flex-wrap justify-center">
-              <button
-                onClick={onConnectClick}
-                className="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center gap-2"
-              >
-                <Mail className="w-4 h-4" /> Direct Contact
-              </button>
-              <button
-                onClick={onDownloadVCard}
-                className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <Download className="w-4 h-4" /> Save Contact
-              </button>
-              <button
-                onClick={onQrClick}
-                className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
-                title="View QR Code"
-              >
-                <QrCode className="w-4 h-4" />
-              </button>
-              <button
-                onClick={onShareClick}
-                className="p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
-                title="Share Profile"
-              >
-                <Share2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* 1. UNIFIED DIGITAL HERO CARD */}
+      <DigitalHeroCard
+        profile={profile}
+        onConnectClick={onConnectClick}
+        onQrClick={onQrClick}
+        onDownloadVCard={onDownloadVCard}
+        onShareClick={onShareClick}
+        isCompact={isCompact}
+      />
 
       {/* 2. EXECUTIVE VISION / BIO STATEMENT */}
       {(profile.bio || profile.collaborationNote) && (

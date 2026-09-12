@@ -147,7 +147,6 @@ const profileDataSchema = new mongoose.Schema(
     phone: { type: String, default: '' },
     workEmail: { type: String, default: '' },
     avatarUrl: { type: String, default: '' },
-    coverUrl: { type: String, default: '' },
     collaborationNote: {
       type: String,
       default: 'Open for collaboration, speaking opportunities and new ideas.'

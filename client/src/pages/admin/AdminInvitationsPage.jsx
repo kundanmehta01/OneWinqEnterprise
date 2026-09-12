@@ -11,13 +11,8 @@ import {
   Trash2,
   X,
   Mail,
-  Users,
   Loader2,
-  RefreshCw,
-  ExternalLink,
-  Shield,
-  Building2,
-  Sparkles
+  RefreshCw
 } from 'lucide-react';
 import { invitationApi } from '../../api/invitationApi';
 import { departmentApi } from '../../api/departmentApi';

@@ -14,7 +14,6 @@ import {
   Loader2,
   AlertCircle,
   Check,
-  Shield,
   Palette
 } from 'lucide-react';
 import { departmentApi } from '../../api/departmentApi';

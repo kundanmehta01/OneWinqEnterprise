@@ -2,7 +2,6 @@ import crypto from 'crypto';
 import { Card } from './card.model.js';
 import { TeamMember } from '../team-members/teamMember.model.js';
 import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
-import { User } from '../users/user.model.js';
 import { analyticsService } from '../analytics/analytics.service.js';
 import { eventBus } from '../../events/appEventBus.js';
 import { APP_EVENTS } from '../../constants/events.constant.js';
@@ -105,6 +104,8 @@ class CardService {
         unlinkedAt: c.unlinkedAt,
         unlinkedBy: c.unlinkedBy ? c.unlinkedBy.email : null,
         hasPendingActivation: Boolean(c.activationTokenHash && normalizedStatus === 'activation_pending'),
+        activationToken: c.activationToken || null,
+        activationUrl: c.activationToken ? `/card/activate/${c.activationToken}` : null,
         activationExpiresAt: c.activationTokenExpiresAt,
         notes: c.notes,
         createdAt: c.createdAt,
@@ -344,6 +345,7 @@ class CardService {
     card.status = 'activation_pending';
     card.memberId = member._id;
     card.profileId = profile ? profile._id : null;
+    card.activationToken = rawToken;
     card.activationTokenHash = tokenHash;
     card.activationTokenExpiresAt = expiresAt;
     card.assignedAt = new Date();
@@ -507,6 +509,7 @@ class CardService {
     card.linkedAt = new Date();
     card.linkedBy = actorContext.actorId;
     card.profileId = profile ? profile._id : card.profileId;
+    card.activationToken = null;
     card.activationTokenHash = null;
     card.activationTokenExpiresAt = null;
 
@@ -557,6 +560,7 @@ class CardService {
     card.status = 'available';
     card.memberId = null;
     card.profileId = null;
+    card.activationToken = null;
     card.activationTokenHash = null;
     card.activationTokenExpiresAt = null;
     card.unlinkedAt = new Date();
@@ -602,6 +606,7 @@ class CardService {
     const tokenHash = this._hashToken(rawToken);
     const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
+    card.activationToken = rawToken;
     card.activationTokenHash = tokenHash;
     card.activationTokenExpiresAt = expiresAt;
     card.status = 'activation_pending';
@@ -636,6 +641,7 @@ class CardService {
     if (targetStatus === 'available') {
       card.memberId = null;
       card.profileId = null;
+      card.activationToken = null;
       card.activationTokenHash = null;
       card.activationTokenExpiresAt = null;
       card.unlinkedAt = new Date();

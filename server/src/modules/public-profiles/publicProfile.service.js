@@ -1,6 +1,7 @@
 import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
 import { TeamMember } from '../team-members/teamMember.model.js';
-import { Template } from '../templates/template.model.js';
+import { templateResolverService } from '../templates/templateResolver.service.js';
+import { CompanyProfile } from '../company-profile/companyProfile.model.js';
 import { generateQRCodeDataUrl, generateQRCodeSvg } from '../../utils/qrCode.util.js';
 import { NotFoundError } from '../../errors/index.js';
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
@@ -48,8 +49,11 @@ class PublicProfileService {
       .populate({
         path: 'memberId',
         match: { status: 'active', isArchived: false },
-        select: 'name employeeId designation departmentId joiningDate',
-        populate: { path: 'departmentId', select: 'name slug' }
+        select: 'name employeeId designation departmentId roleId joiningDate',
+        populate: [
+          { path: 'departmentId', select: 'name slug description templateId', populate: { path: 'templateId' } },
+          { path: 'roleId', select: 'name slug permissions isSystem' }
+        ]
       })
       .populate('templateId')
       .lean();
@@ -73,22 +77,53 @@ class PublicProfileService {
       referer: clientContext.referer
     });
 
-    // Format public-ready profile object
-    const pub = profile.published || {};
+    // Fetch organization branding for shared cover banner & company identity
+    const company = await CompanyProfile.findOne({ isPublic: true }).select('name branding').lean();
+    const orgCoverUrl = company?.branding?.coverUrl || '';
+    const orgLogoUrl = company?.branding?.logoUrl || '';
+
+    // Resolve dynamic profile template based on cascading priority (Role -> Department -> Fallback)
+    const resolvedTemplate = await templateResolverService.resolveTemplateForMember({
+      role: profile.memberId.roleId,
+      department: profile.memberId.departmentId,
+      designation: profile.memberId.designation
+    });
+
+    const pub = profile.published || profile.draft || {};
+    const pre = resolvedTemplate.predefinedDetails || {};
+
+    const profileSkills = (pub.skills && pub.skills.length > 0)
+      ? pub.skills
+      : (pre.skills || []).map((s, idx) => ({ name: s, order: idx }));
 
     return {
       name: profile.memberId.name,
       designation: profile.memberId.designation,
-      department: profile.memberId.departmentId?.name || '',
+      department: {
+        _id: profile.memberId.departmentId?._id,
+        name: profile.memberId.departmentId?.name || '',
+        slug: profile.memberId.departmentId?.slug || '',
+        description: profile.memberId.departmentId?.description || ''
+      },
+      role: {
+        _id: profile.memberId.roleId?._id,
+        name: profile.memberId.roleId?.name || '',
+        slug: profile.memberId.roleId?.slug || ''
+      },
       employeeId: profile.memberId.employeeId,
+      companyName: company?.name || 'OneWinq Enterprise',
       slug: profile.slug,
-      headline: pub.headline || '',
-      bio: pub.bio || '',
+      headline: pub.headline || pre.headline || '',
+      bio: pub.bio || pre.bio || '',
       workEmail: pub.workEmail || '',
       phone: pub.phone || '',
       avatarUrl: pub.avatarUrl || '',
-      coverUrl: pub.coverUrl || '',
-      collaborationNote: pub.collaborationNote || '',
+      coverUrl: orgCoverUrl,
+      orgLogoUrl,
+      companyBranding: company?.branding || null,
+      collaborationNote: pub.collaborationNote || pre.collaborationNote || '',
+      ctaButtonText: pre.ctaButtonText || 'Get in Touch',
+      badgeLabel: pre.badgeLabel || '',
       overviewStats: pub.overviewStats || {
         connectionsCount: '248+',
         projectsCount: '25+',
@@ -98,7 +133,7 @@ class PublicProfileService {
       location: pub.location || {},
       experience: (pub.experience || []).sort((a, b) => (a.order || 0) - (b.order || 0)),
       journey: (pub.journey || []).filter((j) => j.isVisible !== false).sort((a, b) => (a.order || 0) - (b.order || 0)),
-      skills: (pub.skills || []).sort((a, b) => (a.order || 0) - (b.order || 0)),
+      skills: profileSkills.sort((a, b) => (a.order || 0) - (b.order || 0)),
       projects: (pub.projects || []).sort((a, b) => (a.order || 0) - (b.order || 0)),
       impactMetrics: (pub.impactMetrics || []).sort((a, b) => (a.order || 0) - (b.order || 0)),
       achievements: (pub.achievements || []).sort((a, b) => (a.order || 0) - (b.order || 0)),
@@ -107,10 +142,13 @@ class PublicProfileService {
       socialLinks: (pub.socialLinks || []).filter((l) => l.isVisible).sort((a, b) => (a.order || 0) - (b.order || 0)),
       customSections: (pub.customSections || []).filter((s) => s.isVisible).sort((a, b) => (a.order || 0) - (b.order || 0)),
       template: {
-        category: profile.templateId?.category,
-        layoutConfig: profile.templateId?.layoutConfig,
-        themeOverrides: profile.themeOverrides,
-        sectionOrder: profile.templateId?.sectionOrder
+        id: resolvedTemplate.key,
+        key: resolvedTemplate.key,
+        name: resolvedTemplate.name,
+        category: resolvedTemplate.category,
+        layoutConfig: resolvedTemplate.layoutConfig,
+        predefinedDetails: pre,
+        themeOverrides: profile.themeOverrides
       },
       qrCode: qrCodeDataUrl,
       publicUrl

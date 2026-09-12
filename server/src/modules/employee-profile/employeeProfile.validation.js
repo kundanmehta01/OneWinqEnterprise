@@ -112,7 +112,6 @@ export const updateDraftProfileSchema = z.object({
   phone: z.string().max(50).optional(),
   workEmail: z.string().email().optional().or(z.literal('')),
   avatarUrl: z.string().url().optional().or(z.literal('')),
-  coverUrl: z.string().url().optional().or(z.literal('')),
   collaborationNote: z.string().max(500).optional(),
   overviewStats: z.object({
     connectionsCount: z.string().optional(),

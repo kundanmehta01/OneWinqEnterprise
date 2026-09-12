@@ -3,16 +3,19 @@ import { User } from '../users/user.model.js';
 import { Role } from '../roles/role.model.js';
 import { Department } from '../departments/department.model.js';
 import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
+import { Template } from '../templates/template.model.js';
+import { templateResolverService } from '../templates/templateResolver.service.js';
 import { templateService } from '../templates/template.service.js';
 import { hashPassword } from '../../utils/hash.util.js';
 import { generateRandomToken } from '../../utils/token.util.js';
 import { parsePagination, formatPaginationMeta } from '../../utils/pagination.util.js';
-import { NotFoundError, ConflictError, BadRequestError } from '../../errors/index.js';
+import { NotFoundError, ConflictError } from '../../errors/index.js';
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
 import { eventBus } from '../../events/appEventBus.js';
 import { APP_EVENTS } from '../../constants/events.constant.js';
 import { emailService } from '../../integrations/email/email.service.js';
 import { logger } from '../../config/logger.config.js';
+import { assertCanAssignRole, assertCanMutateMember } from '../../utils/rbacHierarchy.util.js';
 
 class TeamMemberService {
   async getAllTeamMembers(query = {}) {
@@ -48,7 +51,7 @@ class TeamMemberService {
       TeamMember.find(filter)
         .populate('userId', 'email status lastLoginAt')
         .populate('departmentId', 'name slug')
-        .populate('roleId', 'name isSystem')
+        .populate('roleId', 'name permissions isSystem slug')
         .populate('profileId', 'slug published.avatarUrl draft.avatarUrl published.headline visibility completionPercentage approvalStatus')
         .sort(sort)
         .skip(skip)
@@ -72,7 +75,7 @@ class TeamMemberService {
     const member = await TeamMember.findById(id)
       .populate('userId', 'email status emailVerified lastLoginAt')
       .populate('departmentId', 'name slug')
-      .populate('roleId', 'name permissions isSystem')
+      .populate('roleId', 'name permissions isSystem slug')
       .populate('profileId')
       .lean();
 
@@ -94,6 +97,9 @@ class TeamMemberService {
     if (!role) {
       throw new NotFoundError('Selected role not found', ERROR_CODES.ROLE_NOT_FOUND);
     }
+
+    // Generic Hierarchy & Privilege Escalation Protection
+    assertCanAssignRole(actorContext, role);
 
     if (departmentId) {
       const department = await Department.findById(departmentId);
@@ -125,7 +131,43 @@ class TeamMemberService {
       emailVerifiedAt: new Date()
     });
 
-    const defaultTemplate = await templateService.getDefaultTemplate();
+    const roleDoc = roleId ? await Role.findById(roleId) : null;
+    const deptDoc = departmentId ? await Department.findById(departmentId).populate('templateId') : null;
+
+    // Intelligently infer professional designation if empty or default 'Team Member'
+    let finalDesignation = (designation || '').trim();
+    if (!finalDesignation || finalDesignation.toLowerCase() === 'team member') {
+      if (roleDoc?.name === 'HR Admin' || roleDoc?.slug?.includes('hr')) {
+        finalDesignation = 'HR Administrator';
+      } else if (roleDoc?.name === 'Super Admin' || roleDoc?.slug?.includes('super-admin')) {
+        finalDesignation = 'Executive Director';
+      } else if (roleDoc?.name === 'Admin') {
+        finalDesignation = 'System Administrator';
+      } else if (roleDoc?.name === 'Content Admin') {
+        finalDesignation = 'Content Administrator';
+      } else if (!finalDesignation) {
+        finalDesignation = 'Team Member';
+      }
+    }
+
+    // Resolve template dynamically (Role -> Designation -> Department -> Fallback)
+    let assignedTemplate = null;
+    const resolved = await templateResolverService.resolveTemplateForMember({
+      role: roleDoc,
+      department: deptDoc,
+      designation: finalDesignation
+    });
+    if (resolved?._id) {
+      assignedTemplate = await Template.findById(resolved._id);
+    } else if (resolved?.category || resolved?.key) {
+      const cat = resolved.category || resolved.key;
+      assignedTemplate = await Template.findOne({
+        $or: [{ category: cat }, { slug: `${cat}-profile` }, { slug: cat }]
+      });
+    }
+    if (!assignedTemplate) {
+      assignedTemplate = await templateService.getDefaultTemplate();
+    }
 
     let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     let slug = baseSlug;
@@ -139,7 +181,7 @@ class TeamMemberService {
       userId: user._id,
       employeeId: empId.toUpperCase(),
       name,
-      designation,
+      designation: finalDesignation,
       departmentId: departmentId || null,
       roleId,
       status,
@@ -150,12 +192,12 @@ class TeamMemberService {
       memberId: member._id,
       userId: user._id,
       slug,
-      templateId: defaultTemplate._id,
-      templateVersion: defaultTemplate.version,
+      templateId: assignedTemplate._id,
+      templateVersion: assignedTemplate.version || 1,
       visibility: 'public',
       approvalStatus: 'approved',
       published: {
-        headline: `${designation} at OneWinq`,
+        headline: `${finalDesignation} at OneWinq`,
         bio: '',
         workEmail: user.email,
         experience: [],
@@ -165,7 +207,7 @@ class TeamMemberService {
         socialLinks: []
       },
       draft: {
-        headline: `${designation} at OneWinq`,
+        headline: `${finalDesignation} at OneWinq`,
         bio: '',
         workEmail: user.email,
         experience: [],
@@ -209,16 +251,23 @@ class TeamMemberService {
   }
 
   async updateTeamMember(id, updateData, actorContext = {}) {
-    const member = await TeamMember.findById(id);
+    const member = await TeamMember.findById(id).populate('roleId');
     if (!member) {
       throw new NotFoundError('Team member not found', ERROR_CODES.RESOURCE_NOT_FOUND);
     }
+
+    // Generic Hierarchy & Privileged Account Mutation Protection
+    assertCanMutateMember(actorContext, member);
 
     const previousValue = member.toObject();
 
     if (updateData.roleId) {
       const role = await Role.findById(updateData.roleId);
       if (!role) throw new NotFoundError('Role not found', ERROR_CODES.ROLE_NOT_FOUND);
+
+      // Generic Hierarchy & Privilege Escalation Protection
+      assertCanAssignRole(actorContext, role);
+
       member.roleId = role._id;
     }
 
@@ -236,6 +285,38 @@ class TeamMemberService {
     if (updateData.employeeId) member.employeeId = updateData.employeeId;
     if (updateData.designation) member.designation = updateData.designation;
     if (updateData.joiningDate) member.joiningDate = updateData.joiningDate;
+
+    // Automatically synchronize profile template & designation on role / dept change
+    if ((updateData.roleId || updateData.departmentId !== undefined || updateData.designation) && member.profileId) {
+      try {
+        const roleDoc = member.roleId ? await Role.findById(member.roleId) : null;
+        const deptDoc = member.departmentId ? await Department.findById(member.departmentId).populate('templateId') : null;
+
+        let newAssignedTemplate = null;
+        const resolved = await templateResolverService.resolveTemplateForMember({
+          role: roleDoc,
+          department: deptDoc,
+          designation: member.designation
+        });
+        if (resolved?._id) {
+          newAssignedTemplate = await Template.findById(resolved._id);
+        } else if (resolved?.category || resolved?.key) {
+          const cat = resolved.category || resolved.key;
+          newAssignedTemplate = await Template.findOne({
+            $or: [{ category: cat }, { slug: `${cat}-profile` }, { slug: cat }]
+          });
+        }
+
+        if (newAssignedTemplate) {
+          await EmployeeProfile.findByIdAndUpdate(member.profileId, {
+            templateId: newAssignedTemplate._id,
+            templateVersion: newAssignedTemplate.version || 1
+          });
+        }
+      } catch (syncErr) {
+        logger.warn(`Failed to sync profile template on member update: ${syncErr.message}`);
+      }
+    }
 
     if (updateData.status) {
       member.status = updateData.status;
@@ -307,10 +388,13 @@ class TeamMemberService {
   }
 
   async deleteTeamMember(id, actorContext = {}, reason = '') {
-    const member = await TeamMember.findById(id);
+    const member = await TeamMember.findById(id).populate('roleId');
     if (!member) {
       throw new NotFoundError('Team member not found', ERROR_CODES.RESOURCE_NOT_FOUND);
     }
+
+    // Generic Hierarchy & Privileged Account Mutation Protection
+    assertCanMutateMember(actorContext, member);
 
     const now = new Date();
     member.isDeleted = true;
@@ -352,10 +436,13 @@ class TeamMemberService {
   }
 
   async restoreTeamMember(id, actorContext = {}) {
-    const member = await TeamMember.findById(id);
+    const member = await TeamMember.findById(id).populate('roleId');
     if (!member) {
       throw new NotFoundError('Team member not found', ERROR_CODES.RESOURCE_NOT_FOUND);
     }
+
+    // Generic Hierarchy & Privileged Account Mutation Protection
+    assertCanMutateMember(actorContext, member);
 
     member.isDeleted = false;
     member.status = 'active';

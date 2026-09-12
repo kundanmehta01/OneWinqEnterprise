@@ -4,13 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
   CreditCard,
   AlertTriangle,
-  Sparkles,
   Loader2,
-  Building2,
-  Lock,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2
+  ArrowRight
 } from 'lucide-react';
 import { cardApi } from '../api/cardApi';
 
