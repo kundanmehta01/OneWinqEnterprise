@@ -99,7 +99,7 @@ export const CompanyMobileFrame = ({ profile, className = '', isStandalone = fal
           </div>
 
           {/* Bottom Dock Navigation */}
-          <CompanyDockNav />
+          <CompanyDockNav theme="dark" />
 
           {/* Home Indicator Bar */}
           <div className="pb-1.5 pt-0.5 bg-[#04060f] flex justify-center">

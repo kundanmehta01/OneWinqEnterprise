@@ -4,6 +4,7 @@ import { connectDB, disconnectDB } from './config/db.config.js';
 import { env } from './config/env.config.js';
 import { logger } from './config/logger.config.js';
 import { initializeEventListeners } from './events/listeners/index.js';
+import { initSocketServer } from './socket/socket.server.js';
 
 const startServer = async () => {
   try {
@@ -16,6 +17,9 @@ const startServer = async () => {
     // 3. Create Express App
     const app = createApp();
     const server = http.createServer(app);
+
+    // 3.5 Initialize Socket.IO
+    initSocketServer(server, app);
 
     // 4. Start Server Listener
     server.listen(env.PORT, () => {
@@ -47,6 +51,11 @@ const startServer = async () => {
 
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.once('SIGUSR2', async () => {
+      logger.info('Received SIGUSR2 (nodemon restart). Closing database cleanly...');
+      await disconnectDB();
+      process.kill(process.pid, 'SIGUSR2');
+    });
 
     process.on('unhandledRejection', (reason, promise) => {
       logger.error('Unhandled Promise Rejection:', { reason, promise });

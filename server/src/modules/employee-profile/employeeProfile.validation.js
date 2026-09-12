@@ -115,24 +115,41 @@ export const updateDraftProfileSchema = z.object({
   collaborationNote: z.string().max(500).optional(),
   overviewStats: z.object({
     connectionsCount: z.string().optional(),
+    connections: z.string().optional(),
     projectsCount: z.string().optional(),
+    projects: z.string().optional(),
     yearsOfExperience: z.string().optional(),
+    years: z.string().optional(),
     servicesCount: z.string().optional(),
+    services: z.string().optional(),
     customMetrics: z.array(z.object({
       label: z.string(),
       value: z.string()
     })).optional()
   }).optional(),
-  location: z.union([
-    z.string().transform((val) => {
-      const parts = val.split(',').map((p) => p.trim());
-      return { city: parts[0] || '', country: parts[1] || '' };
-    }),
-    z.object({
-      city: z.string().optional(),
-      country: z.string().optional()
-    })
-  ]).optional(),
+    about: z.object({
+      title: z.string().optional(),
+      introduction: z.string().optional(),
+      expertise: z.array(z.string()).optional(),
+      experienceSummary: z.string().optional()
+    }).optional(),
+    connectAndContact: z.object({
+      title: z.string().optional(),
+      note: z.string().optional(),
+      workEmail: z.string().optional(),
+      phone: z.string().optional(),
+      ctaButtonText: z.string().optional()
+    }).optional(),
+    location: z.union([
+      z.string().transform((val) => {
+        const parts = val.split(',').map((p) => p.trim());
+        return { city: parts[0] || '', country: parts[1] || '' };
+      }),
+      z.object({
+        city: z.string().optional(),
+        country: z.string().optional()
+      })
+    ]).optional(),
   experience: z.array(experienceSchema).optional(),
   journey: z.array(journeySchema).optional(),
   skills: z.array(skillSchema).optional(),
@@ -158,7 +175,10 @@ export const updateDraftProfileSchema = z.object({
 
 export const submitProfileForApprovalSchema = z.object({
   note: z.string().max(500).optional(),
-  reviewNotes: z.string().max(500).optional()
+  reviewNotes: z.string().max(500).optional(),
+  formData: z.any().optional(),
+  draftData: z.any().optional()
 }).transform((d) => ({
-  note: d.note || d.reviewNotes || ''
+  note: d.note || d.reviewNotes || '',
+  formData: d.formData || d.draftData || null
 }));

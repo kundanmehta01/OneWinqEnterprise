@@ -8,3 +8,5 @@ coverage/
 dist/
 .DS_Store
 *.log
+data/
+.db_data/

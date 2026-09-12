@@ -24,19 +24,55 @@ import {
   Building2
 } from 'lucide-react';
 import { userProfileApi } from '../../api/userProfileApi';
-import { ImageUploadInput } from '../../components/common/ImageUploadInput';
 import { useAuthStore } from '../../stores/authStore';
+import { ImageUploadInput } from '../../components/common/ImageUploadInput';
 import { TemplateRenderer } from '../../components/templates/TemplateRenderer';
+import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 
 export const EmployeeSelfProfilePage = () => {
   const { isSuperAdmin } = useAuthStore();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('identity'); // 'identity', 'experience', 'skills', 'projects', 'social', 'impact'
+  const [activeTab, setActiveTab] = useState('identity'); // 'identity', 'experience', 'skills', 'projects', 'social', 'impact', 'blogs'
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [submitNote, setSubmitNote] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const PROFILE_TABS = [
+    { id: 'identity', label: 'Identity & Stats', icon: User },
+    { id: 'experience', label: 'Experience & Journey', icon: Briefcase },
+    { id: 'skills', label: 'Skills & Badges', icon: Layers },
+    { id: 'projects', label: 'Projects & Media', icon: Sparkles },
+    { id: 'blogs', label: 'Blogs & Insights', icon: Globe },
+    { id: 'social', label: 'Links & Social', icon: Globe },
+    { id: 'impact', label: 'Impact & Awards', icon: Award }
+  ];
+
+  const handleNextTab = () => {
+    const currentIdx = PROFILE_TABS.findIndex((t) => t.id === activeTab);
+    const nextIdx = (currentIdx + 1) % PROFILE_TABS.length;
+    setActiveTab(PROFILE_TABS[nextIdx].id);
+  };
+
+  const handlePrevTab = () => {
+    const currentIdx = PROFILE_TABS.findIndex((t) => t.id === activeTab);
+    const prevIdx = (currentIdx - 1 + PROFILE_TABS.length) % PROFILE_TABS.length;
+    setActiveTab(PROFILE_TABS[prevIdx].id);
+  };
+
+  const swipeHandlers = useSwipeGesture({
+    onSwipeLeft: handleNextTab,
+    onSwipeRight: handlePrevTab,
+    minDistance: 45
+  });
+
+  useEffect(() => {
+    const el = document.getElementById(`profile-tab-${activeTab}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [activeTab]);
 
   // 1. Fetch Profile Data (for team members)
   const { data: profileData, isLoading, error } = useQuery({
@@ -91,9 +127,18 @@ export const EmployeeSelfProfilePage = () => {
     location: '',
     avatarUrl: '',
     collaborationNote: '',
+    overviewStats: {
+      connectionsCount: '',
+      projectsCount: '',
+      yearsOfExperience: '',
+      servicesCount: ''
+    },
     skills: [],
     experience: [],
+    journey: [],
     projects: [],
+    mediaGallery: [],
+    blogs: [],
     socialLinks: [],
     impactMetrics: [],
     achievements: []
@@ -106,6 +151,11 @@ export const EmployeeSelfProfilePage = () => {
       const published = profileData.published || {};
       const member = profileData.memberId || {};
 
+      const cleanStat = (val, legacy) => {
+        if (!val || val === legacy || (legacy === '248+' && val === '248')) return '';
+        return val;
+      };
+
       setFormData({
         headline: draft.headline ?? published.headline ?? member.designation ?? '',
         bio: draft.bio ?? published.bio ?? '',
@@ -114,9 +164,18 @@ export const EmployeeSelfProfilePage = () => {
         location: draft.location ?? published.location ?? '',
         avatarUrl: draft.avatarUrl ?? published.avatarUrl ?? '',
         collaborationNote: draft.collaborationNote ?? published.collaborationNote ?? '',
+        overviewStats: {
+          connectionsCount: cleanStat(draft.overviewStats?.connectionsCount ?? published.overviewStats?.connectionsCount ?? draft.overviewStats?.connections, '248+'),
+          projectsCount: cleanStat(draft.overviewStats?.projectsCount ?? published.overviewStats?.projectsCount ?? draft.overviewStats?.projects, '25+'),
+          yearsOfExperience: cleanStat(draft.overviewStats?.yearsOfExperience ?? published.overviewStats?.yearsOfExperience ?? draft.overviewStats?.years, '8+'),
+          servicesCount: cleanStat(draft.overviewStats?.servicesCount ?? published.overviewStats?.servicesCount ?? draft.overviewStats?.services, '5+')
+        },
         skills: draft.skills?.length ? draft.skills : published.skills || [],
         experience: draft.experience?.length ? draft.experience : published.experience || [],
+        journey: draft.journey?.length ? draft.journey : published.journey || [],
         projects: draft.projects?.length ? draft.projects : published.projects || [],
+        mediaGallery: draft.mediaGallery?.length ? draft.mediaGallery : published.mediaGallery || [],
+        blogs: draft.blogs?.length ? draft.blogs : published.blogs || [],
         socialLinks: draft.socialLinks?.length ? draft.socialLinks : published.socialLinks || [],
         impactMetrics: draft.impactMetrics?.length ? draft.impactMetrics : published.impactMetrics || [],
         achievements: draft.achievements?.length ? draft.achievements : published.achievements || []
@@ -154,16 +213,19 @@ export const EmployeeSelfProfilePage = () => {
   // Submit for Approval Mutation
   const submitApprovalMutation = useMutation({
     mutationFn: async (note) => {
-      return await userProfileApi.submitForApproval(note);
+      // 1. Ensure latest formData is saved to draft first!
+      await userProfileApi.updateMyDraft(formData);
+      // 2. Submit for review with formData payload
+      return await userProfileApi.submitForApproval(note, formData);
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
       queryClient.invalidateQueries({ queryKey: ['my-approval-status'] });
       setIsSubmitModalOpen(false);
       setSubmitNote('');
       setToastMessage({
         type: 'success',
-        text: 'Profile changes submitted to HR & Admin for review!'
+        text: res?.message || 'Profile changes submitted successfully!'
       });
       setTimeout(() => setToastMessage(null), 4500);
     },
@@ -330,6 +392,98 @@ END:VCARD`;
     setFormData({
       ...formData,
       impactMetrics: formData.impactMetrics.filter((_, i) => i !== index)
+    });
+  };
+
+  const addAchievement = () => {
+    setFormData({
+      ...formData,
+      achievements: [
+        ...formData.achievements,
+        { title: '', subtitle: '', badge: 'Honors', isFeatured: true }
+      ]
+    });
+  };
+
+  const updateAchievement = (index, field, value) => {
+    const next = [...formData.achievements];
+    next[index] = { ...next[index], [field]: value };
+    setFormData({ ...formData, achievements: next });
+  };
+
+  const removeAchievement = (index) => {
+    setFormData({
+      ...formData,
+      achievements: formData.achievements.filter((_, i) => i !== index)
+    });
+  };
+
+  const addJourney = () => {
+    setFormData({
+      ...formData,
+      journey: [
+        ...formData.journey,
+        { year: '2024', title: '', description: '', icon: 'rocket', isVisible: true }
+      ]
+    });
+  };
+
+  const updateJourney = (index, field, value) => {
+    const next = [...formData.journey];
+    next[index] = { ...next[index], [field]: value };
+    setFormData({ ...formData, journey: next });
+  };
+
+  const removeJourney = (index) => {
+    setFormData({
+      ...formData,
+      journey: formData.journey.filter((_, i) => i !== index)
+    });
+  };
+
+  const addMedia = () => {
+    setFormData({
+      ...formData,
+      mediaGallery: [
+        ...formData.mediaGallery,
+        { title: '', type: 'event', url: '', thumbnailUrl: '', isVisible: true }
+      ]
+    });
+  };
+
+  const updateMedia = (index, field, value) => {
+    const next = [...formData.mediaGallery];
+    next[index] = { ...next[index], [field]: value };
+    setFormData({ ...formData, mediaGallery: next });
+  };
+
+  const removeMedia = (index) => {
+    setFormData({
+      ...formData,
+      mediaGallery: formData.mediaGallery.filter((_, i) => i !== index)
+    });
+  };
+
+  const addBlog = () => {
+    setFormData({
+      ...formData,
+      blogs: [
+        ...formData.blogs,
+        { title: '', excerpt: '', url: '', coverImage: '', readTime: '5 min read', isVisible: true }
+      ]
+    });
+  };
+
+  const updateBlog = (index, field, value) => {
+    const next = [...formData.blogs];
+    next[index] = { ...next[index], [field]: value };
+    setFormData({ ...formData, blogs: next });
+  };
+
+  const removeBlog = (index) => {
+    setFormData({
+      ...formData,
+      blogs: formData.blogs.filter((_, i) => i !== index)
     });
   };
 
@@ -523,25 +677,19 @@ END:VCARD`;
 
       {/* 2. Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Interactive Form Sections (8 Cols) */}
-        <div className="lg:col-span-8 space-y-6">
+        {/* Left Column: Interactive Form Sections with Mobile Swipe Gesture (8 Cols) */}
+        <div className="lg:col-span-8 space-y-6 touch-pan-y" {...swipeHandlers}>
           {/* Section Tabs */}
-          <div className="bg-white rounded-2xl p-2 border border-slate-100 shadow-sm flex items-center gap-1 overflow-x-auto">
-            {[
-              { id: 'identity', label: 'Identity & Bio', icon: User },
-              { id: 'experience', label: 'Experience', icon: Briefcase },
-              { id: 'skills', label: 'Skills & Badges', icon: Layers },
-              { id: 'projects', label: 'Projects', icon: Sparkles },
-              { id: 'social', label: 'Links & Social', icon: Globe },
-              { id: 'impact', label: 'Impact & Awards', icon: Award }
-            ].map((tab) => {
+          <div className="bg-white rounded-2xl p-2 border border-slate-100 shadow-sm flex items-center gap-1 overflow-x-auto scrollbar-none">
+            {PROFILE_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
+                  id={`profile-tab-${tab.id}`}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     isActive
                       ? 'bg-purple-600 text-white shadow-sm shadow-purple-200'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -552,6 +700,15 @@ END:VCARD`;
                 </button>
               );
             })}
+          </div>
+
+          {/* Mobile Swipe Indicator Hint */}
+          <div className="lg:hidden flex items-center justify-between text-[11px] text-slate-400 px-2 select-none">
+            <span>← Swipe right</span>
+            <span className="font-semibold text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
+              {PROFILE_TABS.findIndex((t) => t.id === activeTab) + 1} of {PROFILE_TABS.length}
+            </span>
+            <span>Swipe left →</span>
           </div>
 
           {/* TAB 1: IDENTITY & BIO */}
@@ -648,6 +805,70 @@ END:VCARD`;
                   placeholder="e.g. Open for tech mentorship, cross-team architecture reviews, and AI initiatives."
                   className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
+              </div>
+
+              {/* Overview Metrics & Counters */}
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-900">
+                    Overview Counters (Digital Card Stats)
+                  </label>
+                  <span className="text-[10px] text-purple-600 font-semibold">Live Dynamic Stats</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Connections</label>
+                    <input
+                      type="text"
+                      value={formData.overviewStats?.connectionsCount || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        overviewStats: { ...formData.overviewStats, connectionsCount: e.target.value }
+                      })}
+                      placeholder="e.g. 500+"
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Projects</label>
+                    <input
+                      type="text"
+                      value={formData.overviewStats?.projectsCount || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        overviewStats: { ...formData.overviewStats, projectsCount: e.target.value }
+                      })}
+                      placeholder="e.g. 25+"
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Years Exp.</label>
+                    <input
+                      type="text"
+                      value={formData.overviewStats?.yearsOfExperience || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        overviewStats: { ...formData.overviewStats, yearsOfExperience: e.target.value }
+                      })}
+                      placeholder="e.g. 8+"
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Services</label>
+                    <input
+                      type="text"
+                      value={formData.overviewStats?.servicesCount || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        overviewStats: { ...formData.overviewStats, servicesCount: e.target.value }
+                      })}
+                      placeholder="e.g. 10+"
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -759,6 +980,76 @@ END:VCARD`;
                   ))}
                 </div>
               )}
+
+              {/* Career Journey Milestones */}
+              <div className="pt-6 border-t border-slate-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Career Milestones & Journey
+                    </h3>
+                    <p className="text-[11px] text-slate-400">Add chronological highlights (e.g. 2024, 2022, 2019).</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addJourney}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Milestone</span>
+                  </button>
+                </div>
+
+                {formData.journey.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No custom milestones added. Fallback will derive from work experience.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {formData.journey.map((item, jIdx) => (
+                      <div key={jIdx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 relative group">
+                        <button
+                          type="button"
+                          onClick={() => removeJourney(jIdx)}
+                          className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="grid grid-cols-3 gap-2 pr-6">
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Year</label>
+                            <input
+                              type="text"
+                              value={item.year}
+                              onChange={(e) => updateJourney(jIdx, 'year', e.target.value)}
+                              placeholder="2024"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Milestone Title</label>
+                            <input
+                              type="text"
+                              value={item.title}
+                              onChange={(e) => updateJourney(jIdx, 'title', e.target.value)}
+                              placeholder="e.g. Promoted to Senior Lead"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Description</label>
+                          <input
+                            type="text"
+                            value={item.description || ''}
+                            onChange={(e) => updateJourney(jIdx, 'description', e.target.value)}
+                            placeholder="Brief context about this milestone..."
+                            className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -898,10 +1189,184 @@ END:VCARD`;
                   ))}
                 </div>
               )}
+
+              {/* Media & Press Gallery */}
+              <div className="pt-6 border-t border-slate-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Media & Press Gallery
+                    </h3>
+                    <p className="text-[11px] text-slate-400">Add keynotes, panel discussions, and event media.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addMedia}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Media</span>
+                  </button>
+                </div>
+
+                {formData.mediaGallery.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No custom media added yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {formData.mediaGallery.map((m, mIdx) => (
+                      <div key={mIdx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 relative group">
+                        <button
+                          type="button"
+                          onClick={() => removeMedia(mIdx)}
+                          className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pr-6">
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Media Title</label>
+                            <input
+                              type="text"
+                              value={m.title}
+                              onChange={(e) => updateMedia(mIdx, 'title', e.target.value)}
+                              placeholder="e.g. Global Tech Keynote"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Type</label>
+                            <select
+                              value={m.type || 'event'}
+                              onChange={(e) => updateMedia(mIdx, 'type', e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-medium"
+                            >
+                              <option value="event">Event</option>
+                              <option value="photo">Photo</option>
+                              <option value="video">Video</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Media / Image URL</label>
+                          <input
+                            type="text"
+                            value={m.url}
+                            onChange={(e) => updateMedia(mIdx, 'url', e.target.value)}
+                            placeholder="https://images.unsplash.com/..."
+                            className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* TAB 5: SOCIAL & LINKS */}
+          {/* TAB: BLOGS & THOUGHTS */}
+          {activeTab === 'blogs' && (
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-6 animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Articles & Thought Leadership</h2>
+                  <p className="text-[11px] text-slate-400">Publish articles, tech guides, and leadership perspectives.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addBlog}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Article</span>
+                </button>
+              </div>
+
+              {formData.blogs.length === 0 ? (
+                <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
+                  <Globe className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs font-medium text-slate-600">No articles added yet.</p>
+                  <button
+                    type="button"
+                    onClick={addBlog}
+                    className="mt-3 text-xs text-purple-600 font-semibold hover:underline cursor-pointer"
+                  >
+                    + Add your first article
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {formData.blogs.map((b, bIdx) => (
+                    <div key={bIdx} className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/40 space-y-3 relative group">
+                      <button
+                        type="button"
+                        onClick={() => removeBlog(bIdx)}
+                        className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pr-8">
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Article Title</label>
+                          <input
+                            type="text"
+                            value={b.title}
+                            onChange={(e) => updateBlog(bIdx, 'title', e.target.value)}
+                            placeholder="e.g. The Future of Digital Identity"
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Read Time</label>
+                          <input
+                            type="text"
+                            value={b.readTime || ''}
+                            onChange={(e) => updateBlog(bIdx, 'readTime', e.target.value)}
+                            placeholder="4 min read"
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Article URL / Link</label>
+                          <input
+                            type="text"
+                            value={b.url || ''}
+                            onChange={(e) => updateBlog(bIdx, 'url', e.target.value)}
+                            placeholder="https://medium.com/... or https://..."
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Cover Image URL</label>
+                          <input
+                            type="text"
+                            value={b.coverImage || ''}
+                            onChange={(e) => updateBlog(bIdx, 'coverImage', e.target.value)}
+                            placeholder="https://images.unsplash.com/..."
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">Excerpt / Summary</label>
+                        <textarea
+                          rows={2}
+                          value={b.excerpt || ''}
+                          onChange={(e) => updateBlog(bIdx, 'excerpt', e.target.value)}
+                          placeholder="Brief summary of the article..."
+                          className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: SOCIAL & LINKS */}
           {activeTab === 'social' && (
             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-6 animate-in fade-in">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -954,7 +1419,7 @@ END:VCARD`;
             </div>
           )}
 
-          {/* TAB 6: IMPACT & AWARDS */}
+          {/* TAB: IMPACT & AWARDS */}
           {activeTab === 'impact' && (
             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-6 animate-in fade-in">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -999,6 +1464,76 @@ END:VCARD`;
                   </div>
                 ))}
               </div>
+
+              {/* Achievements & Honors Section */}
+              <div className="pt-6 border-t border-slate-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-amber-500" /> Honors & Recognitions
+                    </h3>
+                    <p className="text-[11px] text-slate-400">Awards, keynote honors, and verified enterprise badges.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addAchievement}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Honor</span>
+                  </button>
+                </div>
+
+                {formData.achievements.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No custom honors added yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {formData.achievements.map((ach, achIdx) => (
+                      <div key={achIdx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 relative group">
+                        <button
+                          type="button"
+                          onClick={() => removeAchievement(achIdx)}
+                          className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pr-6">
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Honor / Award Title</label>
+                            <input
+                              type="text"
+                              value={ach.title}
+                              onChange={(e) => updateAchievement(achIdx, 'title', e.target.value)}
+                              placeholder="e.g. Verified Organization Identity"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Badge / Category</label>
+                            <input
+                              type="text"
+                              value={ach.badge || ''}
+                              onChange={(e) => updateAchievement(achIdx, 'badge', e.target.value)}
+                              placeholder="Verified"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Subtitle / Issuer</label>
+                          <input
+                            type="text"
+                            value={ach.subtitle || ''}
+                            onChange={(e) => updateAchievement(achIdx, 'subtitle', e.target.value)}
+                            placeholder="Issued by OneWinq Enterprise"
+                            className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1036,9 +1571,15 @@ END:VCARD`;
                     workEmail: formData.workEmail || profileData?.workEmail,
                     phone: formData.phone || profileData?.phone,
                     location: { city: formData.location || profileData?.location?.city || '' },
+                    overviewStats: formData.overviewStats || profileData?.overviewStats,
                     skills: formData.skills || profileData?.skills || [],
                     experience: formData.experience || profileData?.experience || [],
+                    journey: formData.journey || profileData?.journey || [],
                     projects: formData.projects || profileData?.projects || [],
+                    impactMetrics: formData.impactMetrics || profileData?.impactMetrics || [],
+                    achievements: formData.achievements || profileData?.achievements || [],
+                    mediaGallery: formData.mediaGallery || profileData?.mediaGallery || [],
+                    blogs: formData.blogs || profileData?.blogs || [],
                     socialLinks: formData.socialLinks || profileData?.socialLinks || [],
                     template: profileData?.template || { key: 'default' },
                     department: profileData?.memberId?.departmentId || profileData?.department || { name: 'Enterprise' }

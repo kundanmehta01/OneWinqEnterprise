@@ -22,6 +22,7 @@ import { adminEventRoutes } from '../modules/events/adminEvent.routes.js';
 import { userDirectoryRoutes } from '../modules/user-directory/userDirectory.routes.js';
 import { cardRoutes, cardActivationRoutes } from '../modules/cards/card.routes.js';
 import { uploadRoutes } from '../modules/upload/upload.routes.js';
+import { messagingRoutes } from '../modules/messaging/messaging.routes.js';
 
 const apiRouter = Router();
 
@@ -49,6 +50,7 @@ apiRouter.use('/me/dashboard', userDashboardRoutes);
 apiRouter.use('/me/profile', employeeProfileRoutes);
 apiRouter.use('/me/settings', userSettingsRoutes);
 apiRouter.use('/me/notifications', notificationRoutes);
+apiRouter.use('/me/messages', messagingRoutes);
 
 // 5. Professional Networking & Connections (/network)
 apiRouter.use('/network', connectionRoutes);

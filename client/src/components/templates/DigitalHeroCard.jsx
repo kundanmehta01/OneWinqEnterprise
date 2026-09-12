@@ -120,6 +120,44 @@ export const DigitalHeroCard = ({
           </div>
         </div>
 
+        {/* Overview Stats Bar (Founder & Employee Identity) */}
+        {profile.overviewStats && (
+          <div className="grid grid-cols-4 gap-2 py-2.5 px-4 max-w-md mx-auto bg-slate-50/80 rounded-2xl border border-slate-100 text-center">
+            <div>
+              <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+                {(profile.overviewStats.connections !== undefined && profile.overviewStats.connections !== null && profile.overviewStats.connections !== '')
+                  ? profile.overviewStats.connections
+                  : (profile.overviewStats.connectionsCount ?? 0)}
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium">Connections</div>
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+                {(profile.overviewStats.projects !== undefined && profile.overviewStats.projects !== null && profile.overviewStats.projects !== '')
+                  ? profile.overviewStats.projects
+                  : (profile.overviewStats.projectsCount ?? 0)}
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium">Projects</div>
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+                {(profile.overviewStats.years !== undefined && profile.overviewStats.years !== null && profile.overviewStats.years !== '')
+                  ? profile.overviewStats.years
+                  : (profile.overviewStats.yearsOfExperience ?? 0)}
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium">Years</div>
+            </div>
+            <div>
+              <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+                {(profile.overviewStats.services !== undefined && profile.overviewStats.services !== null && profile.overviewStats.services !== '')
+                  ? profile.overviewStats.services
+                  : (profile.overviewStats.servicesCount ?? 0)}
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium">Services</div>
+            </div>
+          </div>
+        )}
+
         {/* Action Controls: Get in Touch, Save Contact (.vcf), QR Code, Share */}
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <button

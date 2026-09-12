@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -17,21 +17,36 @@ import {
   LogOut,
   ExternalLink,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  MessageSquare
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { GlobalSearchModal } from '../../components/common/GlobalSearchModal';
 import { NotificationDrawer } from '../../components/common/NotificationDrawer';
 import { notificationApi } from '../../api/notificationApi';
 import { hasAdminAccess } from '../../utils/permissions';
+import { useMessagingStore } from '../../stores/messagingStore';
 
 export const UserLayout = () => {
   const navigate = useNavigate();
-  const { user, member, role, isSuperAdmin, permissions, logout } = useAuthStore();
+  const { user, member, role, isSuperAdmin, permissions, logout, accessToken } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
+
+  const { connectSocket, disconnectSocket, totalUnread, fetchTotalUnread } = useMessagingStore();
+
+  // Connect socket on mount, disconnect on unmount
+  useEffect(() => {
+    if (accessToken) {
+      connectSocket(accessToken);
+      fetchTotalUnread();
+    }
+    return () => {
+      disconnectSocket();
+    };
+  }, [accessToken]);
 
   const hasAdminPerm = hasAdminAccess(permissions, isSuperAdmin);
 
@@ -60,6 +75,7 @@ export const UserLayout = () => {
     { to: '/app/home', label: 'Home', icon: Home },
     { to: '/app/my-profile', label: 'My Profile', icon: User },
     { to: '/app/network', label: 'Network', icon: UserCheck },
+    { to: '/app/messages', label: 'Messages', icon: MessageSquare, badge: totalUnread },
     { to: '/app/team-departments', label: 'Team & Departments', icon: Layers },
     { to: '/company', label: 'Company', icon: Building2, external: true },
     { to: '/app/events', label: 'Events', icon: Calendar },
@@ -172,6 +188,11 @@ export const UserLayout = () => {
                   <Icon className="w-4 h-4 shrink-0" />
                   <span>{item.label}</span>
                 </div>
+                {item.badge > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
               </NavLink>
             );
           })}
@@ -198,14 +219,16 @@ export const UserLayout = () => {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar */}
         <header className="h-16 bg-white border-b border-slate-100 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-          {/* Left: Mobile Toggle */}
+          {/* Left: Mobile Brand & Desktop Spacer */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            <div className="flex items-center gap-2 lg:hidden">
+              <span className="font-extrabold text-base tracking-tight text-slate-900 font-display">
+                onewinq
+              </span>
+              <span className="text-[9px] tracking-widest uppercase font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md">
+                ENTERPRISE
+              </span>
+            </div>
           </div>
 
           {/* Right: Notifications, Messages, User Profile */}
@@ -345,9 +368,131 @@ export const UserLayout = () => {
         )}
 
         {/* Page Content Viewport */}
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8 overflow-y-auto">
           <Outlet />
         </main>
+
+        {/* Mobile Bottom Tab Bar (lg:hidden) */}
+        <nav
+          aria-label="Mobile Navigation"
+          className="fixed bottom-0 left-0 right-0 z-40 lg:hidden px-4 pb-3 pt-2 bg-gradient-to-t from-[#f8f9fa] via-[#f8f9fa]/95 to-transparent pointer-events-none"
+        >
+          <div className="pointer-events-auto max-w-md mx-auto flex items-center justify-around bg-white/95 border border-slate-200/90 rounded-2xl sm:rounded-full px-2 py-1.5 shadow-xl shadow-indigo-950/10 backdrop-blur-xl ring-1 ring-black/5">
+            {/* 1. Home */}
+            <NavLink
+              to="/app/home"
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center px-3 py-1 rounded-xl transition-all ${
+                  isActive
+                    ? 'text-indigo-600 font-bold scale-105'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div className="relative">
+                    <Home className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+                    {isActive && (
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-600 rounded-full shadow-[0_0_6px_#4f46e5]" />
+                    )}
+                  </div>
+                  <span className="text-[10px] mt-0.5 tracking-tight font-medium">Home</span>
+                </>
+              )}
+            </NavLink>
+
+            {/* 2. Network */}
+            <NavLink
+              to="/app/network"
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center px-3 py-1 rounded-xl transition-all ${
+                  isActive
+                    ? 'text-indigo-600 font-bold scale-105'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div className="relative">
+                    <UserCheck className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+                    {isActive && (
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-600 rounded-full shadow-[0_0_6px_#4f46e5]" />
+                    )}
+                  </div>
+                  <span className="text-[10px] mt-0.5 tracking-tight font-medium">Network</span>
+                </>
+              )}
+            </NavLink>
+
+            {/* 3. Messages */}
+            <NavLink
+              to="/app/messages"
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center px-3 py-1 rounded-xl transition-all ${
+                  isActive
+                    ? 'text-indigo-600 font-bold scale-105'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div className="relative">
+                    <MessageSquare className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+                    {totalUnread > 0 && (
+                      <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center animate-pulse">
+                        {totalUnread > 9 ? '9+' : totalUnread}
+                      </span>
+                    )}
+                    {isActive && !totalUnread && (
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-600 rounded-full shadow-[0_0_6px_#4f46e5]" />
+                    )}
+                  </div>
+                  <span className="text-[10px] mt-0.5 tracking-tight font-medium">Messages</span>
+                </>
+              )}
+            </NavLink>
+
+            {/* 4. Notifications / Alerts */}
+            <button
+              type="button"
+              onClick={() => setNotificationDrawerOpen(true)}
+              className="flex flex-col items-center justify-center px-3 py-1 rounded-xl transition-all text-slate-500 hover:text-slate-900 cursor-pointer"
+            >
+              <div className="relative">
+                <Bell className="w-5 h-5 stroke-[1.75]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] mt-0.5 tracking-tight font-medium">Alerts</span>
+            </button>
+
+            {/* 5. Menu / More */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className={`flex flex-col items-center justify-center px-3 py-1 rounded-xl transition-all cursor-pointer ${
+                mobileMenuOpen
+                  ? 'text-indigo-600 font-bold scale-105'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <div className="relative">
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5 stroke-[2.5]" />
+                ) : (
+                  <Menu className="w-5 h-5 stroke-[1.75]" />
+                )}
+              </div>
+              <span className="text-[10px] mt-0.5 tracking-tight font-medium">Menu</span>
+            </button>
+          </div>
+        </nav>
       </div>
 
       {/* Global Command Search Modal */}

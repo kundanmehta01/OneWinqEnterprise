@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -43,12 +43,22 @@ export const AcceptInvitationPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const acceptedRef = useRef(false);
 
   useEffect(() => {
+    // If the invitation has already been accepted successfully, never re-verify!
+    if (submitSuccess || acceptedRef.current) {
+      return;
+    }
+
+    let isMounted = true;
+
     const verifyToken = async () => {
       if (!token) {
-        setError('No invitation token was provided. Please check the link sent to your email.');
-        setIsLoading(false);
+        if (isMounted) {
+          setError('No invitation token was provided. Please check the link sent to your email.');
+          setIsLoading(false);
+        }
         return;
       }
 
@@ -56,6 +66,8 @@ export const AcceptInvitationPage = () => {
         setIsLoading(true);
         const res = await api.get('/invitations/verify', { params: { token } });
         const data = res.data || res;
+        if (!isMounted || acceptedRef.current) return;
+
         setInviteData(data);
 
         // Only use the 1-click logged_in flow if the currently authenticated user's email matches the invitation email
@@ -79,15 +91,22 @@ export const AcceptInvitationPage = () => {
           setLoginForm((prev) => ({ ...prev, email: data.email }));
         }
       } catch (err) {
+        if (!isMounted || acceptedRef.current || submitSuccess) return;
         console.error('Token verification error:', err);
-        setError(err?.message || 'This invitation link is invalid, has expired, or has already been used.');
+        setError(err?.response?.data?.message || err?.message || 'This invitation link is invalid, has expired, or has already been used.');
       } finally {
-        setIsLoading(false);
+        if (isMounted && !acceptedRef.current) {
+          setIsLoading(false);
+        }
       }
     };
 
     verifyToken();
-  }, [token, isAuthenticated, user]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
 
   // Handle new user registration + join
   const handleNewUserSubmit = async (e) => {
@@ -176,6 +195,11 @@ export const AcceptInvitationPage = () => {
   };
 
   const _handleSuccessfulAcceptance = (responseData) => {
+    acceptedRef.current = true;
+    setError('');
+    setIsLoading(false);
+    setSubmitSuccess(true);
+
     if (responseData.accessToken) {
       localStorage.setItem('onewinq_access_token', responseData.accessToken);
       if (responseData.refreshToken) {
@@ -184,7 +208,6 @@ export const AcceptInvitationPage = () => {
     }
     // Refresh auth state from server
     checkAuth();
-    setSubmitSuccess(true);
   };
 
   return (
@@ -209,7 +232,7 @@ export const AcceptInvitationPage = () => {
         </div>
 
         {/* State 1: Loading */}
-        {isLoading && (
+        {isLoading && !submitSuccess && (
           <div className="bg-white rounded-3xl p-8 border border-purple-100 shadow-xl shadow-purple-500/5 text-center space-y-4">
             <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
             <div>
@@ -219,8 +242,38 @@ export const AcceptInvitationPage = () => {
           </div>
         )}
 
-        {/* State 2: Error */}
-        {!isLoading && error && (
+        {/* State 2: Success (Highest Priority on Successful Acceptance) */}
+        {!isLoading && submitSuccess && (
+          <div className="bg-white rounded-3xl p-8 border border-emerald-100 shadow-xl shadow-emerald-500/5 text-center space-y-5">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-bold text-slate-900">You've Joined Successfully!</h3>
+              <p className="text-xs text-slate-500">
+                Welcome to OneWinq. Your enterprise digital identity profile and credentials have been initialized.
+              </p>
+            </div>
+            <div className="pt-2 space-y-2">
+              <button
+                onClick={() => navigate('/app/home')}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 transition-all hover:scale-[1.01] cursor-pointer"
+              >
+                <span>Enter Enterprise Portal</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <Link
+                to="/"
+                className="block text-xs font-semibold text-slate-500 hover:text-purple-600 py-1"
+              >
+                View Organization Public Identity Page
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* State 3: Error (Only displayed if NOT successfully submitted) */}
+        {!isLoading && !submitSuccess && error && (
           <div className="bg-white rounded-3xl p-8 border border-rose-100 shadow-xl shadow-rose-500/5 text-center space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
               <AlertCircle className="w-6 h-6" />
@@ -240,38 +293,8 @@ export const AcceptInvitationPage = () => {
           </div>
         )}
 
-        {/* State 3: Success */}
-        {!isLoading && submitSuccess && (
-          <div className="bg-white rounded-3xl p-8 border border-emerald-100 shadow-xl shadow-emerald-500/5 text-center space-y-5">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
-            <div className="space-y-1.5">
-              <h3 className="text-lg font-bold text-slate-900">You've Joined Successfully!</h3>
-              <p className="text-xs text-slate-500">
-                Welcome to OneWinq. Your enterprise digital identity profile and credentials have been initialized.
-              </p>
-            </div>
-            <div className="pt-2 space-y-2">
-              <button
-                onClick={() => navigate('/app/home')}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 transition-all hover:scale-[1.01]"
-              >
-                <span>Enter Enterprise Portal</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <Link
-                to="/"
-                className="block text-xs font-semibold text-slate-500 hover:text-purple-600 py-1"
-              >
-                View Organization Public Identity Page
-              </Link>
-            </div>
-          </div>
-        )}
-
         {/* State 4: Valid invitation — show appropriate flow */}
-        {!isLoading && !error && !submitSuccess && inviteData && (
+        {!isLoading && !submitSuccess && !error && inviteData && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-xl shadow-purple-500/5 space-y-6">
             {/* Organization Invitation Badge */}
             <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-100 space-y-2">

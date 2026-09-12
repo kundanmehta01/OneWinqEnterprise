@@ -765,9 +765,9 @@ class CardService {
     // Record tap asynchronously
     if (slug) {
       analyticsService.recordEvent({
-        eventType: 'qr_scan',
+        eventType: 'QR_SCAN',
         targetType: 'EMPLOYEE',
-        targetId: card.profileId._id,
+        targetId: card.memberId?._id || card.profileId?._id,
         slug,
         metadata: {
           cardUid: card.cardUid,

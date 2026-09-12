@@ -28,6 +28,8 @@ import { Screen5Projects } from '../../components/company/screens/Screen5Project
 import { Screen6Achievements } from '../../components/company/screens/Screen6Achievements';
 import { Screen7Media } from '../../components/company/screens/Screen7Media';
 import { Screen8Contact } from '../../components/company/screens/Screen8Contact';
+import { CompanyDockNav } from '../../components/company/CompanyDockNav';
+import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 
 export const CompanyProfileStudioPage = () => {
   const queryClient = useQueryClient();
@@ -98,6 +100,22 @@ export const CompanyProfileStudioPage = () => {
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const handleNextScreen = () => {
+    const next = activeScreen < 8 ? activeScreen + 1 : 1;
+    handleSelectScreen(next);
+  };
+
+  const handlePrevScreen = () => {
+    const prev = activeScreen > 1 ? activeScreen - 1 : 8;
+    handleSelectScreen(prev);
+  };
+
+  const swipeHandlers = useSwipeGesture({
+    onSwipeLeft: handleNextScreen,
+    onSwipeRight: handlePrevScreen,
+    minDistance: 45
+  });
 
   const renderActiveScreen = () => {
     const props = {
@@ -269,26 +287,14 @@ export const CompanyProfileStudioPage = () => {
           </div>
 
           {/* Right: Studio Direct Save & Live Indicators */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleSave}
               disabled={saveMutation.isPending}
-              className="px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md shadow-purple-500/25 hover:shadow-lg hover:shadow-purple-500/35 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md shadow-purple-500/25 hover:shadow-lg hover:shadow-purple-500/35 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
-              {saveMutation.isPending ? 'Saving...' : 'Publish Live Updates'}
-            </button>
-          </div>
-
-          {/* Mobile Hamburger Trigger */}
-          <div className="flex sm:hidden items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors flex items-center justify-center cursor-pointer"
-              aria-label="Toggle navigation menu"
-            >
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 text-slate-700" />}
+              {saveMutation.isPending ? 'Saving...' : 'Publish'}
             </button>
           </div>
         </div>
@@ -332,15 +338,28 @@ export const CompanyProfileStudioPage = () => {
         </div>
       )}
 
-      {/* 4. Main Full-Screen Canvas (Renders the exact 8 public screens in direct editable mode) */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 py-8">
-        <div className="animate-fadeIn">
+      {/* 4. Main Full-Screen Canvas with Mobile Touch Swipe */}
+      <main
+        className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 lg:py-8 pb-24 lg:pb-8 touch-pan-y"
+        {...swipeHandlers}
+      >
+        <div key={activeScreen} className="animate-fadeIn">
           {renderActiveScreen()}
         </div>
       </main>
 
+      {/* Mobile Bottom Navigation Bar */}
+      <CompanyDockNav
+        activeScreen={activeScreen}
+        onNavigate={handleSelectScreen}
+        onToggleMenu={() => setMenuOpen(!menuOpen)}
+        menuOpen={menuOpen}
+        theme="light"
+        isFixed={true}
+      />
+
       {/* 5. Clean Modern Footer */}
-      <footer className="bg-white border-t border-slate-100 mt-14 py-12 px-6 lg:px-12">
+      <footer className="bg-white border-t border-slate-100 mt-14 py-12 pb-28 lg:pb-12 px-6 lg:px-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
           <div className="space-y-3 md:col-span-2">
             <span className="text-xl font-black tracking-tight text-slate-900 font-display">

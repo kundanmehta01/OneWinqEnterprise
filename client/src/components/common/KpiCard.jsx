@@ -10,10 +10,17 @@ export const KpiCard = ({
   trendType = 'neutral', // 'up', 'down', 'neutral'
   trendLabel = 'vs last month',
   sparklineData = null,
-  sparklineColor = '#6366f1'
+  sparklineColor = '#6366f1',
+  onClick,
+  className = ''
 }) => {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+    <div
+      onClick={onClick}
+      className={`bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-all ${
+        onClick ? 'cursor-pointer hover:border-purple-200 active:scale-[0.99]' : ''
+      } ${className}`}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           {Icon && (

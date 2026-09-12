@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Connection } from './connection.model.js';
 import { User } from '../users/user.model.js';
 import { TeamMember } from '../team-members/teamMember.model.js';
@@ -176,12 +177,23 @@ class ConnectionService {
     });
   }
 
-  async acceptConnectionRequest(connectionId, recipientId) {
-    const connection = await Connection.findOne({
-      _id: connectionId,
+  async acceptConnectionRequest(connectionIdOrRequesterId, recipientId) {
+    const isObjectId = mongoose.Types.ObjectId.isValid(connectionIdOrRequesterId);
+    const filter = {
       recipientId,
       status: 'pending'
-    });
+    };
+
+    if (isObjectId) {
+      filter.$or = [
+        { _id: connectionIdOrRequesterId },
+        { requesterId: connectionIdOrRequesterId }
+      ];
+    } else {
+      filter._id = connectionIdOrRequesterId;
+    }
+
+    const connection = await Connection.findOne(filter);
 
     if (!connection) {
       throw new NotFoundError('Pending connection request not found.');
@@ -192,7 +204,8 @@ class ConnectionService {
     await connection.save();
 
     const recipientMember = await TeamMember.findOne({ userId: recipientId }).lean();
-    const recipientName = recipientMember ? recipientMember.name : 'Your colleague';
+    const recipientUser = await User.findById(recipientId).select('name email').lean();
+    const recipientName = recipientMember?.name || recipientUser?.name || recipientUser?.email?.split('@')[0] || 'Your colleague';
 
     await notificationService.createNotification({
       recipientId: connection.requesterId,
@@ -215,12 +228,23 @@ class ConnectionService {
     return connection;
   }
 
-  async declineConnectionRequest(connectionId, recipientId) {
-    const connection = await Connection.findOne({
-      _id: connectionId,
+  async declineConnectionRequest(connectionIdOrRequesterId, recipientId) {
+    const isObjectId = mongoose.Types.ObjectId.isValid(connectionIdOrRequesterId);
+    const filter = {
       recipientId,
       status: 'pending'
-    });
+    };
+
+    if (isObjectId) {
+      filter.$or = [
+        { _id: connectionIdOrRequesterId },
+        { requesterId: connectionIdOrRequesterId }
+      ];
+    } else {
+      filter._id = connectionIdOrRequesterId;
+    }
+
+    const connection = await Connection.findOne(filter);
 
     if (!connection) {
       throw new NotFoundError('Pending connection request not found.');
@@ -275,39 +299,60 @@ class ConnectionService {
       Connection.countDocuments(filter)
     ]);
 
-    const otherUserIds = connections.map((c) =>
-      c.requesterId.toString() === userId.toString() ? c.recipientId : c.requesterId
-    );
+    const otherUserIds = connections
+      .map((c) =>
+        c.requesterId?.toString() === userId?.toString() ? c.recipientId : c.requesterId
+      )
+      .filter(Boolean);
 
-    const members = await TeamMember.find({ userId: { $in: otherUserIds } })
-      .populate('departmentId', 'name')
-      .populate('profileId', 'slug published.avatarUrl published.headline published.socialLinks')
-      .lean();
+    const [members, users] = await Promise.all([
+      TeamMember.find({ userId: { $in: otherUserIds } })
+        .populate('departmentId', 'name')
+        .populate('profileId', 'slug published.avatarUrl draft.avatarUrl published.headline published.socialLinks')
+        .lean(),
+      User.find({ _id: { $in: otherUserIds } })
+        .select('name email avatarUrl designation')
+        .lean()
+    ]);
 
-    const memberMap = new Map(members.map((m) => [m.userId.toString(), m]));
+    const memberMap = new Map();
+    members.forEach((m) => {
+      if (m?.userId) {
+        memberMap.set(m.userId.toString(), m);
+      }
+    });
+
+    const userMap = new Map();
+    users.forEach((u) => {
+      if (u?._id) {
+        userMap.set(u._id.toString(), u);
+      }
+    });
 
     const result = connections.map((conn) => {
-      const otherId = conn.requesterId.toString() === userId.toString()
-        ? conn.recipientId.toString()
-        : conn.requesterId.toString();
+      const otherId = conn.requesterId?.toString() === userId?.toString()
+        ? (conn.recipientId ? conn.recipientId.toString() : '')
+        : (conn.requesterId ? conn.requesterId.toString() : '');
 
       const member = memberMap.get(otherId);
+      const user = userMap.get(otherId);
 
       return {
         _id: conn._id,
         connectionId: conn._id,
         connectedAt: conn.connectedAt,
-        user: member ? {
-          userId: member.userId,
-          name: member.name,
-          designation: member.designation,
-          department: member.departmentId?.name || '',
-          slug: member.profileId?.slug || '',
-          avatarUrl: member.profileId?.published?.avatarUrl || member.profileId?.draft?.avatarUrl || member.avatarUrl || '',
-          headline: member.profileId?.published?.headline || ''
-        } : null
+        user: {
+          userId: otherId,
+          name: member?.name || user?.name || user?.email?.split('@')[0] || 'Colleague',
+          email: user?.email || '',
+          designation: member?.designation || user?.designation || 'Team Member',
+          department: member?.departmentId?.name || '',
+          slug: member?.profileId?.slug || '',
+          avatarUrl: member?.profileId?.published?.avatarUrl || member?.profileId?.draft?.avatarUrl || member?.avatarUrl || user?.avatarUrl || '',
+          headline: member?.profileId?.published?.headline || ''
+        }
       };
-    }).filter((c) => c.user !== null);
+    });
 
     return {
       connections: result,
@@ -315,14 +360,25 @@ class ConnectionService {
     };
   }
 
-  async removeConnection(connectionId, userId, isSuperAdmin = false) {
+  async removeConnection(connectionIdOrOtherUserId, userId, isSuperAdmin = false) {
+    const isObjectId = mongoose.Types.ObjectId.isValid(connectionIdOrOtherUserId);
+    if (!isObjectId) {
+      throw new BadRequestError('Invalid connection ID or user ID provided.');
+    }
+
     const filter = {
-      _id: connectionId,
-      status: 'accepted'
+      status: 'accepted',
+      $or: [
+        { _id: connectionIdOrOtherUserId },
+        { requesterId: connectionIdOrOtherUserId, recipientId: userId },
+        { requesterId: userId, recipientId: connectionIdOrOtherUserId }
+      ]
     };
 
     if (!isSuperAdmin) {
-      filter.$or = [{ requesterId: userId }, { recipientId: userId }];
+      filter.$and = [
+        { $or: [{ requesterId: userId }, { recipientId: userId }] }
+      ];
     }
 
     const connection = await Connection.findOneAndDelete(filter);
@@ -332,7 +388,7 @@ class ConnectionService {
     }
 
     eventBus.emitEvent(APP_EVENTS.CONNECTION_REMOVED, {
-      connectionId,
+      connectionId: connection._id,
       userId
     });
 
@@ -352,31 +408,52 @@ class ConnectionService {
       Connection.countDocuments(filter)
     ]);
 
-    const requesterUserIds = requests.map((r) => r.requesterId);
-    const members = await TeamMember.find({ userId: { $in: requesterUserIds } })
-      .populate('departmentId', 'name')
-      .populate('profileId', 'slug published.avatarUrl published.headline')
-      .lean();
+    const requesterUserIds = requests.map((r) => r.requesterId).filter(Boolean);
+    const [members, users] = await Promise.all([
+      TeamMember.find({ userId: { $in: requesterUserIds } })
+        .populate('departmentId', 'name')
+        .populate('profileId', 'slug published.avatarUrl draft.avatarUrl published.headline')
+        .lean(),
+      User.find({ _id: { $in: requesterUserIds } })
+        .select('name email avatarUrl designation')
+        .lean()
+    ]);
 
-    const memberMap = new Map(members.map((m) => [m.userId.toString(), m]));
+    const memberMap = new Map();
+    members.forEach((m) => {
+      if (m?.userId) {
+        memberMap.set(m.userId.toString(), m);
+      }
+    });
+
+    const userMap = new Map();
+    users.forEach((u) => {
+      if (u?._id) {
+        userMap.set(u._id.toString(), u);
+      }
+    });
 
     const formattedRequests = requests.map((r) => {
-      const m = memberMap.get(r.requesterId.toString());
+      const requesterIdStr = r.requesterId ? r.requesterId.toString() : '';
+      const m = memberMap.get(requesterIdStr);
+      const u = userMap.get(requesterIdStr);
+
       return {
         _id: r._id,
         requestId: r._id,
         connectionId: r._id,
-        note: r.note,
+        note: r.note || '',
         createdAt: r.createdAt,
-        requester: m ? {
-          userId: m.userId,
-          name: m.name,
-          designation: m.designation,
-          department: m.departmentId?.name || '',
-          slug: m.profileId?.slug || '',
-          avatarUrl: m.profileId?.published?.avatarUrl || m.profileId?.draft?.avatarUrl || m.avatarUrl || '',
-          headline: m.profileId?.published?.headline || ''
-        } : null
+        requester: {
+          userId: r.requesterId,
+          name: m?.name || u?.name || u?.email?.split('@')[0] || 'Colleague',
+          email: u?.email || '',
+          designation: m?.designation || u?.designation || 'Team Member',
+          department: m?.departmentId?.name || '',
+          slug: m?.profileId?.slug || '',
+          avatarUrl: m?.profileId?.published?.avatarUrl || m?.profileId?.draft?.avatarUrl || m?.avatarUrl || u?.avatarUrl || '',
+          headline: m?.profileId?.published?.headline || ''
+        }
       };
     });
 
@@ -399,31 +476,52 @@ class ConnectionService {
       Connection.countDocuments(filter)
     ]);
 
-    const recipientUserIds = requests.map((r) => r.recipientId);
-    const members = await TeamMember.find({ userId: { $in: recipientUserIds } })
-      .populate('departmentId', 'name')
-      .populate('profileId', 'slug published.avatarUrl draft.avatarUrl published.headline')
-      .lean();
+    const recipientUserIds = requests.map((r) => r.recipientId).filter(Boolean);
+    const [members, users] = await Promise.all([
+      TeamMember.find({ userId: { $in: recipientUserIds } })
+        .populate('departmentId', 'name')
+        .populate('profileId', 'slug published.avatarUrl draft.avatarUrl published.headline')
+        .lean(),
+      User.find({ _id: { $in: recipientUserIds } })
+        .select('name email avatarUrl designation')
+        .lean()
+    ]);
 
-    const memberMap = new Map(members.map((m) => [m.userId.toString(), m]));
+    const memberMap = new Map();
+    members.forEach((m) => {
+      if (m?.userId) {
+        memberMap.set(m.userId.toString(), m);
+      }
+    });
+
+    const userMap = new Map();
+    users.forEach((u) => {
+      if (u?._id) {
+        userMap.set(u._id.toString(), u);
+      }
+    });
 
     const formattedRequests = requests.map((r) => {
-      const m = memberMap.get(r.recipientId.toString());
+      const recipientIdStr = r.recipientId ? r.recipientId.toString() : '';
+      const m = memberMap.get(recipientIdStr);
+      const u = userMap.get(recipientIdStr);
+
       return {
         _id: r._id,
         requestId: r._id,
         connectionId: r._id,
-        note: r.note,
+        note: r.note || '',
         createdAt: r.createdAt,
-        recipient: m ? {
-          userId: m.userId,
-          name: m.name,
-          designation: m.designation,
-          department: m.departmentId?.name || '',
-          slug: m.profileId?.slug || '',
-          avatarUrl: m.profileId?.published?.avatarUrl || m.profileId?.draft?.avatarUrl || m.avatarUrl || '',
-          headline: m.profileId?.published?.headline || ''
-        } : null
+        recipient: {
+          userId: r.recipientId,
+          name: m?.name || u?.name || u?.email?.split('@')[0] || 'Colleague',
+          email: u?.email || '',
+          designation: m?.designation || u?.designation || 'Team Member',
+          department: m?.departmentId?.name || '',
+          slug: m?.profileId?.slug || '',
+          avatarUrl: m?.profileId?.published?.avatarUrl || m?.profileId?.draft?.avatarUrl || m?.avatarUrl || u?.avatarUrl || '',
+          headline: m?.profileId?.published?.headline || ''
+        }
       };
     });
 

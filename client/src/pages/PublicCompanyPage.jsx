@@ -18,6 +18,8 @@ import { Screen5Projects } from '../components/company/screens/Screen5Projects';
 import { Screen6Achievements } from '../components/company/screens/Screen6Achievements';
 import { Screen7Media } from '../components/company/screens/Screen7Media';
 import { Screen8Contact } from '../components/company/screens/Screen8Contact';
+import { CompanyDockNav } from '../components/company/CompanyDockNav';
+import { useSwipeGesture } from '../hooks/useSwipeGesture';
 
 export const PublicCompanyPage = () => {
   const { activeScreen, setActiveScreen } = usePreviewStore();
@@ -39,6 +41,22 @@ export const PublicCompanyPage = () => {
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const handleNextScreen = () => {
+    const next = activeScreen < 8 ? activeScreen + 1 : 1;
+    handleSelectScreen(next);
+  };
+
+  const handlePrevScreen = () => {
+    const prev = activeScreen > 1 ? activeScreen - 1 : 8;
+    handleSelectScreen(prev);
+  };
+
+  const swipeHandlers = useSwipeGesture({
+    onSwipeLeft: handleNextScreen,
+    onSwipeRight: handlePrevScreen,
+    minDistance: 45
+  });
 
   const navLinks = [
     { id: 1, label: 'Home' },
@@ -135,7 +153,7 @@ export const PublicCompanyPage = () => {
             </button>
           </div>
 
-          {/* Mobile Hamburger Trigger */}
+          {/* Mobile Header Right: Log In */}
           <div className="flex sm:hidden items-center gap-2">
             <Link
               to="/admin/login"
@@ -144,13 +162,6 @@ export const PublicCompanyPage = () => {
               <Lock className="w-3 h-3 text-purple-600" />
               <span>Log in</span>
             </Link>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors flex items-center justify-center"
-              aria-label="Toggle navigation menu"
-            >
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 text-slate-700" />}
-            </button>
           </div>
         </div>
       </header>
@@ -202,16 +213,29 @@ export const PublicCompanyPage = () => {
         </div>
       )}
 
-      {/* 3. Main Full-Screen Canvas */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 py-8">
+      {/* 3. Main Full-Screen Canvas with Mobile Touch Swipe */}
+      <main
+        className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 lg:py-8 pb-24 lg:pb-8 touch-pan-y"
+        {...swipeHandlers}
+      >
         {/* Render Active Section Content */}
-        <div className="animate-fadeIn">
+        <div key={activeScreen} className="animate-fadeIn">
           {renderActiveScreen()}
         </div>
       </main>
 
+      {/* 4. Mobile Bottom Navigation Bar (Matching Mockup Flow) */}
+      <CompanyDockNav
+        activeScreen={activeScreen}
+        onNavigate={handleSelectScreen}
+        onToggleMenu={() => setMenuOpen(!menuOpen)}
+        menuOpen={menuOpen}
+        theme="light"
+        isFixed={true}
+      />
+
       {/* 5. Clean Modern Footer */}
-      <footer className="bg-white border-t border-slate-100 mt-14 py-12 px-6 lg:px-12">
+      <footer className="bg-white border-t border-slate-100 mt-14 py-12 pb-28 lg:pb-12 px-6 lg:px-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
           <div className="space-y-3 md:col-span-2">
             <span className="text-xl font-black tracking-tight text-slate-900 font-display">

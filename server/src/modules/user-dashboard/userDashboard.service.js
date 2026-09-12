@@ -44,7 +44,13 @@ class UserDashboardService {
         status: 'pending'
       }),
       member.profileId
-        ? AnalyticsEvent.countDocuments({ targetId: member.profileId._id, eventType: 'page_view' })
+        ? AnalyticsEvent.countDocuments({
+            $or: [
+              { targetId: member._id, eventType: { $in: ['PROFILE_VIEW', 'page_view'] } },
+              { targetId: member.profileId._id, eventType: { $in: ['PROFILE_VIEW', 'page_view'] } },
+              { slug: member.profileId.slug, eventType: { $in: ['PROFILE_VIEW', 'page_view'] } }
+            ]
+          })
         : 0,
       EventRegistration.countDocuments({
         userId,

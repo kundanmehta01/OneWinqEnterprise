@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Users,
   UserPlus,
   UserCheck,
+  UserMinus,
   Search,
   CheckCircle2,
   AlertCircle,
@@ -14,24 +16,32 @@ import {
   Send,
   Loader2,
   Trash2,
-  Building2
+  Building2,
+  MessageSquare
 } from 'lucide-react';
 import { connectionApi } from '../../api/connectionApi';
 import { departmentApi } from '../../api/departmentApi';
 import { KpiCard } from '../../components/common/KpiCard';
 import { useAuthStore } from '../../stores/authStore';
+import { useMessagingStore } from '../../stores/messagingStore';
 
 export const ColleagueNetworkPage = () => {
+  const navigate = useNavigate();
   const { isSuperAdmin } = useAuthStore();
+  const { createDirectChat, openConversation } = useMessagingStore();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('explore'); // 'explore', 'connections', 'requests'
   const [search, setSearch] = useState('');
   const [selectedDept, setSelectedDept] = useState('all');
   const [toastMessage, setToastMessage] = useState(null);
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   // Send request modal
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [connectionNote, setConnectionNote] = useState('');
+
+  // Remove connection modal
+  const [disconnectingTarget, setDisconnectingTarget] = useState(null); // { id, name }
 
   // 1. Fetch People Directory
   const { data: peopleResponse, isLoading: isPeopleLoading } = useQuery({
@@ -43,7 +53,7 @@ export const ColleagueNetworkPage = () => {
       const res = await connectionApi.getPeople(params);
       return res?.data || res;
     },
-    enabled: activeTab === 'explore' && !isSuperAdmin
+    enabled: !isSuperAdmin
   });
 
   // 2. Fetch My Connections
@@ -53,7 +63,7 @@ export const ColleagueNetworkPage = () => {
       const res = await connectionApi.getMyConnections();
       return res?.data || res;
     },
-    enabled: activeTab === 'connections' && !isSuperAdmin
+    enabled: !isSuperAdmin
   });
 
   if (isSuperAdmin) {
@@ -87,16 +97,16 @@ export const ColleagueNetworkPage = () => {
       const res = await connectionApi.getIncomingRequests();
       return res?.data || res;
     },
-    enabled: activeTab === 'requests'
+    enabled: !isSuperAdmin
   });
 
-  const { data: outgoingResponse } = useQuery({
+  const { data: outgoingResponse, isLoading: isOutgoingLoading } = useQuery({
     queryKey: ['outgoing-requests'],
     queryFn: async () => {
       const res = await connectionApi.getOutgoingRequests();
       return res?.data || res;
     },
-    enabled: activeTab === 'requests'
+    enabled: !isSuperAdmin
   });
 
   // 4. Fetch Departments for filter
@@ -141,6 +151,8 @@ export const ColleagueNetworkPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['network-people'] });
       queryClient.invalidateQueries({ queryKey: ['outgoing-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['incoming-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['my-connections'] });
       queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
       setSelectedRecipient(null);
       setConnectionNote('');
@@ -155,10 +167,14 @@ export const ColleagueNetworkPage = () => {
     mutationFn: (connectionId) => connectionApi.acceptRequest(connectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incoming-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['outgoing-requests'] });
       queryClient.invalidateQueries({ queryKey: ['my-connections'] });
       queryClient.invalidateQueries({ queryKey: ['network-people'] });
       queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
       showToast('success', 'Connection accepted! You are now connected.');
+    },
+    onError: (err) => {
+      showToast('error', err?.response?.data?.message || 'Failed to accept request.');
     }
   });
 
@@ -166,9 +182,14 @@ export const ColleagueNetworkPage = () => {
     mutationFn: (connectionId) => connectionApi.declineRequest(connectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incoming-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['outgoing-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['my-connections'] });
       queryClient.invalidateQueries({ queryKey: ['network-people'] });
       queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
       showToast('success', 'Connection declined.');
+    },
+    onError: (err) => {
+      showToast('error', err?.response?.data?.message || 'Failed to decline request.');
     }
   });
 
@@ -176,7 +197,9 @@ export const ColleagueNetworkPage = () => {
     mutationFn: (connectionId) => connectionApi.cancelRequest(connectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['outgoing-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['incoming-requests'] });
       queryClient.invalidateQueries({ queryKey: ['network-people'] });
+      queryClient.invalidateQueries({ queryKey: ['my-connections'] });
       queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
       showToast('success', 'Connection request cancelled.');
     },
@@ -189,9 +212,34 @@ export const ColleagueNetworkPage = () => {
     mutationFn: (connectionId) => connectionApi.removeConnection(connectionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-connections'] });
+      queryClient.invalidateQueries({ queryKey: ['network-people'] });
+      queryClient.invalidateQueries({ queryKey: ['incoming-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['outgoing-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
+      setDisconnectingTarget(null);
       showToast('success', 'Connection removed.');
+    },
+    onError: (err) => {
+      showToast('error', err?.response?.data?.message || 'Failed to remove connection.');
     }
   });
+
+  const handleStartChat = async (targetUserId) => {
+    if (!targetUserId || isStartingChat) return;
+    setIsStartingChat(true);
+    try {
+      const conv = await createDirectChat(targetUserId);
+      const convObj = conv?.data || conv;
+      if (convObj?._id) {
+        openConversation(convObj._id);
+        navigate('/app/messages');
+      }
+    } catch (err) {
+      showToast('error', err?.response?.data?.message || err?.message || 'Failed to start chat');
+    } finally {
+      setIsStartingChat(false);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -233,6 +281,8 @@ export const ColleagueNetworkPage = () => {
           trend=""
           trendType="neutral"
           trendLabel="Connected colleagues"
+          onClick={() => setActiveTab('connections')}
+          className={activeTab === 'connections' ? 'ring-2 ring-purple-600 border-transparent shadow-md' : 'hover:border-purple-200'}
         />
         <KpiCard
           icon={Clock}
@@ -242,6 +292,8 @@ export const ColleagueNetworkPage = () => {
           trend=""
           trendType="neutral"
           trendLabel="Awaiting your response"
+          onClick={() => setActiveTab('requests')}
+          className={activeTab === 'requests' ? 'ring-2 ring-purple-600 border-transparent shadow-md' : 'hover:border-amber-200'}
         />
         <KpiCard
           icon={Users}
@@ -251,16 +303,18 @@ export const ColleagueNetworkPage = () => {
           trend=""
           trendType="neutral"
           trendLabel="Active enterprise directory"
+          onClick={() => setActiveTab('explore')}
+          className={activeTab === 'explore' ? 'ring-2 ring-purple-600 border-transparent shadow-md' : 'hover:border-blue-200'}
         />
       </div>
 
       {/* 3. Navigation Tabs & Search */}
       <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-2xl w-full sm:w-auto">
+        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto">
           {[
-            { id: 'explore', label: 'Explore Directory', icon: Users },
-            { id: 'connections', label: `My Connections (${connectionsList.length})`, icon: UserCheck },
-            { id: 'requests', label: `Requests (${incomingList.length})`, icon: Clock }
+            { id: 'explore', label: 'Explore Directory', icon: Users, badge: null },
+            { id: 'connections', label: 'My Connections', icon: UserCheck, badge: connectionsList.length },
+            { id: 'requests', label: 'Requests', icon: Clock, badge: incomingList.length }
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -268,7 +322,7 @@ export const ColleagueNetworkPage = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-purple-600 text-white shadow-sm shadow-purple-200'
                     : 'text-slate-600 hover:text-slate-900'
@@ -276,6 +330,19 @@ export const ColleagueNetworkPage = () => {
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
+                {tab.badge !== null && (
+                  <span
+                    className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      isActive
+                        ? 'bg-white/25 text-white'
+                        : tab.badge > 0
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-slate-200 text-slate-500'
+                    }`}
+                  >
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -375,9 +442,35 @@ export const ColleagueNetworkPage = () => {
                       )}
 
                       {isConnected ? (
-                        <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl">
-                          <Check className="w-3.5 h-3.5" /> Connected
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleStartChat(person.userId || person._id)}
+                            disabled={isStartingChat}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                            title="Send direct message"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>Message</span>
+                          </button>
+                          <button
+                            onClick={() => setDisconnectingTarget({
+                              id: person.connectionId || person.userId || person._id,
+                              name: person.name
+                            })}
+                            disabled={removeConnMutation.isPending}
+                            className="group flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-rose-50 text-emerald-700 hover:text-rose-700 border border-emerald-200 hover:border-rose-200 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+                            title="Click to remove connection"
+                          >
+                            <span className="flex items-center gap-1 group-hover:hidden">
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Connected</span>
+                            </span>
+                            <span className="hidden items-center gap-1 group-hover:flex text-rose-600">
+                              <UserMinus className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Disconnect</span>
+                            </span>
+                          </button>
+                        </div>
                       ) : isPendingSent ? (
                         <button
                           onClick={() => cancelRequestMutation.mutate(person.connectionId || person.userId || person._id)}
@@ -395,14 +488,24 @@ export const ColleagueNetworkPage = () => {
                           </span>
                         </button>
                       ) : isPendingReceived ? (
-                        <button
-                          onClick={() => acceptRequestMutation.mutate(person.connectionId)}
-                          disabled={acceptRequestMutation.isPending}
-                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Accept</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => acceptRequestMutation.mutate(person.connectionId || person.userId || person._id)}
+                            disabled={acceptRequestMutation.isPending || declineRequestMutation.isPending}
+                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs cursor-pointer transition-all disabled:opacity-50"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Accept</span>
+                          </button>
+                          <button
+                            onClick={() => declineRequestMutation.mutate(person.connectionId || person.userId || person._id)}
+                            disabled={acceptRequestMutation.isPending || declineRequestMutation.isPending}
+                            className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold cursor-pointer transition-all disabled:opacity-50"
+                            title="Decline request"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       ) : (
                         <button
                           onClick={() => setSelectedRecipient(person)}
@@ -464,7 +567,16 @@ export const ColleagueNetworkPage = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleStartChat(partner.userId || partner._id)}
+                        disabled={isStartingChat}
+                        className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                        title="Send Message"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Message</span>
+                      </button>
                       {slug && (
                         <a
                           href={`/p/${slug}`}
@@ -477,11 +589,16 @@ export const ColleagueNetworkPage = () => {
                         </a>
                       )}
                       <button
-                        onClick={() => removeConnMutation.mutate(connId)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                        onClick={() => setDisconnectingTarget({
+                          id: connId || partner.userId,
+                          name: partner.name || 'Colleague'
+                        })}
+                        disabled={removeConnMutation.isPending}
+                        className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200/80 hover:border-rose-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                         title="Remove Connection"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <UserMinus className="w-3.5 h-3.5" />
+                        <span>Disconnect</span>
                       </button>
                     </div>
                   </div>
@@ -504,7 +621,12 @@ export const ColleagueNetworkPage = () => {
               </span>
             </h2>
 
-            {incomingList.length === 0 ? (
+            {isIncomingLoading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+                <p className="text-xs text-slate-400">Loading incoming requests...</p>
+              </div>
+            ) : incomingList.length === 0 ? (
               <div className="text-center py-12 text-xs text-slate-400">No pending incoming requests.</div>
             ) : (
               <div className="divide-y divide-slate-50">
@@ -530,18 +652,26 @@ export const ColleagueNetworkPage = () => {
                           <div>
                             <p className="text-xs font-bold text-slate-900">{req.requester?.name || 'Colleague'}</p>
                             <p className="text-[11px] text-slate-400">{req.requester?.designation || req.requester?.email}</p>
+                            {req.requester?.department && (
+                              <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                <Building2 className="w-2.5 h-2.5" />
+                                <span>{req.requester.department}</span>
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => declineRequestMutation.mutate(reqId)}
-                            className="px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                            disabled={declineRequestMutation.isPending || acceptRequestMutation.isPending}
+                            className="px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50"
                           >
                             Decline
                           </button>
                           <button
                             onClick={() => acceptRequestMutation.mutate(reqId)}
-                            className="px-3 py-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs transition-colors"
+                            disabled={acceptRequestMutation.isPending || declineRequestMutation.isPending}
+                            className="px-3 py-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
                           >
                             Accept
                           </button>
@@ -564,7 +694,12 @@ export const ColleagueNetworkPage = () => {
               </span>
             </h2>
 
-            {outgoingList.length === 0 ? (
+            {isOutgoingLoading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+                <p className="text-xs text-slate-400">Loading sent requests...</p>
+              </div>
+            ) : outgoingList.length === 0 ? (
               <div className="text-center py-12 text-xs text-slate-400">No sent requests pending.</div>
             ) : (
               <div className="divide-y divide-slate-50">
@@ -589,11 +724,18 @@ export const ColleagueNetworkPage = () => {
                         <div>
                           <p className="text-xs font-bold text-slate-900">{req.recipient?.name || 'Colleague'}</p>
                           <p className="text-[11px] text-slate-400">{req.recipient?.designation || req.recipient?.email}</p>
+                          {req.recipient?.department && (
+                            <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                              <Building2 className="w-2.5 h-2.5" />
+                              <span>{req.recipient.department}</span>
+                            </p>
+                          )}
                         </div>
                       </div>
                       <button
                         onClick={() => cancelRequestMutation.mutate(reqId)}
-                        className="px-2.5 py-1 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-100 transition-colors"
+                        disabled={cancelRequestMutation.isPending}
+                        className="px-2.5 py-1 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-100 transition-colors disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -667,6 +809,43 @@ export const ColleagueNetworkPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. MODAL: CONFIRM REMOVE CONNECTION */}
+      {disconnectingTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-100 w-full max-w-sm p-6 space-y-4 animate-in fade-in">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <UserMinus className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-slate-900">Disconnect Colleague</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Are you sure you want to remove your connection with{' '}
+                <span className="font-semibold text-slate-800">{disconnectingTarget.name}</span>? You can send a connection request again anytime.
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setDisconnectingTarget(null)}
+                className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 border border-slate-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={removeConnMutation.isPending}
+                onClick={() => removeConnMutation.mutate(disconnectingTarget.id)}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              >
+                {removeConnMutation.isPending ? 'Removing...' : 'Disconnect'}
+              </button>
+            </div>
           </div>
         </div>
       )}

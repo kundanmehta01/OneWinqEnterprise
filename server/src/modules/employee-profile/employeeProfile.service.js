@@ -8,6 +8,7 @@ import { User } from '../users/user.model.js';
 import { Role } from '../roles/role.model.js';
 import { ProfileApproval } from '../profile-approvals/profileApproval.model.js';
 import { CompanyProfile } from '../company-profile/companyProfile.model.js';
+import { OrganizationSettings } from '../settings/organizationSettings.model.js';
 import { calculateObjectDiff } from '../../utils/objectDiff.util.js';
 import { NotFoundError, BadRequestError, ForbiddenError, ConflictError } from '../../errors/index.js';
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
@@ -249,8 +250,24 @@ class EmployeeProfileService {
     profile.draft = draft;
     profile.calculateCompletionScore();
 
-    if (profile.approvalStatus === 'approved' || profile.approvalStatus === 'changes_requested') {
-      profile.approvalStatus = 'draft';
+    const member = await TeamMember.findOne({ userId }).populate('roleId');
+    const isSuperOrAdmin = member?.roleId?.slug === 'super-admin' || member?.roleId?.slug === 'admin' || member?.isSystem;
+
+    // Check organization approval policy
+    const orgSettings = await OrganizationSettings.findOne().lean();
+    const requireApproval = orgSettings?.profileSettings?.requireApprovalForProfileChanges ?? true;
+
+    // If approval is not required OR user is administrator, also promote directly to published
+    if (!requireApproval || isSuperOrAdmin || updateData.publishImmediately) {
+      profile.published = draft;
+      profile.approvalStatus = 'approved';
+      profile.isLocked = false;
+      profile.lastApprovedAt = new Date();
+      profile.lastReviewedBy = userId;
+    } else {
+      if (profile.approvalStatus === 'approved' || profile.approvalStatus === 'changes_requested') {
+        profile.approvalStatus = 'draft';
+      }
     }
 
     await profile.save();
@@ -271,19 +288,42 @@ class EmployeeProfileService {
       throw new NotFoundError('Employee profile not found', ERROR_CODES.PROFILE_NOT_FOUND);
     }
 
-    if (profile.isLocked || profile.approvalStatus === 'pending_review') {
-      throw new BadRequestError('A profile submission is already pending review.', ERROR_CODES.PROFILE_ALREADY_PENDING);
-    }
+    const member = await TeamMember.findOne({ userId }).populate('roleId');
+    const isSuperOrAdmin = member?.roleId?.slug === 'super-admin' || member?.roleId?.slug === 'admin' || member?.isSystem;
 
     const publishedClean = profile.published ? profile.published.toObject() : {};
     const draftClean = profile.draft ? profile.draft.toObject() : {};
     const diffSummary = calculateObjectDiff(publishedClean, draftClean);
 
-    if (diffSummary.length === 0 && profile.published?.headline) {
-      throw new BadRequestError(
-        'No changes detected between draft and published profile.',
-        ERROR_CODES.NO_PENDING_CHANGES
-      );
+    // If user is administrator or founder, auto-approve and make published immediately
+    if (isSuperOrAdmin) {
+      profile.published = draftClean;
+      profile.approvalStatus = 'approved';
+      profile.isLocked = false;
+      profile.lastApprovedAt = new Date();
+      profile.lastReviewedBy = userId;
+      profile.calculateCompletionScore();
+      await profile.save();
+
+      return {
+        message: 'Profile changes published and live immediately.',
+        approvalId: null,
+        diffSummary,
+        autoApproved: true
+      };
+    }
+
+    if (profile.isLocked || profile.approvalStatus === 'pending_review') {
+      throw new BadRequestError('A profile submission is already pending review.', ERROR_CODES.PROFILE_ALREADY_PENDING);
+    }
+
+    // If there are no diffs detected, don't throw 400 error — return friendly success
+    if (diffSummary.length === 0) {
+      return {
+        message: 'Your profile is already up to date with the published version.',
+        approvalId: null,
+        diffSummary: []
+      };
     }
 
     const approval = await ProfileApproval.create({

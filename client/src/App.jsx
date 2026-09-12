@@ -31,6 +31,7 @@ import { ColleagueNetworkPage } from './pages/admin/ColleagueNetworkPage';
 import { TeamDepartmentsPage } from './pages/admin/TeamDepartmentsPage';
 import { UserEventsPage } from './pages/user/UserEventsPage';
 import { EmployeeSettingsPage } from './pages/user/EmployeeSettingsPage';
+import { MessagingPage } from './pages/user/MessagingPage';
 
 import { hasAdminAccess } from './utils/permissions';
 
@@ -153,6 +154,7 @@ export const App = () => {
         <Route path="network" element={<ColleagueNetworkPage />} />
         <Route path="team-departments" element={<TeamDepartmentsPage />} />
         <Route path="events" element={<UserEventsPage />} />
+        <Route path="messages" element={<MessagingPage />} />
         <Route path="settings" element={<EmployeeSettingsPage />} />
       </Route>
 

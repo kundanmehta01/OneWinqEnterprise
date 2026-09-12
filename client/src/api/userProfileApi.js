@@ -12,8 +12,8 @@ export const userProfileApi = {
     return res.data || res;
   },
 
-  submitForApproval: async (reviewNotes = '') => {
-    const res = await api.post('/me/profile/submit', { reviewNotes });
+  submitForApproval: async (reviewNotes = '', formData = null) => {
+    const res = await api.post('/me/profile/submit', { reviewNotes, formData });
     return res.data || res;
   },
 

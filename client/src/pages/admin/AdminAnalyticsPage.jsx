@@ -7,7 +7,8 @@ import {
   QrCode,
   Link as LinkIcon,
   Users,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 import { analyticsApi } from '../../api/analyticsApi';
 import { KpiCard } from '../../components/common/KpiCard';
@@ -17,12 +18,14 @@ export const AdminAnalyticsPage = () => {
   const [selectedRange, setSelectedRange] = useState('7d');
   const [hoveredTrend, setHoveredTrend] = useState(null);
 
-  const { data: analyticsResponse, isLoading } = useQuery({
-    queryKey: ['admin-analytics', selectedRange, activeFilterPill],
+  const { data: analyticsResponse, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ['admin-analytics', selectedRange],
     queryFn: async () => {
       const res = await analyticsApi.getMetrics({ range: selectedRange });
       return res?.data || res;
-    }
+    },
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true
   });
 
   const analyticsData = analyticsResponse || {};
@@ -70,23 +73,63 @@ export const AdminAnalyticsPage = () => {
 
   const filterPills = ['Overview', 'Profile Views', 'QR Scans', 'Link Clicks'];
 
-  // Calculate SVG Trend points
-  const maxTrendViews = Math.max(1, ...trends.map((t) => t.views || 0));
+  // Metric configuration dynamically mapped to the active filter pill
+  const metricConfig = useMemo(() => {
+    switch (activeFilterPill) {
+      case 'QR Scans':
+        return {
+          key: 'scans',
+          label: 'QR & Smart Card Scans Over Time',
+          unit: 'Scans',
+          color: '#f59e0b',
+          dotColor: '#d97706',
+          activeDot: '#b45309'
+        };
+      case 'Link Clicks':
+        return {
+          key: 'clicks',
+          label: 'Profile Link Clicks Over Time',
+          unit: 'Clicks',
+          color: '#0ea5e9',
+          dotColor: '#0284c7',
+          activeDot: '#0369a1'
+        };
+      case 'Profile Views':
+      case 'Overview':
+      default:
+        return {
+          key: 'views',
+          label: 'Profile Views Over Time',
+          unit: 'Views',
+          color: '#6366f1',
+          dotColor: '#4f46e5',
+          activeDot: '#4338ca'
+        };
+    }
+  }, [activeFilterPill]);
+
+  // Calculate SVG Trend points dynamically based on selected metric
+  const maxTrendValue = Math.max(1, ...trends.map((t) => t[metricConfig.key] || 0));
   const trendPoints = trends.length > 0
     ? trends.map((t, idx) => {
         const x = trends.length === 1 ? 160 : 20 + (idx / (trends.length - 1)) * 280;
-        const normalized = Math.min(1, Math.max(0, (t.views || 0) / maxTrendViews));
+        const val = t[metricConfig.key] || 0;
+        const normalized = Math.min(1, Math.max(0, val / maxTrendValue));
         const y = 120 - normalized * 90;
-        return { date: t.date, views: t.views || 0, x, y };
+        return { date: t.date, value: val, x, y };
       })
     : [
-        { date: 'Start', views: 0, x: 20, y: 120 },
-        { date: 'Today', views: 0, x: 300, y: 120 }
+        { date: 'Start', value: 0, x: 20, y: 120 },
+        { date: 'Today', value: 0, x: 300, y: 120 }
       ];
 
   const trendPathD = trendPoints.length > 1
     ? `M ${trendPoints.map((p) => `${p.x} ${p.y}`).join(' L ')}`
     : `M 20 120 L 300 120`;
+
+  const trendAreaD = trendPoints.length > 1
+    ? `${trendPathD} L ${trendPoints[trendPoints.length - 1].x} 130 L ${trendPoints[0].x} 130 Z`
+    : `M 20 120 L 300 120 L 300 130 L 20 130 Z`;
 
   // Dynamic Donut calculations
   const circ = 2 * Math.PI * 38; // ~238.76
@@ -116,7 +159,13 @@ export const AdminAnalyticsPage = () => {
       {/* 1. Header with Dynamic Range Filter & Export */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-display">Analytics</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-display">Analytics</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+              Live Sync
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
             Real-time telemetry and engagement metrics for enterprise profiles and smart cards.
           </p>
@@ -142,6 +191,16 @@ export const AdminAnalyticsPage = () => {
           <div className="hidden md:flex items-center px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-500">
             {dateRangeLabel}
           </div>
+
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            title="Refresh real-time telemetry"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs transition-colors disabled:opacity-60"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isFetching ? 'animate-spin text-indigo-600' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
 
           <button
             onClick={() => window.print()}
@@ -210,12 +269,12 @@ export const AdminAnalyticsPage = () => {
         />
       </div>
 
-      {/* 4. Row 1: Views Over Time + Top Profiles + Traffic Source */}
+      {/* 4. Row 1: Views / Scans / Clicks Line Chart + Top Profiles + Traffic Source */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Views Line Chart */}
+        {/* Dynamic Line Chart */}
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-slate-900">Profile Views Over Time</h2>
+            <h2 className="text-sm font-bold text-slate-900">{metricConfig.label}</h2>
             <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
               {dateRangeLabel}
             </span>
@@ -229,20 +288,34 @@ export const AdminAnalyticsPage = () => {
                 style={{ left: `${(hoveredTrend.x / 320) * 100}%`, top: `${(hoveredTrend.y / 140) * 100}%` }}
               >
                 <p className="text-[10px] text-slate-400 font-medium">{hoveredTrend.date}</p>
-                <p className="text-xs font-bold text-indigo-600">{hoveredTrend.views} Views</p>
+                <p className="text-xs font-bold" style={{ color: metricConfig.color }}>
+                  {hoveredTrend.value} {metricConfig.unit}
+                </p>
               </div>
             )}
 
             <svg viewBox="0 0 320 140" className="w-full h-full overflow-visible">
+              <defs>
+                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={metricConfig.color} stopOpacity="0.25" />
+                  <stop offset="100%" stopColor={metricConfig.color} stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+
               <line x1="0" y1="30" x2="320" y2="30" stroke="#f1f5f9" />
               <line x1="0" y1="70" x2="320" y2="70" stroke="#f1f5f9" />
               <line x1="0" y1="110" x2="320" y2="110" stroke="#f1f5f9" />
               <line x1="0" y1="130" x2="320" y2="130" stroke="#e2e8f0" />
 
               <path
+                d={trendAreaD}
+                fill="url(#chartGradient)"
+              />
+
+              <path
                 d={trendPathD}
                 fill="none"
-                stroke="#6366f1"
+                stroke={metricConfig.color}
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -254,7 +327,7 @@ export const AdminAnalyticsPage = () => {
                   cx={pt.x}
                   cy={pt.y}
                   r={pIdx === trendPoints.length - 1 ? 4.5 : 3.5}
-                  fill={pIdx === trendPoints.length - 1 ? '#4f46e5' : '#6366f1'}
+                  fill={pIdx === trendPoints.length - 1 ? metricConfig.activeDot : metricConfig.dotColor}
                   stroke="#ffffff"
                   strokeWidth={pIdx === trendPoints.length - 1 ? 2 : 0}
                   className="cursor-pointer hover:r-5 transition-all"

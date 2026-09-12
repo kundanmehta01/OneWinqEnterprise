@@ -7,6 +7,7 @@ import {
   Calendar,
   Share2,
   UserPlus,
+  UserMinus,
   Check,
   ChevronRight,
   MapPin,
@@ -18,19 +19,23 @@ import {
   Heart,
   Bell,
   CheckCircle2,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react';
 import { userDashboardApi } from '../../api/userDashboardApi';
 import { connectionApi } from '../../api/connectionApi';
 import { eventApi } from '../../api/eventApi';
 import { useAuthStore } from '../../stores/authStore';
+import { useMessagingStore } from '../../stores/messagingStore';
 
 export const UserHomePage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, member } = useAuthStore();
+  const { createDirectChat, openConversation } = useMessagingStore();
   const [copied, setCopied] = useState(false);
   const [actionSuccessMessage, setActionSuccessMessage] = useState('');
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   const { data: dashboard, isLoading, error } = useQuery({
     queryKey: ['user-home-dashboard'],
@@ -73,6 +78,22 @@ export const UserHomePage = () => {
     }
   });
 
+  // Remove Connection mutation
+  const removeMutation = useMutation({
+    mutationFn: async (connectionIdOrRecipientId) => {
+      return await connectionApi.removeConnection(connectionIdOrRecipientId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-home-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['network-people'] });
+      queryClient.invalidateQueries({ queryKey: ['my-connections'] });
+      showToast('Connection removed.');
+    },
+    onError: (err) => {
+      showToast(err?.response?.data?.message || 'Failed to remove connection.');
+    }
+  });
+
   // Register Event mutation
   const registerMutation = useMutation({
     mutationFn: async (eventId) => {
@@ -87,6 +108,23 @@ export const UserHomePage = () => {
   const showToast = (msg) => {
     setActionSuccessMessage(msg);
     setTimeout(() => setActionSuccessMessage(''), 4000);
+  };
+
+  const handleStartChat = async (targetUserId) => {
+    if (!targetUserId || isStartingChat) return;
+    setIsStartingChat(true);
+    try {
+      const conv = await createDirectChat(targetUserId);
+      const convObj = conv?.data || conv;
+      if (convObj?._id) {
+        openConversation(convObj._id);
+        navigate('/app/messages');
+      }
+    } catch (err) {
+      showToast(err?.response?.data?.message || err?.message || 'Failed to start chat');
+    } finally {
+      setIsStartingChat(false);
+    }
   };
 
   const hero = dashboard?.hero || {};
@@ -418,9 +456,29 @@ export const UserHomePage = () => {
               </div>
 
               {person.connectionStatus === 'connected' ? (
-                <span className="w-full py-1.5 px-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold flex items-center justify-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> Connected
-                </span>
+                <div className="w-full flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleStartChat(person.userId)}
+                    disabled={isStartingChat}
+                    className="flex-1 py-1.5 px-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
+                    title="Send direct message"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Message</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Are you sure you want to disconnect from ${person.name}?`)) {
+                        removeMutation.mutate(person.connectionId || person.userId);
+                      }
+                    }}
+                    disabled={removeMutation.isPending}
+                    className="p-1.5 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-semibold transition-all shadow-2xs flex items-center justify-center cursor-pointer"
+                    title="Disconnect"
+                  >
+                    <UserMinus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               ) : (person.connectionStatus === 'pending_sent' || person.connectionStatus === 'pending') ? (
                 <button
                   onClick={() => cancelMutation.mutate(person.connectionId || person.userId)}

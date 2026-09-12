@@ -793,10 +793,17 @@ export const seedSampleMembers = async () => {
       headline: item.headline || `${item.designation} at OneWinq`,
       bio: item.bio || `Professional ${item.designation} driving innovation at OneWinq.`,
       workEmail: item.email,
-      phone: '+91 731 490 88' + item.employeeId.slice(-2),
+      phone: item.phone || ('+91 731 490 88' + item.employeeId.slice(-2)),
       avatarUrl: item.avatar,
       coverUrl: item.cover || 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1200&h=400&fit=crop',
-      location: { city: 'Indore', country: 'India' },
+      location: item.location || { city: 'Indore', country: 'India' },
+      collaborationNote: item.collaborationNote || 'Open for collaboration, professional networking and exciting opportunities.',
+      overviewStats: item.overviewStats || {
+        connectionsCount: '',
+        projectsCount: '',
+        yearsOfExperience: '',
+        servicesCount: ''
+      },
       experience: item.experience || [
         {
           title: item.designation,
@@ -812,7 +819,12 @@ export const seedSampleMembers = async () => {
         { name: 'Problem Solving', category: 'General', proficiencyLevel: 'Expert', order: 1 },
         { name: 'Team Collaboration', category: 'General', proficiencyLevel: 'Expert', order: 2 }
       ],
+      journey: item.journey || [],
       projects: item.projects || [],
+      impactMetrics: item.impactMetrics || [],
+      achievements: item.achievements || [],
+      mediaGallery: item.mediaGallery || [],
+      blogs: item.blogs || [],
       socialLinks: item.socialLinks || [
         { platform: 'LinkedIn', url: `https://linkedin.com/in/${slug}`, isVisible: true, order: 1 }
       ]
