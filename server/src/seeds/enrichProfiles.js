@@ -10,10 +10,10 @@ const memberEnrichments = {
     bio: 'Visionary leader and entrepreneur passionate about technology, identity and building impactful solutions.',
     collaborationNote: 'Open for collaboration, speaking opportunities and new ideas.',
     overviewStats: {
-      connectionsCount: '248',
-      projectsCount: '25+',
-      yearsOfExperience: '8+',
-      servicesCount: '5+'
+      connectionsCount: '',
+      projectsCount: '',
+      yearsOfExperience: '',
+      servicesCount: ''
     },
     skills: [
       { name: 'Digital Identity', category: 'Identity', proficiencyLevel: 'Expert', order: 1 },
@@ -639,10 +639,10 @@ export async function enrichAllProfiles() {
 
     // Build rich 8-section payload
     const enrichedStats = specific?.overviewStats || {
-      connectionsCount: pub.overviewStats?.connectionsCount || '150+',
-      projectsCount: pub.overviewStats?.projectsCount || '10+',
-      yearsOfExperience: pub.overviewStats?.yearsOfExperience || '5+',
-      servicesCount: pub.overviewStats?.servicesCount || '6+'
+      connectionsCount: '',
+      projectsCount: '',
+      yearsOfExperience: '',
+      servicesCount: ''
     };
 
     const enrichedJourney = (specific?.journey && specific.journey.length > 0)

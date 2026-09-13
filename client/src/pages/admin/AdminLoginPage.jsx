@@ -13,6 +13,10 @@ export const AdminLoginPage = () => {
   const [formError, setFormError] = useState('');
 
   const determineRedirect = (res) => {
+    const searchParams = new URLSearchParams(location.search);
+    const redirectUrl = searchParams.get('redirect');
+    if (redirectUrl) return redirectUrl;
+
     const isSuperAdminAccount = res?.user?.email === 'superadmin@onewinq.com' || (!res?.member && res?.user?.isSuperAdmin);
     return isSuperAdminAccount ? '/admin/company-profile' : '/app/home';
   };
@@ -22,8 +26,10 @@ export const AdminLoginPage = () => {
     setFormError('');
     try {
       const res = await login(email, password);
+      const searchParams = new URLSearchParams(location.search);
+      const redirectUrl = searchParams.get('redirect');
       const defaultDest = determineRedirect(res);
-      const dest = location.state?.from?.pathname || defaultDest;
+      const dest = redirectUrl || location.state?.from?.pathname || defaultDest;
       navigate(dest, { replace: true });
     } catch (err) {
       setFormError(err.message || 'Invalid credentials');
@@ -36,8 +42,11 @@ export const AdminLoginPage = () => {
     setFormError('');
     try {
       const res = await login(quickEmail, quickPassword);
+      const searchParams = new URLSearchParams(location.search);
+      const redirectUrl = searchParams.get('redirect');
       const defaultDest = determineRedirect(res);
-      navigate(defaultDest, { replace: true });
+      const dest = redirectUrl || defaultDest;
+      navigate(dest, { replace: true });
     } catch (err) {
       setFormError(err.message || 'Invalid credentials');
     }

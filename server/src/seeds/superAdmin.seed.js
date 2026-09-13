@@ -98,10 +98,10 @@ export const seedSuperAdmin = async () => {
     coverUrl: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1200&h=400&fit=crop',
     collaborationNote: 'Open for collaboration, speaking opportunities and new ideas.',
     overviewStats: {
-      connectionsCount: '248',
-      projectsCount: '25+',
-      yearsOfExperience: '8+',
-      servicesCount: '5+'
+      connectionsCount: '',
+      projectsCount: '',
+      yearsOfExperience: '',
+      servicesCount: ''
     },
     location: { city: 'Indore', country: 'India' },
     journey: [

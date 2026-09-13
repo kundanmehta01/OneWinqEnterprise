@@ -132,18 +132,37 @@ class PublicProfileService {
     const realProjectsCount = (pub.projects || []).length;
     const realSkillsCount = (pub.skills || profileSkills || []).length;
 
-    // User-entered overviewStats values take precedence if provided
-    const connectionsVal = pub.overviewStats?.connectionsCount || pub.overviewStats?.connections
-      || (realConnections > 0 ? `${realConnections}+` : (tapCount > 0 ? `${tapCount}+` : '0'));
+    // Filter out static legacy seed values ('248', '248+', '150+', '25+', '8+', '5+', '6+')
+    const isLegacySeed = (val, legacyDefaults) => {
+      if (!val) return true;
+      const str = String(val).trim();
+      return legacyDefaults.includes(str);
+    };
 
-    const projectsVal = pub.overviewStats?.projectsCount || pub.overviewStats?.projects
-      || (realProjectsCount > 0 ? `${realProjectsCount}+` : '0');
+    const legacyConnections = ['248', '248+', '150', '150+', '500+'];
+    const legacyProjects = ['25+', '25', '10+', '10'];
+    const legacyYears = ['8+', '8', '5+', '5'];
+    const legacyServices = ['5+', '5', '6+', '6'];
 
-    const yearsVal = pub.overviewStats?.yearsOfExperience || pub.overviewStats?.years
-      || (realYears > 0 ? `${realYears}+` : '0');
+    const rawConn = pub.overviewStats?.connectionsCount || pub.overviewStats?.connections;
+    const connectionsVal = (!isLegacySeed(rawConn, legacyConnections))
+      ? String(rawConn)
+      : (realConnections > 0 ? `${realConnections}+` : (tapCount > 0 ? `${tapCount}+` : '0'));
 
-    const servicesVal = pub.overviewStats?.servicesCount || pub.overviewStats?.services
-      || (realSkillsCount > 0 ? `${realSkillsCount}+` : '0');
+    const rawProj = pub.overviewStats?.projectsCount || pub.overviewStats?.projects;
+    const projectsVal = (!isLegacySeed(rawProj, legacyProjects))
+      ? String(rawProj)
+      : (realProjectsCount > 0 ? `${realProjectsCount}+` : '0');
+
+    const rawYears = pub.overviewStats?.yearsOfExperience || pub.overviewStats?.years;
+    const yearsVal = (!isLegacySeed(rawYears, legacyYears))
+      ? String(rawYears)
+      : (realYears > 0 ? `${realYears}+` : '0');
+
+    const rawServ = pub.overviewStats?.servicesCount || pub.overviewStats?.services;
+    const servicesVal = (!isLegacySeed(rawServ, legacyServices))
+      ? String(rawServ)
+      : (realSkillsCount > 0 ? `${realSkillsCount}+` : '0');
 
     const dynamicOverviewStats = {
       connectionsCount: connectionsVal,

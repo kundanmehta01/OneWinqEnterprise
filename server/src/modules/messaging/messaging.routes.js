@@ -42,4 +42,20 @@ router.post(
 );
 router.delete('/conversations/:id/messages/:messageId', messagingController.deleteMessage.bind(messagingController));
 
+// ── Folders ────────────────────────────────────────────────────────
+// GET    /me/messages/folders                       — list user's folders
+// POST   /me/messages/folders                       — create folder
+// PATCH  /me/messages/folders/:id                   — update folder
+// DELETE /me/messages/folders/:id                   — delete folder
+// POST   /me/messages/folders/:id/members           — add members to folder
+// DELETE /me/messages/folders/:id/members/:memberId — remove member from folder
+
+router.get('/folders', messagingController.getFolders.bind(messagingController));
+router.post('/folders', messagingController.createFolder.bind(messagingController));
+router.patch('/folders/:id', messagingController.updateFolder.bind(messagingController));
+router.delete('/folders/:id', messagingController.deleteFolder.bind(messagingController));
+router.post('/folders/:id/members', messagingController.addFolderMembers.bind(messagingController));
+router.delete('/folders/:id/members/:memberId', messagingController.removeFolderMember.bind(messagingController));
+
 export const messagingRoutes = router;
+

@@ -13,6 +13,7 @@ import {
   updateCardStatusSchema,
   cardIdParamSchema,
   activationTokenParamSchema,
+  claimCardSchema,
   cardQuerySchema
 } from './card.validation.js';
 import { PERMISSIONS } from '../../constants/permissions.constant.js';
@@ -34,6 +35,15 @@ activationRouter.post(
   validate({ params: activationTokenParamSchema }),
   cardController.activateCard.bind(cardController)
 );
+
+// Authenticated: Claim/link an unlinked card directly to the logged-in user's profile
+activationRouter.post(
+  '/claim',
+  authenticate,
+  validate({ body: claimCardSchema }),
+  cardController.claimCard.bind(cardController)
+);
+
 
 // 2. Organization Admin Card Management Router (/admin/cards or /api/v1/admin/cards)
 const adminRouter = Router();

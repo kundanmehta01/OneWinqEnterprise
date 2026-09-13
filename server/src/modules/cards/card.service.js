@@ -696,9 +696,15 @@ class CardService {
   }
 
   async resolvePublicCardTap(cardUid, clientContext = {}) {
-    const normalizedUid = cardUid.toUpperCase().trim();
+    const trimmedUid = (cardUid || '').trim();
+    const normalizedUid = trimmedUid.toUpperCase();
     const card = await Card.findOne({
-      $or: [{ cardUid: normalizedUid }, { serialNumber: normalizedUid }]
+      $or: [
+        { cardUid: trimmedUid },
+        { cardUid: normalizedUid },
+        { cardUid: new RegExp(`^${trimmedUid}$`, 'i') },
+        { serialNumber: normalizedUid }
+      ]
     })
       .populate('memberId', 'name designation status email')
       .populate('profileId', 'slug visibility published.headline published.avatarUrl')
@@ -737,7 +743,7 @@ class CardService {
         status: 'available',
         cardUid: card.cardUid,
         cardType: card.cardType,
-        message: 'This smart card is currently unassigned and ready for setup.'
+        message: 'This OneWinq smart business card has not been activated yet. Link it to your profile to start networking instantly.'
       };
     }
 
@@ -750,7 +756,7 @@ class CardService {
           name: card.memberId?.name || '',
           designation: card.memberId?.designation || ''
         },
-        message: 'This smart card is assigned and pending activation by its owner.'
+        message: 'This OneWinq smart business card has not been activated yet. Link it to your profile to start networking instantly.'
       };
     }
 
@@ -790,6 +796,96 @@ class CardService {
       }
     };
   }
+
+  async claimCard(cardUid, userId, actorContext = {}) {
+    if (!cardUid) {
+      throw new BadRequestError('Card identifier is required.');
+    }
+
+    const trimmedUid = cardUid.trim();
+    const normalizedUid = trimmedUid.toUpperCase();
+    const card = await Card.findOne({
+      $or: [
+        { cardUid: trimmedUid },
+        { cardUid: normalizedUid },
+        { cardUid: new RegExp(`^${trimmedUid}$`, 'i') },
+        { serialNumber: normalizedUid }
+      ]
+    });
+
+    if (!card) {
+      throw new NotFoundError(`Card "${cardUid}" not found in system.`);
+    }
+
+    if (card.status === 'suspended' || card.status === 'blocked') {
+      throw new BadRequestError('This smart card has been temporarily suspended by the organization.');
+    }
+
+    if (card.status === 'deactivated' || card.status === 'lost') {
+      throw new BadRequestError('This smart card has been deactivated or reported lost.');
+    }
+
+    let member = await TeamMember.findOne({ userId });
+    let profile = null;
+    if (member?.profileId) {
+      profile = await EmployeeProfile.findById(member.profileId);
+    }
+    if (!profile && member) {
+      profile = await EmployeeProfile.findOne({ memberId: member._id });
+    }
+    if (!profile) {
+      const { employeeProfileService } = await import('../employee-profile/employeeProfile.service.js');
+      profile = await employeeProfileService._ensureProfileForUser(userId);
+      if (!member) {
+        member = await TeamMember.findOne({ userId });
+      }
+    }
+
+    if (!member || !profile) {
+      throw new BadRequestError('Unable to resolve your employee profile. Please contact your administrator.');
+    }
+
+    // If card is already active/linked:
+    if ((card.status === 'active' || card.status === 'linked') && card.memberId) {
+      if (card.memberId.toString() !== member._id.toString()) {
+        throw new ConflictError('This card is already linked to another team member account.');
+      }
+      return {
+        success: true,
+        message: 'This card is already linked to your profile.',
+        cardUid: card.cardUid,
+        slug: profile.slug,
+        redirectUrl: `/p/${profile.slug}`
+      };
+    }
+
+    // Link card to member and profile
+    card.status = 'active';
+    card.memberId = member._id;
+    card.profileId = profile._id;
+    card.assignedAt = card.assignedAt || new Date();
+    card.activatedAt = new Date();
+    card.activationToken = null;
+    card.activationTokenHash = null;
+    card.activationTokenExpiresAt = null;
+    await card.save();
+
+    eventBus.emitEvent(APP_EVENTS.CARD_ACTIVATED, {
+      cardId: card._id,
+      cardUid: card.cardUid,
+      memberId: member._id,
+      userId
+    });
+
+    return {
+      success: true,
+      message: 'Card successfully activated and linked to your profile!',
+      cardUid: card.cardUid,
+      slug: profile.slug,
+      redirectUrl: `/p/${profile.slug}`
+    };
+  }
 }
 
 export const cardService = new CardService();
+

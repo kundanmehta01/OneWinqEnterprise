@@ -24,3 +24,20 @@ export const updateGroupSchema = z.object({
 export const addParticipantSchema = z.object({
   userId: z.string().min(1, 'userId is required')
 });
+
+export const createFolderSchema = z.object({
+  name: z.string().min(1, 'Folder name is required').max(60),
+  color: z.string().optional(),
+  memberIds: z.array(z.string()).optional().default([])
+});
+
+export const updateFolderSchema = z.object({
+  name: z.string().min(1).max(60).optional(),
+  color: z.string().optional(),
+  memberIds: z.array(z.string()).optional()
+});
+
+export const addFolderMembersSchema = z.object({
+  memberIds: z.array(z.string()).min(1, 'At least one member ID is required')
+});
+

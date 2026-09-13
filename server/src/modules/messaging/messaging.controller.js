@@ -1,5 +1,6 @@
 import { conversationService } from './conversation.service.js';
 import { messageService } from './message.service.js';
+import { chatFolderService } from './chatFolder.service.js';
 import { uploadService } from '../upload/upload.service.js';
 import { CompanyProfile } from '../company-profile/companyProfile.model.js';
 import { ApiResponse } from '../../utils/apiResponse.util.js';
@@ -9,7 +10,10 @@ import {
   createGroupSchema,
   sendMessageSchema,
   updateGroupSchema,
-  addParticipantSchema
+  addParticipantSchema,
+  createFolderSchema,
+  updateFolderSchema,
+  addFolderMembersSchema
 } from './messaging.validation.js';
 
 // Cache the singleton company ID
@@ -317,6 +321,94 @@ class MessagingController {
       return ApiResponse.success(res, {
         data: { unreadCount: count },
         message: 'Unread count retrieved'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ── Folders ────────────────────────────────────────────────────────
+
+  async getFolders(req, res, next) {
+    try {
+      const userId = req.user._id;
+      const companyId = await getCompanyId();
+      const folders = await chatFolderService.getUserFolders(userId, companyId);
+      return ApiResponse.success(res, {
+        data: folders,
+        message: 'Folders retrieved successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createFolder(req, res, next) {
+    try {
+      const userId = req.user._id;
+      const companyId = await getCompanyId();
+      const validated = createFolderSchema.parse(req.body);
+      const folder = await chatFolderService.createFolder(userId, companyId, validated);
+      return ApiResponse.created(res, {
+        data: folder,
+        message: 'Folder created successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateFolder(req, res, next) {
+    try {
+      const userId = req.user._id;
+      const { id } = req.params;
+      const validated = updateFolderSchema.parse(req.body);
+      const folder = await chatFolderService.updateFolder(id, userId, validated);
+      return ApiResponse.success(res, {
+        data: folder,
+        message: 'Folder updated successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteFolder(req, res, next) {
+    try {
+      const userId = req.user._id;
+      const { id } = req.params;
+      await chatFolderService.deleteFolder(id, userId);
+      return ApiResponse.success(res, {
+        message: 'Folder deleted successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addFolderMembers(req, res, next) {
+    try {
+      const userId = req.user._id;
+      const { id } = req.params;
+      const validated = addFolderMembersSchema.parse(req.body);
+      const folder = await chatFolderService.addMembers(id, userId, validated.memberIds);
+      return ApiResponse.success(res, {
+        data: folder,
+        message: 'Members added to folder'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async removeFolderMember(req, res, next) {
+    try {
+      const userId = req.user._id;
+      const { id, memberId } = req.params;
+      const folder = await chatFolderService.removeMember(id, userId, memberId);
+      return ApiResponse.success(res, {
+        data: folder,
+        message: 'Member removed from folder'
       });
     } catch (error) {
       next(error);
