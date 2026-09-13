@@ -6,7 +6,6 @@ const cardSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      uppercase: true,
       trim: true,
       index: true
     },

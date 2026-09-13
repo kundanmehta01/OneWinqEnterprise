@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Send, Paperclip, X, ArrowLeft, Users, MessageSquare, Image as ImageIcon } from 'lucide-react';
+import { Send, Paperclip, X, ArrowLeft, Users, MessageSquare, Image as ImageIcon, Folder, Check, Plus } from 'lucide-react';
 import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { MessageBubble } from './MessageBubble';
+import { FolderManageModal } from './FolderManageModal';
 
 const getConversationMeta = (conversation, currentUserId) => {
   if (!conversation) return { name: 'Chat', initials: 'C' };
@@ -20,16 +21,34 @@ const getConversationMeta = (conversation, currentUserId) => {
   const u = other?.userId;
   const name = u?.name || u?.email?.split('@')[0] || 'Colleague';
   const avatar = u?.avatarUrl || null;
-  return { name, avatar, initials: name.slice(0, 2).toUpperCase(), isGroup: false };
+  return {
+    name,
+    avatar,
+    initials: name.slice(0, 2).toUpperCase(),
+    isGroup: false,
+    otherUserId: (u?._id || u)?.toString()
+  };
 };
 
 export const ChatWindow = ({ conversation, onBack, onOpenGroupInfo, onNewDirect, onNewGroup }) => {
   const { user } = useAuthStore();
-  const { messages, typingUsers, sendMessage, deleteMessage, setTyping, activeConversationId } = useMessagingStore();
+  const {
+    messages,
+    typingUsers,
+    sendMessage,
+    deleteMessage,
+    setTyping,
+    activeConversationId,
+    folders,
+    addFolderMembers,
+    removeFolderMember
+  } = useMessagingStore();
   const [input, setInput] = useState('');
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [isSending, setIsSending] = useState(false);
+  const [showFolderDropdown, setShowFolderDropdown] = useState(false);
+  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimerRef = useRef(null);
@@ -38,6 +57,7 @@ export const ChatWindow = ({ conversation, onBack, onOpenGroupInfo, onNewDirect,
   const msgs = messages[conversationId] || [];
   const typing = typingUsers[conversationId] || [];
   const meta = getConversationMeta(conversation, user?._id);
+  const otherUserId = meta.otherUserId;
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -162,21 +182,135 @@ export const ChatWindow = ({ conversation, onBack, onOpenGroupInfo, onNewDirect,
         )}
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-900 truncate">{meta.name}</p>
-          {meta.isGroup && (
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-slate-900 truncate">{meta.name}</p>
+            {/* Show folder tags for direct colleague */}
+            {!meta.isGroup && otherUserId && (
+              <div className="flex items-center gap-1 overflow-hidden">
+                {folders
+                  .filter((f) => (f.members || []).some((m) => (m._id || m).toString() === otherUserId))
+                  .map((f) => (
+                    <span
+                      key={f._id}
+                      className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-white shrink-0 shadow-2xs"
+                      style={{ backgroundColor: f.color || '#8b5cf6' }}
+                    >
+                      {f.name}
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
+          {meta.isGroup ? (
             <p className="text-[10px] text-slate-500">{conversation.participants?.length} members</p>
+          ) : (
+            <p className="text-[10px] text-slate-400">Direct Conversation</p>
           )}
         </div>
 
-        {meta.isGroup && (
-          <button
-            onClick={onOpenGroupInfo}
-            className="p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
-            title="Group info"
-          >
-            <Users className="w-4 h-4" />
-          </button>
-        )}
+        {/* Action Buttons */}
+        <div className="flex items-center gap-1.5 relative">
+          {!meta.isGroup && otherUserId && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowFolderDropdown((prev) => !prev)}
+                className="px-2.5 py-1.5 rounded-xl text-slate-600 hover:text-purple-700 hover:bg-purple-50 text-xs font-semibold flex items-center gap-1.5 border border-slate-200 hover:border-purple-200 transition-all cursor-pointer shadow-2xs"
+                title="Add this colleague to custom folders (e.g. Senior)"
+              >
+                <Folder className="w-3.5 h-3.5 text-purple-600" />
+                <span className="hidden sm:inline">Folder</span>
+              </button>
+
+              {/* Folder assignment popover */}
+              {showFolderDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-30 animate-in fade-in zoom-in-95">
+                  <div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-100 mb-1">
+                    <span className="text-[11px] font-bold text-slate-800">Assign to Folder</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowFolderDropdown(false)}
+                      className="text-slate-400 hover:text-slate-600 p-0.5 rounded-md"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div className="max-h-40 overflow-y-auto space-y-0.5">
+                    {folders.length === 0 ? (
+                      <p className="text-[11px] text-slate-400 text-center py-2">No folders created yet</p>
+                    ) : (
+                      folders.map((f) => {
+                        const isMember = (f.members || []).some(
+                          (m) => (m._id || m).toString() === otherUserId
+                        );
+                        return (
+                          <button
+                            key={f._id}
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                if (isMember) {
+                                  await removeFolderMember(f._id, otherUserId);
+                                } else {
+                                  await addFolderMembers(f._id, [otherUserId]);
+                                }
+                              } catch (err) {
+                                console.error('Failed to toggle folder member', err);
+                              }
+                            }}
+                            className="w-full flex items-center justify-between p-1.5 rounded-xl hover:bg-purple-50/80 text-left transition-colors cursor-pointer text-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full shrink-0"
+                                style={{ backgroundColor: f.color || '#8b5cf6' }}
+                              />
+                              <span className="font-semibold text-slate-800 truncate">{f.name}</span>
+                            </div>
+                            <div
+                              className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all ${
+                                isMember
+                                  ? 'bg-purple-600 border-purple-600 text-white'
+                                  : 'border-slate-300 bg-white'
+                              }`}
+                            >
+                              {isMember && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="pt-1.5 mt-1 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowFolderDropdown(false);
+                        setShowNewFolderModal(true);
+                      }}
+                      className="w-full py-1 px-2 text-[11px] font-semibold text-purple-600 hover:bg-purple-50 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Create New Folder</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {meta.isGroup && (
+            <button
+              onClick={onOpenGroupInfo}
+              className="p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+              title="Group info"
+            >
+              <Users className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages area */}
@@ -279,6 +413,12 @@ export const ChatWindow = ({ conversation, onBack, onOpenGroupInfo, onNewDirect,
           <Send className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Folder Creation Modal */}
+      <FolderManageModal
+        isOpen={showNewFolderModal}
+        onClose={() => setShowNewFolderModal(false)}
+      />
     </div>
   );
 };

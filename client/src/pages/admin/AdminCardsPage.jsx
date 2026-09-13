@@ -22,7 +22,8 @@ import {
   UserCheck,
   UserX,
   PauseCircle,
-  PlayCircle
+  PlayCircle,
+  HelpCircle
 } from 'lucide-react';
 import { cardApi } from '../../api/cardApi';
 import { teamApi } from '../../api/teamApi';
@@ -42,8 +43,6 @@ export const AdminCardsPage = () => {
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [selectedCardForAssign, setSelectedCardForAssign] = useState(null);
 
   // Activation Link Popup Modal
   const [activationModalData, setActivationModalData] = useState(null);
@@ -59,10 +58,29 @@ export const AdminCardsPage = () => {
     notes: ''
   });
 
-  const [bulkPrefix, setBulkPrefix] = useState('WINQ-NFC');
+  const [bulkPrefix, setBulkPrefix] = useState('winq');
   const [bulkCount, setBulkCount] = useState(5);
-  const [selectedMemberId, setSelectedMemberId] = useState('');
-  const [assignNotes, setAssignNotes] = useState('');
+
+  const generateRandomCardId = (prefix = 'winq') => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `${prefix}-${code}`;
+  };
+
+  const handleOpenAddModal = () => {
+    const uid = generateRandomCardId('winq');
+    setNewCardData({
+      cardUid: uid,
+      serialNumber: `SN-${uid.toUpperCase()}`,
+      cardType: 'metal_black',
+      batchNumber: `BATCH-${new Date().getFullYear()}`,
+      notes: ''
+    });
+    setIsAddModalOpen(true);
+  };
 
   // 1. Fetch Cards
   const { data: cardsResponse, isLoading } = useQuery({
@@ -86,15 +104,6 @@ export const AdminCardsPage = () => {
     }
   });
 
-  // 3. Fetch Team Members for assignment
-  const { data: teamResponse } = useQuery({
-    queryKey: ['admin-team-for-cards'],
-    queryFn: async () => {
-      const res = await teamApi.getAll({ limit: 150 });
-      return res?.data || [];
-    }
-  });
-
   const cardsList = Array.isArray(cardsResponse)
     ? cardsResponse
     : cardsResponse?.cards || [];
@@ -104,10 +113,6 @@ export const AdminCardsPage = () => {
     totalPages: Math.ceil(cardsList.length / pageSize) || 1,
     currentPage: page
   };
-
-  const teamMembers = Array.isArray(teamResponse)
-    ? teamResponse
-    : teamResponse?.members || [];
 
   const stats = statsResponse || {
     total: cardsList.length,
@@ -131,7 +136,7 @@ export const AdminCardsPage = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-cards-stats'] });
       setIsAddModalOpen(false);
       setNewCardData({ cardUid: '', serialNumber: '', cardType: 'metal_black', batchNumber: 'BATCH-2026-01', notes: '' });
-      showToast('success', 'NFC Smart Card registered as Available in inventory!');
+      showToast('success', 'Winq Smart Card registered as Available in inventory!');
     },
     onError: (err) => {
       showToast('error', err?.response?.data?.message || 'Failed to register card.');
@@ -151,44 +156,17 @@ export const AdminCardsPage = () => {
     }
   });
 
-  // Assign Card Mutation (Status: AVAILABLE -> ACTIVATION PENDING)
-  const assignCardMutation = useMutation({
-    mutationFn: (data) => cardApi.assign(data),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-cards'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-cards-stats'] });
-      setIsAssignModalOpen(false);
-      setSelectedMemberId('');
-      setAssignNotes('');
-
-      const result = res?.data || res;
-      if (result?.activationUrl) {
-        setActivationModalData({
-          cardUid: selectedCardForAssign?.cardUid,
-          memberName: teamMembers.find((m) => m._id === selectedMemberId)?.name || 'Team Member',
-          activationUrl: `${window.location.origin}${result.activationUrl}`,
-          expiresAt: result.expiresAt
-        });
-      }
-      setSelectedCardForAssign(null);
-      showToast('success', 'Card assigned to member! Activation link generated.');
-    },
-    onError: (err) => {
-      showToast('error', err?.response?.data?.message || 'Card assignment failed.');
-    }
-  });
-
-  // Unassign Card Mutation (Status -> AVAILABLE)
+  // Unassign / Unlink Card Mutation (Status -> AVAILABLE / UNLINKED)
   const unassignCardMutation = useMutation({
     mutationFn: (data) => cardApi.unassign(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-cards'] });
       queryClient.invalidateQueries({ queryKey: ['admin-cards-stats'] });
       setActiveMenuId(null);
-      showToast('success', 'Card unassigned and returned to Available inventory.');
+      showToast('success', 'Card unlinked and returned to Unlinked inventory.');
     },
     onError: (err) => {
-      showToast('error', err?.response?.data?.message || 'Failed to unassign card.');
+      showToast('error', err?.response?.data?.message || 'Failed to unlink card.');
     }
   });
 
@@ -243,14 +221,15 @@ export const AdminCardsPage = () => {
   const handleBulkSubmit = (e) => {
     e.preventDefault();
     const batch = [];
-    const rand = Math.floor(1000 + Math.random() * 9000);
+    const prefix = bulkPrefix?.trim() || 'winq';
     for (let i = 1; i <= Number(bulkCount); i++) {
-      const uid = `${bulkPrefix}-${rand}-${String(i).padStart(3, '0')}`;
+      const uid = generateRandomCardId(prefix);
       batch.push({
         cardUid: uid,
-        serialNumber: `SN-${uid}`,
+        serialNumber: `SN-${uid.toUpperCase()}`,
         cardType: 'metal_black',
-        batchNumber: `BATCH-${Date.now().toString().slice(-4)}`
+        batchNumber: `BATCH-${new Date().getFullYear()}`,
+        status: 'available'
       });
     }
     createBulkMutation.mutate(batch);
@@ -371,22 +350,22 @@ export const AdminCardsPage = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsBulkModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 transition-colors cursor-pointer"
-          >
-            <Layers className="w-4 h-4" />
-            <span>Bulk Batch</span>
-          </button>
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-sm shadow-purple-200 transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Register Card</span>
-          </button>
-        </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsBulkModalOpen(true)}
+              className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer hover:border-purple-300 shadow-2xs"
+            >
+              <Layers className="w-4 h-4 text-purple-600" />
+              <span>Bulk Register Cards</span>
+            </button>
+            <button
+              onClick={handleOpenAddModal}
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-purple-500/20 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Register Single Card</span>
+            </button>
+          </div>
       </div>
 
       {/* 2. 4 KPI Summary Cards */}
@@ -519,155 +498,127 @@ export const AdminCardsPage = () => {
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-100 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-3">Card ID / Serial</th>
-                  <th className="py-3 px-3">Activation Link</th>
-                  <th className="py-3 px-3">Owner / Member</th>
-                  <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3">Taps</th>
-                  <th className="py-3 px-3 text-right">Actions</th>
+                <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3.5 px-4">CARD ID</th>
+                  <th className="py-3.5 px-4">STATUS</th>
+                  <th className="py-3.5 px-4">OWNER ACCOUNT</th>
+                  <th className="py-3.5 px-4">CARD URL / ACTIVATION LINK</th>
+                  <th className="py-3.5 px-4 text-right">ACTIONS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 text-xs text-slate-700">
                 {cardsList.map((card) => {
                   const member = card.memberId || card.member;
-                  const isAvailable = card.status === 'available';
+                  const isAvailable = card.status === 'available' || card.status === 'unassigned';
                   const isPending = card.status === 'activation_pending';
-                  const isActive = card.status === 'active';
-                  const isSuspended = card.status === 'suspended';
+                  const isActive = card.status === 'active' || card.status === 'linked';
+                  const isSuspended = card.status === 'suspended' || card.status === 'blocked';
+                  const cardUrl = `${window.location.origin}/c/${card.cardUid}`;
 
                   return (
                     <tr key={card._id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3.5 px-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 font-mono text-[10px] font-bold">
-                            NFC
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900 font-mono">{card.cardUid}</p>
-                            <p className="text-[10px] text-slate-400 font-mono">
-                              {card.serialNumber || 'SN--'} &bull; {getCardTypeLabel(card.cardType)}
-                            </p>
-                          </div>
-                        </div>
+                      {/* CARD ID */}
+                      <td className="py-3.5 px-4 font-mono font-bold text-indigo-600 text-xs">
+                        {card.cardUid}
                       </td>
-                      <td className="py-3.5 px-3">
-                        {isPending ? (
-                          card.activationUrl || card.activationToken ? (
-                            <div className="flex items-center gap-1.5 max-w-[210px]">
-                              <span
-                                className="font-mono text-[10px] text-purple-700 bg-purple-50/80 border border-purple-200/80 px-2 py-1 rounded-lg truncate select-all cursor-text max-w-[135px]"
-                                title={`${window.location.origin}${card.activationUrl || `/card/activate/${card.activationToken}`}`}
-                              >
-                                {card.activationUrl || `/card/activate/${card.activationToken}`}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleCopyCardActivationLink(
-                                    `${window.location.origin}${card.activationUrl || `/card/activate/${card.activationToken}`}`,
-                                    card._id
-                                  )
-                                }
-                                className="p-1 rounded-lg hover:bg-purple-100 text-purple-600 transition-colors shrink-0 cursor-pointer"
-                                title="Copy Link"
-                              >
-                                {copiedCardId === card._id ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                              <a
-                                href={card.activationUrl || `/card/activate/${card.activationToken}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-1 rounded-lg hover:bg-purple-100 text-slate-400 hover:text-purple-600 transition-colors shrink-0"
-                                title="Open Link"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => generateLinkMutation.mutate(card._id)}
-                              disabled={generateLinkMutation.isPending}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[11px] font-semibold transition-colors cursor-pointer"
-                              title="Generate Single-Use Activation Link"
-                            >
-                              <Sparkles className="w-3 h-3 text-amber-600" />
-                              <span>Generate Link</span>
-                            </button>
-                          )
+
+                      {/* STATUS */}
+                      <td className="py-3.5 px-4">
+                        {isAvailable ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-slate-300 text-slate-700 bg-slate-50 uppercase tracking-wide">
+                            UNLINKED
+                          </span>
                         ) : isActive ? (
-                          <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>Activated</span>
-                            {card.profile?.slug && (
-                              <a
-                                href={`/p/${card.profile.slug}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-purple-600 hover:underline inline-flex items-center ml-0.5"
-                                title="View Digital Profile"
-                              >
-                                <ExternalLink className="w-2.5 h-2.5" />
-                              </a>
-                            )}
-                          </div>
-                        ) : isAvailable ? (
-                          <span className="text-[11px] text-slate-400 italic">Not Assigned</span>
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-300 text-emerald-700 bg-emerald-50 uppercase tracking-wide">
+                            LINKED
+                          </span>
+                        ) : isPending ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-amber-300 text-amber-700 bg-amber-50 uppercase tracking-wide">
+                            PENDING
+                          </span>
                         ) : (
-                          <span className="text-[11px] text-slate-400">—</span>
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-rose-300 text-rose-700 bg-rose-50 uppercase tracking-wide">
+                            {card.status?.toUpperCase()}
+                          </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-3">
+
+                      {/* OWNER ACCOUNT */}
+                      <td className="py-3.5 px-4">
                         {member ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold flex items-center justify-center">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-7 h-7 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold flex items-center justify-center shrink-0">
                               {member.name ? member.name.substring(0, 1).toUpperCase() : 'M'}
                             </div>
-                            <div>
-                              <p className="font-semibold text-slate-900">{member.name}</p>
-                              <p className="text-[10px] text-slate-400">
-                                {member.designation || 'Member'}{' '}
-                                {member.employeeId ? `• ${member.employeeId}` : ''}
+                            <div className="min-w-0">
+                              <p className="font-semibold text-slate-900 truncate">{member.name}</p>
+                              <p className="text-[10px] text-slate-400 truncate">
+                                {member.email || member.designation || 'Team Member'}
                               </p>
                             </div>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic text-[11px]">—</span>
+                          <span className="inline-flex items-center gap-1.5 text-slate-400 font-medium text-xs">
+                            <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Not Linked</span>
+                          </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-3">{renderStatusBadge(card.status)}</td>
-                      <td className="py-3.5 px-3">
-                        <span className="font-bold text-purple-600">{card.tapCount || 0}</span>
-                        <span className="text-[10px] text-slate-400 ml-1">taps</span>
-                      </td>
-                      <td className="py-3.5 px-3 text-right relative">
-                        <div className="flex items-center justify-end gap-2">
-                          {/* Quick Lifecycle Action Buttons */}
-                          {isAvailable && (
-                            <button
-                              onClick={() => {
-                                setSelectedCardForAssign(card);
-                                setIsAssignModalOpen(true);
-                              }}
-                              className="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-semibold flex items-center gap-1 border border-purple-200 transition-colors"
-                            >
-                              <UserCheck className="w-3.5 h-3.5" />
-                              <span>Assign Card</span>
-                            </button>
-                          )}
 
-                          {isPending && (
+                      {/* CARD URL / ACTIVATION LINK */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5 max-w-[260px]">
+                          <span
+                            className="font-mono text-xs text-slate-600 truncate select-all cursor-text"
+                            title={cardUrl}
+                          >
+                            {cardUrl}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCardActivationLink(cardUrl, card._id)}
+                            className="p-1 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors shrink-0 cursor-pointer"
+                            title="Copy Card Link"
+                          >
+                            {copiedCardId === card._id ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <a
+                            href={cardUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors shrink-0 cursor-pointer"
+                            title="Open Card Link"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right relative">
+                        <div className="flex items-center justify-end gap-2">
+                          {isAvailable ? (
                             <button
-                              onClick={() => generateLinkMutation.mutate(card._id)}
-                              className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-semibold flex items-center gap-1 border border-amber-200 transition-colors"
+                              type="button"
+                              onClick={() => handleCopyCardActivationLink(cardUrl, card._id)}
+                              className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-semibold flex items-center gap-1 border border-indigo-200 transition-colors cursor-pointer"
+                              title="Copy Link for user to link their profile"
                             >
                               <Copy className="w-3.5 h-3.5" />
-                              <span>Get Link</span>
+                              <span>Copy Link</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => unassignCardMutation.mutate({ cardId: card._id })}
+                              disabled={unassignCardMutation.isPending}
+                              className="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 text-[11px] font-semibold flex items-center gap-1 border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer"
+                              title="Unlink this card so another user can claim it"
+                            >
+                              <Unlink className="w-3.5 h-3.5" />
+                              <span>Unlink</span>
                             </button>
                           )}
 
@@ -677,6 +628,7 @@ export const AdminCardsPage = () => {
                               target="_blank"
                               rel="noreferrer"
                               className="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-semibold flex items-center gap-1 border border-slate-200 transition-colors"
+                              title="View Member Profile"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                               <span>Profile</span>
@@ -694,47 +646,49 @@ export const AdminCardsPage = () => {
 
                         {/* Dropdown Menu */}
                         {activeMenuId === card._id && (
-                          <div className="absolute right-3 mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-xs text-left animate-in fade-in">
-                            {isAvailable ? (
+                          <div className="absolute right-4 mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-30 text-xs text-left animate-in fade-in">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleCopyCardActivationLink(cardUrl, card._id);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-3 py-2 flex items-center gap-2 hover:bg-slate-50 text-slate-700"
+                            >
+                              <Copy className="w-3.5 h-3.5 text-indigo-600" /> Copy Card Link
+                            </button>
+
+                            <a
+                              href={cardUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={() => setActiveMenuId(null)}
+                              className="w-full px-3 py-2 flex items-center gap-2 hover:bg-slate-50 text-slate-700"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-400" /> Open Card Link
+                            </a>
+
+                            {!isAvailable && (
                               <button
                                 onClick={() => {
-                                  setSelectedCardForAssign(card);
-                                  setIsAssignModalOpen(true);
+                                  unassignCardMutation.mutate({ cardId: card._id });
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full px-3 py-2 flex items-center gap-2 hover:bg-purple-50 text-purple-700 font-semibold"
-                              >
-                                <UserCheck className="w-3.5 h-3.5" /> Assign to Member
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => unassignCardMutation.mutate({ cardId: card._id })}
                                 className="w-full px-3 py-2 flex items-center gap-2 hover:bg-amber-50 text-amber-700 font-semibold"
                               >
-                                <Unlink className="w-3.5 h-3.5" /> Unassign Card
-                              </button>
-                            )}
-
-                            {isPending && (
-                              <button
-                                onClick={() => {
-                                  generateLinkMutation.mutate(card._id);
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full px-3 py-2 flex items-center gap-2 hover:bg-slate-50 text-slate-700"
-                              >
-                                <Copy className="w-3.5 h-3.5" /> Resend Activation Link
+                                <Unlink className="w-3.5 h-3.5" /> Unlink Card
                               </button>
                             )}
 
                             {isActive && (
                               <button
-                                onClick={() =>
+                                onClick={() => {
                                   updateStatusMutation.mutate({
                                     id: card._id,
                                     status: 'suspended'
-                                  })
-                                }
+                                  });
+                                  setActiveMenuId(null);
+                                }}
                                 className="w-full px-3 py-2 flex items-center gap-2 hover:bg-orange-50 text-orange-700"
                               >
                                 <PauseCircle className="w-3.5 h-3.5" /> Suspend Card
@@ -743,12 +697,13 @@ export const AdminCardsPage = () => {
 
                             {isSuspended && (
                               <button
-                                onClick={() =>
+                                onClick={() => {
                                   updateStatusMutation.mutate({
                                     id: card._id,
                                     status: 'active'
-                                  })
-                                }
+                                  });
+                                  setActiveMenuId(null);
+                                }}
                                 className="w-full px-3 py-2 flex items-center gap-2 hover:bg-emerald-50 text-emerald-700"
                               >
                                 <PlayCircle className="w-3.5 h-3.5" /> Unsuspend / Activate
@@ -756,23 +711,14 @@ export const AdminCardsPage = () => {
                             )}
 
                             <button
-                              onClick={() =>
-                                updateStatusMutation.mutate({
-                                  id: card._id,
-                                  status: card.status === 'deactivated' ? 'available' : 'deactivated'
-                                })
-                              }
-                              className="w-full px-3 py-2 flex items-center gap-2 hover:bg-slate-50 text-slate-700"
+                              onClick={() => {
+                                if (window.confirm('Delete this card from inventory permanently?')) {
+                                  deleteCardMutation.mutate(card._id);
+                                }
+                              }}
+                              className="w-full px-3 py-2 flex items-center gap-2 hover:bg-rose-50 text-rose-600 border-t border-slate-100 mt-1"
                             >
-                              <ShieldCheck className="w-3.5 h-3.5" />
-                              {card.status === 'deactivated' ? 'Restore to Available' : 'Deactivate'}
-                            </button>
-
-                            <button
-                              onClick={() => deleteCardMutation.mutate(card._id)}
-                              className="w-full px-3 py-2 flex items-center gap-2 hover:bg-rose-50 text-rose-600 border-t border-slate-100"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" /> Remove Hardware
+                              <Trash2 className="w-3.5 h-3.5" /> Delete Card
                             </button>
                           </div>
                         )}
@@ -802,93 +748,7 @@ export const AdminCardsPage = () => {
         )}
       </div>
 
-      {/* 7. MODAL: ASSIGN CARD TO USER */}
-      {isAssignModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md p-6 space-y-4 animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-                  <UserCheck className="w-4 h-4" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Assign Card to Member</h3>
-              </div>
-              <button
-                onClick={() => setIsAssignModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            <div className="p-3 bg-purple-50/60 rounded-2xl border border-purple-100 text-xs space-y-1">
-              <p className="text-purple-600 font-semibold">Selected Smart Card:</p>
-              <p className="font-bold text-slate-900 font-mono text-sm">{selectedCardForAssign?.cardUid}</p>
-              <p className="text-[11px] text-slate-500">
-                The card will move to <strong>Activation Pending</strong> status. A secure activation URL will be generated for the member.
-              </p>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!selectedMemberId) return;
-                assignCardMutation.mutate({
-                  cardId: selectedCardForAssign._id,
-                  memberId: selectedMemberId,
-                  notes: assignNotes
-                });
-              }}
-              className="space-y-3"
-            >
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Select Team Member</label>
-                <select
-                  required
-                  value={selectedMemberId}
-                  onChange={(e) => setSelectedMemberId(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-none bg-white"
-                >
-                  <option value="">-- Choose Member --</option>
-                  {teamMembers.map((m) => (
-                    <option key={m._id} value={m._id}>
-                      {m.name} ({m.designation || 'Member'}) - {m.employeeId}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Optional Notes</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Issued for Q3 client visits"
-                  value={assignNotes}
-                  onChange={(e) => setAssignNotes(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsAssignModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={assignCardMutation.isPending || !selectedMemberId}
-                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  {assignCardMutation.isPending ? 'Assigning...' : 'Assign & Generate Link'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* 8. POPUP: ACTIVATION URL MODAL (Generated upon assignment or resend) */}
       {activationModalData && (
@@ -949,8 +809,8 @@ export const AdminCardsPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white rounded-3xl shadow-xl border border-slate-100 w-full max-w-md p-6 space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900">Register Physical NFC Card</h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
+              <h3 className="text-base font-bold text-slate-900">Register Physical Card</h3>
+              <button onClick={() => setIsAddModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -963,14 +823,14 @@ export const AdminCardsPage = () => {
               className="space-y-3"
             >
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Card UID (Hardware ID)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Card ID</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. WINQ-HXL5QD"
+                  placeholder="e.g. winq-HXL5QD"
                   value={newCardData.cardUid}
                   onChange={(e) => setNewCardData({ ...newCardData, cardUid: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono uppercase"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono"
                 />
               </div>
 
@@ -1046,14 +906,16 @@ export const AdminCardsPage = () => {
 
             <form onSubmit={handleBulkSubmit} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Card UID Prefix</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Card ID Prefix</label>
                 <input
                   type="text"
                   required
+                  placeholder="e.g. winq"
                   value={bulkPrefix}
                   onChange={(e) => setBulkPrefix(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none uppercase font-mono"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono"
                 />
+                <p className="text-[10px] text-slate-400 mt-1">Cards will be created as e.g. {bulkPrefix || 'winq'}-HXL5QD</p>
               </div>
 
               <div>

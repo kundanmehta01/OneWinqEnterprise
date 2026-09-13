@@ -33,6 +33,64 @@ export const DigitalHeroCard = ({
 
   const departmentName = profile.department?.name || profile.department || 'Enterprise';
 
+  // Legacy static dummy values to filter out
+  const legacyConnections = ['248', '248+', '150', '150+', '500+'];
+  const legacyProjects = ['25+', '25', '10+', '10'];
+  const legacyYears = ['8+', '8', '5+', '5'];
+  const legacyServices = ['5+', '5', '6+', '6'];
+
+  // Calculate real projects count from profile.projects
+  const realProjects = (profile.projects || profile.workAndImpact?.projects || []).length;
+
+  // Calculate real skills / services count from profile.skills
+  const realServices = (profile.skills || []).length;
+
+  // Calculate real experience years from profile.experience
+  let calculatedYears = 0;
+  const experienceList = profile.experience || profile.about?.experience || [];
+  if (experienceList.length > 0) {
+    experienceList.forEach((exp) => {
+      const start = exp.startDate ? new Date(exp.startDate) : null;
+      const end = exp.endDate ? new Date(exp.endDate) : (exp.isCurrent ? new Date() : null);
+      if (start && end && !isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        const diff = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24 * 365.25)));
+        calculatedYears += diff;
+      } else {
+        calculatedYears += 1;
+      }
+    });
+  }
+
+  // Dynamic Connections
+  const rawConn = profile.overviewStats?.connections ?? profile.overviewStats?.connectionsCount ?? profile.stats?.connectionsCount;
+  const isCustomConn = rawConn && !legacyConnections.includes(String(rawConn).trim());
+  const displayConnections = isCustomConn
+    ? rawConn
+    : (profile.connectionsCount !== undefined && profile.connectionsCount !== null)
+    ? (profile.connectionsCount > 0 ? `${profile.connectionsCount}+` : '0')
+    : (profile.cardTapCount > 0 ? `${profile.cardTapCount}+` : '0');
+
+  // Dynamic Projects
+  const rawProj = profile.overviewStats?.projects ?? profile.overviewStats?.projectsCount ?? profile.stats?.projectsCount;
+  const isCustomProj = rawProj && !legacyProjects.includes(String(rawProj).trim());
+  const displayProjects = isCustomProj
+    ? rawProj
+    : (realProjects > 0 ? `${realProjects}+` : '0');
+
+  // Dynamic Years
+  const rawYears = profile.overviewStats?.years ?? profile.overviewStats?.yearsOfExperience ?? profile.stats?.yearsOfExperience;
+  const isCustomYears = rawYears && !legacyYears.includes(String(rawYears).trim());
+  const displayYears = isCustomYears
+    ? rawYears
+    : (calculatedYears > 0 ? `${calculatedYears}+` : '1+');
+
+  // Dynamic Services
+  const rawServ = profile.overviewStats?.services ?? profile.overviewStats?.servicesCount ?? profile.stats?.servicesCount;
+  const isCustomServ = rawServ && !legacyServices.includes(String(rawServ).trim());
+  const displayServices = isCustomServ
+    ? rawServ
+    : (realServices > 0 ? `${realServices}+` : '0');
+
   return (
     <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-500/5 overflow-hidden">
       {/* 1. Cover Banner */}
@@ -121,42 +179,32 @@ export const DigitalHeroCard = ({
         </div>
 
         {/* Overview Stats Bar (Founder & Employee Identity) */}
-        {profile.overviewStats && (
-          <div className="grid grid-cols-4 gap-2 py-2.5 px-4 max-w-md mx-auto bg-slate-50/80 rounded-2xl border border-slate-100 text-center">
-            <div>
-              <div className="text-xs sm:text-sm font-extrabold text-slate-900">
-                {(profile.overviewStats.connections !== undefined && profile.overviewStats.connections !== null && profile.overviewStats.connections !== '')
-                  ? profile.overviewStats.connections
-                  : (profile.overviewStats.connectionsCount ?? 0)}
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium">Connections</div>
+        <div className="grid grid-cols-4 gap-2 py-2.5 px-4 max-w-md mx-auto bg-slate-50/80 rounded-2xl border border-slate-100 text-center">
+          <div>
+            <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+              {displayConnections}
             </div>
-            <div>
-              <div className="text-xs sm:text-sm font-extrabold text-slate-900">
-                {(profile.overviewStats.projects !== undefined && profile.overviewStats.projects !== null && profile.overviewStats.projects !== '')
-                  ? profile.overviewStats.projects
-                  : (profile.overviewStats.projectsCount ?? 0)}
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium">Projects</div>
-            </div>
-            <div>
-              <div className="text-xs sm:text-sm font-extrabold text-slate-900">
-                {(profile.overviewStats.years !== undefined && profile.overviewStats.years !== null && profile.overviewStats.years !== '')
-                  ? profile.overviewStats.years
-                  : (profile.overviewStats.yearsOfExperience ?? 0)}
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium">Years</div>
-            </div>
-            <div>
-              <div className="text-xs sm:text-sm font-extrabold text-slate-900">
-                {(profile.overviewStats.services !== undefined && profile.overviewStats.services !== null && profile.overviewStats.services !== '')
-                  ? profile.overviewStats.services
-                  : (profile.overviewStats.servicesCount ?? 0)}
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium">Services</div>
-            </div>
+            <div className="text-[10px] text-slate-400 font-medium">Connections</div>
           </div>
-        )}
+          <div>
+            <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+              {displayProjects}
+            </div>
+            <div className="text-[10px] text-slate-400 font-medium">Projects</div>
+          </div>
+          <div>
+            <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+              {displayYears}
+            </div>
+            <div className="text-[10px] text-slate-400 font-medium">Years</div>
+          </div>
+          <div>
+            <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+              {displayServices}
+            </div>
+            <div className="text-[10px] text-slate-400 font-medium">Services</div>
+          </div>
+        </div>
 
         {/* Action Controls: Get in Touch, Save Contact (.vcf), QR Code, Share */}
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">

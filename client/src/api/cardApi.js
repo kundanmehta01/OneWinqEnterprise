@@ -63,7 +63,14 @@ export const cardApi = {
     return res.data || res;
   },
 
-  // Public NFC Tap Resolver
+  // User claim unlinked card to profile
+  claimCard: async (cardUid) => {
+    const res = await api.post('/cards/claim', { cardUid });
+    return res.data || res;
+  },
+
+  // Public Smart Card Tap Resolver
+
   resolvePublicTap: async (cardUid) => {
     const res = await api.get(`/public/cards/${cardUid}`);
     return res.data || res;

@@ -12,6 +12,9 @@ export const useMessagingStore = create((set, get) => ({
   typingUsers: {}, // { [conversationId]: { userId, name }[] }
   unreadCounts: {}, // { [conversationId]: number }
   totalUnread: 0,
+  folders: [],
+  selectedFolderId: null,
+  isLoadingFolders: false,
   socket: null,
   isConnected: false,
   isLoadingConversations: false,
@@ -320,5 +323,75 @@ export const useMessagingStore = create((set, get) => ({
     } catch (_) {
       return 0;
     }
+  },
+
+  // ── Folders ──────────────────────────────────────────────────
+
+  fetchFolders: async () => {
+    set({ isLoadingFolders: true });
+    try {
+      const res = await messagingApi.getFolders();
+      const folders = res?.data || [];
+      set({ folders, isLoadingFolders: false });
+      return folders;
+    } catch (err) {
+      set({ isLoadingFolders: false });
+      console.error('Failed to fetch chat folders', err);
+      return [];
+    }
+  },
+
+  setSelectedFolderId: (selectedFolderId) => {
+    set({ selectedFolderId });
+  },
+
+  createFolder: async (data) => {
+    const res = await messagingApi.createFolder(data);
+    const folder = res?.data || res;
+    if (folder && folder._id) {
+      set((state) => ({ folders: [...state.folders, folder] }));
+    }
+    return folder;
+  },
+
+  updateFolder: async (folderId, data) => {
+    const res = await messagingApi.updateFolder(folderId, data);
+    const updated = res?.data || res;
+    if (updated && updated._id) {
+      set((state) => ({
+        folders: state.folders.map((f) => (f._id === folderId ? updated : f))
+      }));
+    }
+    return updated;
+  },
+
+  deleteFolder: async (folderId) => {
+    await messagingApi.deleteFolder(folderId);
+    set((state) => ({
+      folders: state.folders.filter((f) => f._id !== folderId),
+      selectedFolderId: state.selectedFolderId === folderId ? null : state.selectedFolderId
+    }));
+  },
+
+  addFolderMembers: async (folderId, memberIds) => {
+    const res = await messagingApi.addFolderMembers(folderId, memberIds);
+    const updated = res?.data || res;
+    if (updated && updated._id) {
+      set((state) => ({
+        folders: state.folders.map((f) => (f._id === folderId ? updated : f))
+      }));
+    }
+    return updated;
+  },
+
+  removeFolderMember: async (folderId, memberId) => {
+    const res = await messagingApi.removeFolderMember(folderId, memberId);
+    const updated = res?.data || res;
+    if (updated && updated._id) {
+      set((state) => ({
+        folders: state.folders.map((f) => (f._id === folderId ? updated : f))
+      }));
+    }
+    return updated;
   }
 }));

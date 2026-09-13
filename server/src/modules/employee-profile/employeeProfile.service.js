@@ -9,6 +9,7 @@ import { Role } from '../roles/role.model.js';
 import { ProfileApproval } from '../profile-approvals/profileApproval.model.js';
 import { CompanyProfile } from '../company-profile/companyProfile.model.js';
 import { OrganizationSettings } from '../settings/organizationSettings.model.js';
+import { Connection } from '../connections/connection.model.js';
 import { calculateObjectDiff } from '../../utils/objectDiff.util.js';
 import { NotFoundError, BadRequestError, ForbiddenError, ConflictError } from '../../errors/index.js';
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
@@ -80,11 +81,92 @@ class EmployeeProfileService {
       });
     }
 
+    // Dynamically calculate overview stats if not custom entered or if filled with legacy seed defaults
+    const pub = profile.published || profile.draft || {};
+    const legacyConnections = ['248', '248+', '150', '150+', '500+'];
+    const legacyProjects = ['25+', '25', '10+', '10'];
+    const legacyYears = ['8+', '8', '5+', '5'];
+    const legacyServices = ['5+', '5', '6+', '6'];
+
+    const isLegacySeed = (val, legacyDefaults) => {
+      if (!val) return true;
+      const str = String(val).trim();
+      return legacyDefaults.includes(str);
+    };
+
+    let realConnections = 0;
+    try {
+      const userOrMemberId = profile.userId?._id || profile.userId;
+      const memberQueryId = profile.memberId?._id || profile.memberId;
+      const queryIds = [userOrMemberId, memberQueryId].filter(Boolean);
+      if (queryIds.length > 0) {
+        realConnections = await Connection.countDocuments({
+          $or: [
+            { requesterId: { $in: queryIds }, status: 'accepted' },
+            { recipientId: { $in: queryIds }, status: 'accepted' }
+          ]
+        });
+      }
+    } catch (e) {
+      realConnections = 0;
+    }
+
+    let realYears = 0;
+    const experienceList = pub.experience || [];
+    if (experienceList.length > 0) {
+      experienceList.forEach((exp) => {
+        const start = exp.startDate ? new Date(exp.startDate) : null;
+        const end = exp.endDate ? new Date(exp.endDate) : (exp.isCurrent ? new Date() : null);
+        if (start && end && !isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          const diff = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24 * 365.25)));
+          realYears += diff;
+        } else {
+          realYears += 1;
+        }
+      });
+    }
+
+    const realProjectsCount = (pub.projects || []).length;
+    const realSkillsCount = (pub.skills || []).length;
+    const tapCount = nfcCard?.tapCount || 0;
+
+    const rawConn = pub.overviewStats?.connectionsCount || pub.overviewStats?.connections;
+    const connectionsVal = (!isLegacySeed(rawConn, legacyConnections))
+      ? String(rawConn)
+      : (realConnections > 0 ? `${realConnections}+` : (tapCount > 0 ? `${tapCount}+` : '0'));
+
+    const rawProj = pub.overviewStats?.projectsCount || pub.overviewStats?.projects;
+    const projectsVal = (!isLegacySeed(rawProj, legacyProjects))
+      ? String(rawProj)
+      : (realProjectsCount > 0 ? `${realProjectsCount}+` : '0');
+
+    const rawYears = pub.overviewStats?.yearsOfExperience || pub.overviewStats?.years;
+    const yearsVal = (!isLegacySeed(rawYears, legacyYears))
+      ? String(rawYears)
+      : (realYears > 0 ? `${realYears}+` : '0');
+
+    const rawServ = pub.overviewStats?.servicesCount || pub.overviewStats?.services;
+    const servicesVal = (!isLegacySeed(rawServ, legacyServices))
+      ? String(rawServ)
+      : (realSkillsCount > 0 ? `${realSkillsCount}+` : '0');
+
+    const dynamicOverviewStats = {
+      connectionsCount: connectionsVal,
+      connections: connectionsVal,
+      projectsCount: projectsVal,
+      projects: projectsVal,
+      yearsOfExperience: yearsVal,
+      years: yearsVal,
+      servicesCount: servicesVal,
+      services: servicesVal
+    };
+
     return {
       ...profile,
       coverUrl: company?.branding?.coverUrl || '',
       orgLogoUrl: company?.branding?.logoUrl || '',
       companyBranding: company?.branding || null,
+      overviewStats: dynamicOverviewStats,
       template: {
         id: resolvedTemplate.key,
         key: resolvedTemplate.key,

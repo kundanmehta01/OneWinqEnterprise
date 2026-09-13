@@ -202,6 +202,28 @@ export class CardController {
       next(error);
     }
   }
+
+  async claimCard(req, res, next) {
+    try {
+      const { cardUid } = req.body;
+      const userId = req.user._id;
+      const actorContext = {
+        actorId: userId,
+        user: req.user,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      };
+
+      const result = await cardService.claimCard(cardUid, userId, actorContext);
+      return ApiResponse.success(res, {
+        data: result,
+        message: result.message
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const cardController = new CardController();
+

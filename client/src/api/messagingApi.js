@@ -74,5 +74,37 @@ export const messagingApi = {
   deleteMessage: async (conversationId, messageId) => {
     const res = await api.delete(`${BASE}/conversations/${conversationId}/messages/${messageId}`);
     return res;
+  },
+
+  // ── Folders ──────────────────────────────────────────────────
+  getFolders: async () => {
+    const res = await api.get(`${BASE}/folders`);
+    return res;
+  },
+
+  createFolder: async ({ name, color, memberIds }) => {
+    const res = await api.post(`${BASE}/folders`, { name, color, memberIds });
+    return res;
+  },
+
+  updateFolder: async (folderId, data) => {
+    const res = await api.patch(`${BASE}/folders/${folderId}`, data);
+    return res;
+  },
+
+  deleteFolder: async (folderId) => {
+    const res = await api.delete(`${BASE}/folders/${folderId}`);
+    return res;
+  },
+
+  addFolderMembers: async (folderId, memberIds) => {
+    const res = await api.post(`${BASE}/folders/${folderId}/members`, { memberIds });
+    return res;
+  },
+
+  removeFolderMember: async (folderId, memberId) => {
+    const res = await api.delete(`${BASE}/folders/${folderId}/members/${memberId}`);
+    return res;
   }
 };
+

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const createCardSchema = z.object({
-  cardUid: z.string().min(3).max(64).trim().toUpperCase(),
-  serialNumber: z.string().min(3).max(64).trim().toUpperCase(),
+  cardUid: z.string().min(3).max(64).trim(),
+  serialNumber: z.string().min(3).max(64).trim(),
   cardType: z.enum(['metal_black', 'metal_gold', 'metal_silver', 'pvc_matte', 'pvc_glossy', 'bamboo_wood', 'hybrid']).optional().default('metal_black'),
   batchNumber: z.string().max(100).optional().default('BATCH-2026-01'),
   notes: z.string().max(500).optional().default('')
@@ -54,6 +54,10 @@ export const cardIdParamSchema = z.object({
 
 export const activationTokenParamSchema = z.object({
   token: z.string().min(10).max(128).trim()
+});
+
+export const claimCardSchema = z.object({
+  cardUid: z.string().min(1, 'cardUid is required').trim()
 });
 
 export const cardQuerySchema = z.object({

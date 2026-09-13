@@ -15,6 +15,7 @@ export const MessagingPage = () => {
     connectSocket,
     disconnectSocket,
     fetchConversations,
+    fetchFolders,
     openConversation,
     closeConversation,
     isLoadingConversations
@@ -31,6 +32,7 @@ export const MessagingPage = () => {
       connectSocket(accessToken);
     }
     fetchConversations();
+    fetchFolders();
 
     return () => {
       disconnectSocket();
