@@ -26,7 +26,8 @@ import {
   BookOpen,
   Linkedin,
   Instagram,
-  Facebook
+  Facebook,
+  Zap
 } from 'lucide-react';
 import { DigitalHeroCard } from './DigitalHeroCard';
 
@@ -183,10 +184,10 @@ export const IdentityFlowSections = ({
                 <Sparkles className="w-4 h-4 text-purple-600" /> Explore {firstName}'s Profile
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Browse detailed background, track record, deliverables and direct channels.
+                Browse detailed background, track record, skills, deliverables and direct channels.
               </p>
             </div>
-            <span className="text-[11px] font-semibold text-slate-400 font-mono">01 / 08</span>
+            <span className="text-[11px] font-semibold text-slate-400 font-mono">01 / 09</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
@@ -202,7 +203,7 @@ export const IdentityFlowSections = ({
                 <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </h4>
               <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                {profile.about?.introduction || profile.headline || 'Professional biography, expertise and key focus areas.'}
+                {profile.about?.introduction || profile.bio || profile.headline || 'Professional biography, expertise and key focus areas.'}
               </p>
             </button>
 
@@ -226,6 +227,22 @@ export const IdentityFlowSections = ({
               onClick={() => onNavigate(4)}
               className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
             >
+              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                <Zap className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
+                <span>Skills & Tools</span>
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Core domain capabilities, technical proficiencies, and tools.
+              </p>
+            </button>
+
+            <button
+              onClick={() => onNavigate(5)}
+              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
+            >
               <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
                 <FolderGit2 className="w-4 h-4" />
               </div>
@@ -239,10 +256,10 @@ export const IdentityFlowSections = ({
             </button>
 
             <button
-              onClick={() => onNavigate(5)}
+              onClick={() => onNavigate(6)}
               className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
                 <Award className="w-4 h-4" />
               </div>
               <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
@@ -255,14 +272,14 @@ export const IdentityFlowSections = ({
             </button>
 
             <button
-              onClick={() => onNavigate(6)}
+              onClick={() => onNavigate(7)}
               className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
                 <ImageIcon className="w-4 h-4" />
               </div>
               <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
-                <span>Media & Gallery</span>
+                <span>Media Gallery</span>
                 <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </h4>
               <p className="text-[11px] text-slate-500 mt-1">
@@ -272,13 +289,29 @@ export const IdentityFlowSections = ({
 
             <button
               onClick={() => onNavigate(8)}
-              className="p-4 rounded-2xl bg-purple-600 text-white shadow-md shadow-purple-500/20 text-left transition-all hover:bg-purple-700 group cursor-pointer"
+              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                <FileText className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
+                <span>Blogs / Thoughts</span>
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {blogsList.length > 0 ? `${blogsList.length} articles and publications.` : 'Articles and thought leadership.'}
+              </p>
+            </button>
+
+            <button
+              onClick={() => onNavigate(9)}
+              className="p-4 rounded-2xl bg-purple-600 text-white shadow-md shadow-purple-500/20 text-left transition-all hover:bg-purple-700 group cursor-pointer sm:col-span-2 md:col-span-2"
             >
               <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
                 <Mail className="w-4 h-4" />
               </div>
               <h4 className="text-xs font-bold text-white flex items-center justify-between">
-                <span>Connect Directly</span>
+                <span>Contact Diary</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </h4>
               <p className="text-[11px] text-purple-100 mt-1">
@@ -313,10 +346,10 @@ export const IdentityFlowSections = ({
             <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
               <Sparkles className="w-4 h-4 shrink-0" /> {profile.about?.title || `About ${firstName}`}
             </h3>
-            <p className="text-[11px] text-slate-400">Professional Summary, Core Expertise & Experience</p>
+            <p className="text-[11px] text-slate-400">Professional Summary, Core Expertise & Bio</p>
           </div>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">02 / 08</span>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">02 / 09</span>
       </div>
 
       {/* 2.1 Introduction */}
@@ -327,10 +360,10 @@ export const IdentityFlowSections = ({
         </p>
       </div>
 
-      {/* 2.2 Expertise */}
+      {/* 2.2 Core Expertise Summary */}
       {((profile.about?.expertise && profile.about.expertise.length > 0) || (profile.skills && profile.skills.length > 0)) && (
         <div className="space-y-2.5 pt-2 border-t border-slate-100">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Core Expertise & Skills</h4>
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Core Focus Areas</h4>
           <div className="flex flex-wrap gap-2">
             {(profile.about?.expertise || profile.skills || []).map((skill, idx) => (
               <span
@@ -351,22 +384,10 @@ export const IdentityFlowSections = ({
 
       {/* 2.3 Experience Summary */}
       <div className="space-y-2.5 pt-2 border-t border-slate-100">
-        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience</h4>
+        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience Overview</h4>
         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
           {profile.about?.experienceSummary || `${profile.overviewStats?.years || profile.overviewStats?.yearsOfExperience || '5+'} years in ${departmentName} leadership, high-velocity execution, and driving enterprise digital transformation.`}
         </p>
-
-        {/* Inline past positions if present */}
-        {(profile.about?.experience?.length > 0 || profile.experience?.length > 0) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-            {(profile.about?.experience || profile.experience || []).slice(0, 4).map((exp, idx) => (
-              <div key={idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 text-left">
-                <div className="text-xs font-bold text-slate-900">{exp.title}</div>
-                <div className="text-[11px] font-medium text-slate-500">{exp.company} • {exp.location || 'Remote'}</div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Screen Navigation Footer */}
@@ -382,7 +403,7 @@ export const IdentityFlowSections = ({
             onClick={() => onNavigate(3)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
-            Experience <ArrowRight className="w-3.5 h-3.5" />
+            Work Experience <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -390,13 +411,11 @@ export const IdentityFlowSections = ({
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 3: EXPERIENCE (Timeline)
+  // SCREEN 3: WORK EXPERIENCE
   // ────────────────────────────────────────────────────────────────
   const renderScreen3 = () => (
     <div id="screen-3-experience" className="space-y-6 animate-fadeIn">
-      {/* Main Experience Timeline Card */}
       <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
-        {/* Top Header with Purple Indicator Bar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             {activeScreen !== undefined && (
@@ -411,15 +430,14 @@ export const IdentityFlowSections = ({
             )}
             <div className="w-1.5 h-5 rounded-full bg-purple-600" style={{ backgroundColor: primaryColor }} />
             <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-slate-900">
-              Experience
+              Work Experience
             </h3>
           </div>
           {activeScreen !== undefined && (
-            <span className="text-[11px] font-semibold text-slate-400 font-mono">03 / 08</span>
+            <span className="text-[11px] font-semibold text-slate-400 font-mono">03 / 09</span>
           )}
         </div>
 
-        {/* Timeline Items */}
         {experienceList.length > 0 ? (
           <div className="relative pl-7 space-y-7 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-3 before:w-[2px] before:bg-slate-200">
             {experienceList.map((item, idx) => {
@@ -431,7 +449,6 @@ export const IdentityFlowSections = ({
 
               return (
                 <div key={idx} className="relative group">
-                  {/* Node Dot */}
                   <div
                     className={`absolute -left-[27px] top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-white transition-all ${
                       isPresent
@@ -450,7 +467,6 @@ export const IdentityFlowSections = ({
                     />
                   </div>
 
-                  {/* Experience Content */}
                   <div className="space-y-0.5">
                     <div className="flex items-center justify-between gap-3">
                       <h4 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
@@ -502,7 +518,6 @@ export const IdentityFlowSections = ({
           </div>
         )}
 
-        {/* Screen Navigation Footer */}
         {activeScreen !== undefined && (
           <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
             <button
@@ -515,165 +530,116 @@ export const IdentityFlowSections = ({
               onClick={() => onNavigate(4)}
               className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
             >
-              Projects <ArrowRight className="w-3.5 h-3.5" />
+              Skills & Tools <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
       </section>
-
-      {/* Social Links Row (Matching Screenshot) */}
-      <div className="flex items-center justify-center gap-3 pt-1 pb-1 flex-wrap">
-        {linkedinLink ? (
-          <a
-            href={linkedinLink.url}
-            target="_blank"
-            rel="noreferrer"
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="LinkedIn"
-          >
-            <Linkedin className="w-4 h-4" />
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onConnectClick}
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="LinkedIn"
-          >
-            <Linkedin className="w-4 h-4" />
-          </button>
-        )}
-
-        {profile.socialLinks?.find(l => l.platform?.toLowerCase().includes('instagram')) ? (
-          <a
-            href={profile.socialLinks.find(l => l.platform?.toLowerCase().includes('instagram')).url}
-            target="_blank"
-            rel="noreferrer"
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Instagram"
-          >
-            <Instagram className="w-4 h-4" />
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onConnectClick}
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Instagram"
-          >
-            <Instagram className="w-4 h-4" />
-          </button>
-        )}
-
-        {profile.socialLinks?.find(l => l.platform?.toLowerCase().includes('facebook')) ? (
-          <a
-            href={profile.socialLinks.find(l => l.platform?.toLowerCase().includes('facebook')).url}
-            target="_blank"
-            rel="noreferrer"
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Facebook"
-          >
-            <Facebook className="w-4 h-4" />
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onConnectClick}
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Facebook"
-          >
-            <Facebook className="w-4 h-4" />
-          </button>
-        )}
-
-        {profile.socialLinks?.find(l => l.platform?.toLowerCase().includes('web') || l.platform?.toLowerCase().includes('portfolio')) ? (
-          <a
-            href={profile.socialLinks.find(l => l.platform?.toLowerCase().includes('web') || l.platform?.toLowerCase().includes('portfolio')).url}
-            target="_blank"
-            rel="noreferrer"
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Website"
-          >
-            <Globe className="w-4 h-4" />
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onConnectClick}
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Website"
-          >
-            <Globe className="w-4 h-4" />
-          </button>
-        )}
-
-        {profile.workEmail ? (
-          <a
-            href={`mailto:${profile.workEmail}`}
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Email"
-          >
-            <Mail className="w-4 h-4" />
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onConnectClick}
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Email"
-          >
-            <Mail className="w-4 h-4" />
-          </button>
-        )}
-
-        {profile.phone ? (
-          <a
-            href={`tel:${profile.phone}`}
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Phone"
-          >
-            <Phone className="w-4 h-4" />
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={onConnectClick}
-            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
-            title="Phone"
-          >
-            <Phone className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-
-      {/* "Get Your OneWinq Card" Promo Banner (Matching Screenshot) */}
-      <div className="rounded-3xl p-6 sm:p-7 bg-gradient-to-b from-[#0A0D18] via-[#0D1527] to-[#120F2E] text-white shadow-xl relative overflow-hidden space-y-3">
-        <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-          Get Your OneWinq Card
-        </h3>
-        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm">
-          Transform your professional identity into a tactile, effortless experience.
-        </p>
-        <div className="pt-2">
-          <button
-            type="button"
-            onClick={onConnectClick}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-slate-900 font-bold text-xs sm:text-sm hover:bg-slate-100 transition-all shadow-md cursor-pointer"
-          >
-            <span>Get Started</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
     </div>
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 4: WORK / PROJECTS (Impact Section REMOVED)
+  // SCREEN 4: SKILLS & TECHNICAL CAPABILITIES
   // ────────────────────────────────────────────────────────────────
-  const renderScreen4 = () => (
-    <section id="screen-4-work" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5 animate-fadeIn">
-      {/* Top Header with Back Button */}
+  const renderScreen4 = () => {
+    const skillsList = (profile.skills && profile.skills.length > 0)
+      ? profile.skills
+      : (profile.about?.expertise && profile.about.expertise.length > 0)
+      ? profile.about.expertise
+      : (profile.expertise && profile.expertise.length > 0)
+      ? profile.expertise
+      : [];
+
+    return (
+      <section id="screen-4-skills" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-fadeIn">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-3">
+            {activeScreen !== undefined && (
+              <button
+                type="button"
+                onClick={() => onNavigate(1)}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+                title="Back to Overview"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div>
+              <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
+                <Zap className="w-4 h-4 shrink-0 text-amber-500" /> Skills & Technical Capabilities
+              </h3>
+              <p className="text-[11px] text-slate-400">Core Capabilities, Technical Proficiencies & Tools</p>
+            </div>
+          </div>
+          <span className="text-[11px] font-semibold text-slate-400 font-mono">04 / 09</span>
+        </div>
+
+        {skillsList.length > 0 ? (
+          <div className="space-y-4">
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+              Key technical proficiencies, strategic frameworks, and domain expertise verified across {firstName}'s enterprise deliverables.
+            </p>
+            <div className="flex flex-wrap gap-2.5 pt-2">
+              {skillsList.map((skill, idx) => {
+                const name = typeof skill === 'string' ? skill : (skill.name || skill.title || skill.label || 'Capability');
+                const level = typeof skill === 'object' ? (skill.level || skill.category) : null;
+                return (
+                  <div
+                    key={idx}
+                    className="px-4 py-2.5 rounded-2xl border flex items-center gap-2.5 transition-all shadow-2xs hover:shadow-xs"
+                    style={{
+                      backgroundColor: `${primaryColor}08`,
+                      borderColor: `${primaryColor}25`,
+                      color: primaryColor
+                    }}
+                  >
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
+                    <span className="text-xs font-bold text-slate-900">{name}</span>
+                    {level && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/80 text-purple-700 border border-purple-200/80">
+                        {level}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+            <Zap className="w-8 h-8 text-amber-500 mx-auto" />
+            <h4 className="text-xs font-bold text-slate-700">Skills Portfolio</h4>
+            <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+              {firstName}'s skills and core competencies list is currently being curated.
+            </p>
+          </div>
+        )}
+
+        {activeScreen !== undefined && (
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+            <button
+              onClick={() => onNavigate(3)}
+              className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Work Experience
+            </button>
+            <button
+              onClick={() => onNavigate(5)}
+              className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
+            >
+              Featured Projects <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+      </section>
+    );
+  };
+
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN 5: FEATURED PROJECTS
+  // ────────────────────────────────────────────────────────────────
+  const renderScreen5 = () => (
+    <section id="screen-5-work" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5 animate-fadeIn">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-3">
           {activeScreen !== undefined && (
@@ -693,10 +659,9 @@ export const IdentityFlowSections = ({
             <p className="text-[11px] text-slate-400">Enterprise Solutions & Key Initiatives</p>
           </div>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">04 / 08</span>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">05 / 09</span>
       </div>
 
-      {/* Featured Projects Grid */}
       {projectsList.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
           {projectsList.map((proj, idx) => (
@@ -752,17 +717,16 @@ export const IdentityFlowSections = ({
         </div>
       )}
 
-      {/* Screen Navigation Footer */}
       {activeScreen !== undefined && (
         <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
           <button
-            onClick={() => onNavigate(3)}
+            onClick={() => onNavigate(4)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Career Journey
+            <ArrowLeft className="w-3.5 h-3.5" /> Work Experience
           </button>
           <button
-            onClick={() => onNavigate(5)}
+            onClick={() => onNavigate(6)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
             Achievements <ArrowRight className="w-3.5 h-3.5" />
@@ -773,11 +737,10 @@ export const IdentityFlowSections = ({
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 5: ACHIEVEMENTS
+  // SCREEN 6: ACHIEVEMENTS
   // ────────────────────────────────────────────────────────────────
-  const renderScreen5 = () => (
-    <section id="screen-5-achievements" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
-      {/* Top Header with Back Button */}
+  const renderScreen6 = () => (
+    <section id="screen-6-achievements" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-3">
           {activeScreen !== undefined && (
@@ -797,7 +760,7 @@ export const IdentityFlowSections = ({
             <p className="text-[11px] text-slate-400">Industry Honors, Certifications & Awards</p>
           </div>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">05 / 08</span>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">06 / 09</span>
       </div>
 
       {achievementsList.length > 0 ? (
@@ -833,20 +796,19 @@ export const IdentityFlowSections = ({
         </div>
       )}
 
-      {/* Screen Navigation Footer */}
       {activeScreen !== undefined && (
         <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
           <button
-            onClick={() => onNavigate(4)}
+            onClick={() => onNavigate(5)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Projects
+            <ArrowLeft className="w-3.5 h-3.5" /> Featured Projects
           </button>
           <button
-            onClick={() => onNavigate(6)}
+            onClick={() => onNavigate(7)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
-            Media & Gallery <ArrowRight className="w-3.5 h-3.5" />
+            Media Gallery <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -854,11 +816,10 @@ export const IdentityFlowSections = ({
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 6: MEDIA & GALLERY
+  // SCREEN 7: MEDIA GALLERY
   // ────────────────────────────────────────────────────────────────
-  const renderScreen6 = () => (
-    <section id="screen-6-media" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
-      {/* Top Header with Back Button */}
+  const renderScreen7 = () => (
+    <section id="screen-7-media" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-3">
           {activeScreen !== undefined && (
@@ -873,17 +834,16 @@ export const IdentityFlowSections = ({
           )}
           <div>
             <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <ImageIcon className="w-4 h-4 shrink-0" /> Media & Gallery
+              <ImageIcon className="w-4 h-4 shrink-0" /> Media Gallery
             </h3>
             <p className="text-[11px] text-slate-400">Photos, Videos, Press & Events</p>
           </div>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">06 / 08</span>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">07 / 09</span>
       </div>
 
       {allMedia.length > 0 ? (
         <>
-          {/* Filter Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             {['all', 'photos', 'videos', 'events'].map(tab => (
               <button
@@ -901,7 +861,6 @@ export const IdentityFlowSections = ({
             ))}
           </div>
 
-          {/* Media Items Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 pt-1">
             {(filteredMedia.length > 0 ? filteredMedia : allMedia).map((item, idx) => (
               <div
@@ -938,20 +897,19 @@ export const IdentityFlowSections = ({
         </div>
       )}
 
-      {/* Screen Navigation Footer */}
       {activeScreen !== undefined && (
         <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
           <button
-            onClick={() => onNavigate(5)}
+            onClick={() => onNavigate(6)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Achievements
           </button>
           <button
-            onClick={() => onNavigate(7)}
+            onClick={() => onNavigate(8)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
-            Blogs & Insights <ArrowRight className="w-3.5 h-3.5" />
+            Blogs & Thoughts <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -959,11 +917,10 @@ export const IdentityFlowSections = ({
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 7: BLOGS & THOUGHTS
+  // SCREEN 8: BLOGS / THOUGHTS
   // ────────────────────────────────────────────────────────────────
-  const renderScreen7 = () => (
-    <section id="screen-7-blogs" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
-      {/* Top Header with Back Button */}
+  const renderScreen8 = () => (
+    <section id="screen-8-blogs" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-3">
           {activeScreen !== undefined && (
@@ -978,12 +935,12 @@ export const IdentityFlowSections = ({
           )}
           <div>
             <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <FileText className="w-4 h-4 shrink-0" /> Blogs & Insights
+              <FileText className="w-4 h-4 shrink-0" /> Blogs / Thoughts
             </h3>
             <p className="text-[11px] text-slate-400">Publications, Thought Leadership & Articles</p>
           </div>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">07 / 08</span>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">08 / 09</span>
       </div>
 
       {blogsList.length > 0 ? (
@@ -1025,20 +982,19 @@ export const IdentityFlowSections = ({
         </div>
       )}
 
-      {/* Screen Navigation Footer */}
       {activeScreen !== undefined && (
         <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
           <button
-            onClick={() => onNavigate(6)}
+            onClick={() => onNavigate(7)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Media & Gallery
+            <ArrowLeft className="w-3.5 h-3.5" /> Media Gallery
           </button>
           <button
-            onClick={() => onNavigate(8)}
+            onClick={() => onNavigate(9)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
-            Connect & Contact <ArrowRight className="w-3.5 h-3.5" />
+            Contact Diary <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -1046,11 +1002,10 @@ export const IdentityFlowSections = ({
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 8: CONNECT & CONTACT
+  // SCREEN 9: CONTACT DIARY
   // ────────────────────────────────────────────────────────────────
-  const renderScreen8 = () => (
-    <section id="screen-8-connect" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-fadeIn">
-      {/* Top Header with Back Button */}
+  const renderScreen9 = () => (
+    <section id="screen-9-contact" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-fadeIn">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-3">
           {activeScreen !== undefined && (
@@ -1065,19 +1020,18 @@ export const IdentityFlowSections = ({
           )}
           <div>
             <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <Mail className="w-4 h-4 shrink-0" /> {profile.connectAndContact?.title || "Let's Connect"}
+              <Mail className="w-4 h-4 shrink-0" /> Contact Diary
             </h3>
             <p className="text-[11px] text-slate-400">Direct Contact Details, Channels & vCard</p>
           </div>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">08 / 08</span>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">09 / 09</span>
       </div>
 
       <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
         {profile.connectAndContact?.note || profile.collaborationNote || 'Open for collaboration, speaking opportunities, and high-impact enterprise projects.'}
       </p>
 
-      {/* Contact Details List */}
       <div className="space-y-3">
         {profile.workEmail && (
           <a
@@ -1165,7 +1119,6 @@ export const IdentityFlowSections = ({
         ))}
       </div>
 
-      {/* Big Action Buttons */}
       <div className="space-y-2.5 pt-2">
         <button
           onClick={onConnectClick}
@@ -1185,14 +1138,13 @@ export const IdentityFlowSections = ({
         </button>
       </div>
 
-      {/* Screen Navigation Footer */}
       {activeScreen !== undefined && (
         <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
           <button
-            onClick={() => onNavigate(7)}
+            onClick={() => onNavigate(8)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Blogs & Insights
+            <ArrowLeft className="w-3.5 h-3.5" /> Blogs / Thoughts
           </button>
           <button
             onClick={() => onNavigate(1)}
@@ -1206,7 +1158,7 @@ export const IdentityFlowSections = ({
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN SELECTOR (When activeScreen is specified: 1 to 8)
+  // SCREEN SELECTOR (When activeScreen is specified: 1 to 9)
   // ────────────────────────────────────────────────────────────────
   if (activeScreen !== undefined && activeScreen !== null && activeScreen !== 'all') {
     switch (Number(activeScreen)) {
@@ -1226,13 +1178,15 @@ export const IdentityFlowSections = ({
         return renderScreen7();
       case 8:
         return renderScreen8();
+      case 9:
+        return renderScreen9();
       default:
         return renderScreen1();
     }
   }
 
   // ────────────────────────────────────────────────────────────────
-  // DEFAULT FULL CONTINUOUS VIEW (Fallback for previews without activeScreen)
+  // DEFAULT FULL CONTINUOUS VIEW (Fallback for desktop without activeScreen)
   // ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-8 animate-fadeIn max-w-4xl mx-auto">
@@ -1240,12 +1194,12 @@ export const IdentityFlowSections = ({
       {renderScreen2()}
       {journeyList.length > 0 && renderScreen3()}
       {renderScreen4()}
-      {achievementsList.length > 0 && renderScreen5()}
-      {allMedia.length > 0 && renderScreen6()}
-      {blogsList.length > 0 && renderScreen7()}
-      {renderScreen8()}
+      {renderScreen5()}
+      {achievementsList.length > 0 && renderScreen6()}
+      {allMedia.length > 0 && renderScreen7()}
+      {blogsList.length > 0 && renderScreen8()}
+      {renderScreen9()}
 
-      {/* Role Perspective Quote if configured */}
       {showQuote && roleQuote && (
         <div
           className="rounded-3xl p-6 border shadow-xs relative overflow-hidden"

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { PublicCompanyPage } from './pages/PublicCompanyPage';
 import { PublicEmployeeProfilePage } from './pages/PublicEmployeeProfilePage';
@@ -32,6 +32,7 @@ import { TeamDepartmentsPage } from './pages/admin/TeamDepartmentsPage';
 import { UserEventsPage } from './pages/user/UserEventsPage';
 import { EmployeeSettingsPage } from './pages/user/EmployeeSettingsPage';
 import { MessagingPage } from './pages/user/MessagingPage';
+import { AppProfileViewPage } from './pages/user/AppProfileViewPage';
 
 import { hasAdminAccess } from './utils/permissions';
 
@@ -95,8 +96,18 @@ const AdminIndexRedirect = () => {
   if (perms.includes('card.read')) return <Navigate to="/admin/cards" replace />;
   if (perms.includes('role.read')) return <Navigate to="/admin/roles" replace />;
   if (perms.includes('settings.read')) return <Navigate to="/admin/settings" replace />;
-
   return <Navigate to="/app/home" replace />;
+};
+
+// Global Scroll to Top on Route Change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [pathname]);
+  return null;
 };
 
 export const App = () => {
@@ -107,7 +118,9 @@ export const App = () => {
   }, [checkAuth]);
 
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       {/* 1. Public Company Identity Flow */}
       <Route path="/" element={<PublicCompanyPage />} />
       <Route path="/company" element={<PublicCompanyPage />} />
@@ -156,6 +169,8 @@ export const App = () => {
         <Route path="events" element={<UserEventsPage />} />
         <Route path="messages" element={<MessagingPage />} />
         <Route path="settings" element={<EmployeeSettingsPage />} />
+        {/* In-app profile viewer — viewer's own navbar stays intact */}
+        <Route path="profile/:slug" element={<AppProfileViewPage />} />
       </Route>
 
       {/* 6. ORGANIZATION ADMIN CONSOLE (Dedicated Admin Side) */}
@@ -275,7 +290,9 @@ export const App = () => {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 };
 
 export default App;
+

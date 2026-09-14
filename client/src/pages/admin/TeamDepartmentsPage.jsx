@@ -389,18 +389,20 @@ export const TeamDepartmentsPage = () => {
                         className="p-4 rounded-2xl bg-slate-50/70 hover:bg-white border border-slate-100 hover:border-indigo-200 transition-all flex flex-col items-center text-center group shadow-2xs hover:shadow-sm"
                       >
                         {/* Avatar + Online Indicator */}
-                        <div className="relative mb-2.5">
+                        <NavLink to={`/p/${member.slug || 'profile'}`} className="relative mb-2.5 cursor-pointer">
                           <img
                             src={member.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=e0e7ff&color=4f46e5`}
                             alt={member.name}
                             className="w-14 h-14 rounded-2xl object-cover ring-2 ring-slate-100 group-hover:ring-indigo-200 transition-all"
                           />
                           <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white" />
-                        </div>
+                        </NavLink>
 
                         {/* Name & Title */}
                         <div className="min-w-0 w-full mb-2">
-                          <h4 className="text-xs font-bold text-slate-900 truncate">{member.name}</h4>
+                          <NavLink to={`/p/${member.slug || 'profile'}`} className="hover:underline hover:text-indigo-600 transition-colors">
+                            <h4 className="text-xs font-bold text-slate-900 truncate">{member.name}</h4>
+                          </NavLink>
                           <p className="text-[11px] text-slate-500 font-medium truncate">{member.designation || 'Engineer'}</p>
                           <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1 mt-0.5">
                             <MapPin className="w-2.5 h-2.5" />
@@ -458,16 +460,18 @@ export const TeamDepartmentsPage = () => {
                         className="p-3.5 rounded-2xl bg-slate-50/70 hover:bg-white border border-slate-100 hover:border-indigo-200 transition-all flex items-center justify-between gap-4"
                       >
                         <div className="flex items-center gap-3.5 min-w-0">
-                          <div className="relative shrink-0">
+                          <NavLink to={`/p/${member.slug || 'profile'}`} className="relative shrink-0 cursor-pointer">
                             <img
                               src={member.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=e0e7ff&color=4f46e5`}
                               alt={member.name}
                               className="w-11 h-11 rounded-xl object-cover"
                             />
                             <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
-                          </div>
+                          </NavLink>
                           <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-slate-900 truncate">{member.name}</h4>
+                            <NavLink to={`/p/${member.slug || 'profile'}`} className="hover:underline hover:text-indigo-600 transition-colors">
+                              <h4 className="text-xs font-bold text-slate-900 truncate">{member.name}</h4>
+                            </NavLink>
                             <p className="text-[11px] text-slate-500 font-medium truncate">{member.designation}</p>
                             <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
                               <MapPin className="w-2.5 h-2.5" />
