@@ -75,6 +75,43 @@ export const PublicEmployeeProfilePage = () => {
     document.body.scrollTop = 0;
   }, [activeScreen]);
 
+  useEffect(() => {
+    if (profile) {
+      const manifest = {
+        name: profile.name || 'OneWinq Profile',
+        short_name: profile.name?.split(' ')[0] || 'Profile',
+        start_url: window.location.pathname,
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#7c3aed',
+        icons: [
+          {
+            src: profile.avatarUrl || '/vite.svg',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: profile.avatarUrl || '/vite.svg',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      };
+      const stringManifest = JSON.stringify(manifest);
+      const blob = new Blob([stringManifest], { type: 'application/json' });
+      const manifestURL = URL.createObjectURL(blob);
+      let link = document.querySelector('link[rel="manifest"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'manifest';
+        document.head.appendChild(link);
+      }
+      link.href = manifestURL;
+    }
+  }, [profile]);
+
   const navLinks = [
     { id: 1, label: 'Overview', icon: Home },
     { id: 2, label: 'About', icon: User },
@@ -247,13 +284,6 @@ END:VCARD`;
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => setIsQrModalOpen(true)}
-              className="p-2 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 transition-colors cursor-pointer"
-              title="Share QR Code"
-            >
-              <QrCode className="w-4 h-4" />
-            </button>
 
             <button
               onClick={handleCopyLink}
@@ -379,7 +409,7 @@ END:VCARD`;
 
       {/* 4. Main Full-Screen Canvas with Mobile Touch Swipe (Matching Company Profile) */}
       <main
-        className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 lg:py-8 pb-24 lg:pb-8 touch-pan-y"
+        className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 lg:py-8 pb-36 lg:pb-8 touch-pan-y"
         {...swipeHandlers}
       >
         {/* Render Active Screen with Smooth Fade Transition */}
@@ -398,7 +428,7 @@ END:VCARD`;
       </main>
 
       {/* Mobile Page Indicator Dots */}
-      <div className="fixed bottom-16 left-0 right-0 z-30 lg:hidden flex items-center justify-center pointer-events-none px-4">
+      <div className="fixed bottom-[88px] left-0 right-0 z-30 lg:hidden flex items-center justify-center pointer-events-none px-4">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 border border-purple-100/90 shadow-lg shadow-purple-900/10 backdrop-blur-md pointer-events-auto">
           {navLinks.map((link) => {
             const isActive = activeScreen === link.id;

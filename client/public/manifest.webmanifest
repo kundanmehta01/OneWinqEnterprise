@@ -1,0 +1,17 @@
+{
+  "name": "OneWinq Digital Identity",
+  "short_name": "OneWinq",
+  "description": "Save and revisit verified OneWinq digital profiles.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfaff",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/onewinq-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

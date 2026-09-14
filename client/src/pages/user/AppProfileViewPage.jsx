@@ -66,6 +66,43 @@ export const AppProfileViewPage = () => {
     document.body.scrollTop = 0;
   }, [activeScreen]);
 
+  useEffect(() => {
+    if (profile) {
+      const manifest = {
+        name: profile.name || 'OneWinq Profile',
+        short_name: profile.name?.split(' ')[0] || 'Profile',
+        start_url: window.location.pathname,
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#7c3aed',
+        icons: [
+          {
+            src: profile.avatarUrl || '/vite.svg',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: profile.avatarUrl || '/vite.svg',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      };
+      const stringManifest = JSON.stringify(manifest);
+      const blob = new Blob([stringManifest], { type: 'application/json' });
+      const manifestURL = URL.createObjectURL(blob);
+      let link = document.querySelector('link[rel="manifest"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'manifest';
+        document.head.appendChild(link);
+      }
+      link.href = manifestURL;
+    }
+  }, [profile]);
+
   const navLinks = [
     { id: 1, label: "Overview", icon: Home },
     { id: 2, label: "About", icon: User },
@@ -265,9 +302,7 @@ export const AppProfileViewPage = () => {
                 <button onClick={() => { setMenuOpen(false); setIsConnectModalOpen(true); }} className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-purple-600 text-white text-xs font-bold cursor-pointer">
                   <UserCheck className="w-4 h-4" /><span>Exchange Contact</span>
                 </button>
-                <button onClick={() => { setMenuOpen(false); handleDownloadVCard(); }} className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer">
-                  <Download className="w-4 h-4" /><span>Save Contact (.vcf)</span>
-                </button>
+          
               </div>
             </div>
           </div>
@@ -275,7 +310,7 @@ export const AppProfileViewPage = () => {
       )}
 
       {/* Main Profile Content with Touch Swipe — NO arrow buttons */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-20 lg:pb-8 touch-pan-y" {...swipeHandlers}>
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-36 lg:pb-8 touch-pan-y" {...swipeHandlers}>
         <div key={activeScreen} className="animate-fadeIn">
           <TemplateRenderer
             templateKey={profile?.template?.key || profile?.template?.id}
@@ -291,7 +326,7 @@ export const AppProfileViewPage = () => {
       </main>
 
       {/* Mobile Dot Indicator (minimal, no arrow buttons) */}
-      <div className="fixed bottom-4 left-0 right-0 z-20 lg:hidden flex items-center justify-center pointer-events-none">
+      <div className="fixed bottom-[88px] left-0 right-0 z-20 lg:hidden flex items-center justify-center pointer-events-none">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 border border-purple-100/90 shadow-lg backdrop-blur-md pointer-events-auto">
           {navLinks.map((link) => {
             const isActive = activeScreen === link.id;
