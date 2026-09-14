@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Send, Paperclip, X, ArrowLeft, Users, MessageSquare, Image as ImageIcon, Folder, Check, Plus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Send, Paperclip, X, ArrowLeft, Users, MessageSquare, Image as ImageIcon, Folder, Check, Plus, User } from 'lucide-react';
 import { useMessagingStore } from '../../stores/messagingStore';
 import { useAuthStore } from '../../stores/authStore';
 import { MessageBubble } from './MessageBubble';
@@ -21,12 +22,15 @@ const getConversationMeta = (conversation, currentUserId) => {
   const u = other?.userId;
   const name = u?.name || u?.email?.split('@')[0] || 'Colleague';
   const avatar = u?.avatarUrl || null;
+  const slug = u?.profileId?.slug || u?.slug || u?.profileSlug || u?.username || (u?._id || u)?.toString();
+
   return {
     name,
     avatar,
     initials: name.slice(0, 2).toUpperCase(),
     isGroup: false,
-    otherUserId: (u?._id || u)?.toString()
+    otherUserId: (u?._id || u)?.toString(),
+    slug
   };
 };
 
@@ -163,7 +167,21 @@ export const ChatWindow = ({ conversation, onBack, onOpenGroupInfo, onNewDirect,
         </button>
 
         {/* Avatar */}
-        {meta.avatar ? (
+        {!meta.isGroup && meta.slug ? (
+          <Link to={`/p/${meta.slug}`} title={`View ${meta.name}'s Profile`} className="shrink-0 hover:opacity-85 transition-opacity">
+            {meta.avatar ? (
+              <img
+                src={meta.avatar}
+                alt={meta.name}
+                className="w-9 h-9 rounded-xl object-cover border border-slate-200"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-indigo-500 to-purple-600">
+                {meta.initials}
+              </div>
+            )}
+          </Link>
+        ) : meta.avatar ? (
           <img
             src={meta.avatar}
             alt={meta.name}
@@ -183,7 +201,14 @@ export const ChatWindow = ({ conversation, onBack, onOpenGroupInfo, onNewDirect,
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-slate-900 truncate">{meta.name}</p>
+            {!meta.isGroup && meta.slug ? (
+              <Link to={`/p/${meta.slug}`} className="text-sm font-semibold text-slate-900 truncate hover:text-purple-600 transition-colors">
+                {meta.name}
+              </Link>
+            ) : (
+              <p className="text-sm font-semibold text-slate-900 truncate">{meta.name}</p>
+            )}
+
             {/* Show folder tags for direct colleague */}
             {!meta.isGroup && otherUserId && (
               <div className="flex items-center gap-1 overflow-hidden">
@@ -210,6 +235,17 @@ export const ChatWindow = ({ conversation, onBack, onOpenGroupInfo, onNewDirect,
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1.5 relative">
+          {!meta.isGroup && meta.slug && (
+            <Link
+              to={`/p/${meta.slug}`}
+              className="px-2.5 py-1.5 rounded-xl text-purple-700 bg-purple-50 hover:bg-purple-100 text-xs font-semibold flex items-center gap-1 border border-purple-200/80 transition-all cursor-pointer shadow-2xs"
+              title={`View ${meta.name}'s public profile`}
+            >
+              <User className="w-3.5 h-3.5 text-purple-600" />
+              <span className="hidden sm:inline">View Profile</span>
+            </Link>
+          )}
+
           {!meta.isGroup && otherUserId && (
             <div className="relative">
               <button

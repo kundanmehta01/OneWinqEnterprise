@@ -37,14 +37,14 @@ export const UserDockNav = ({
       label: 'Connect',
       icon: Plus,
       isAction: true,
-      targetScreen: 8
+      targetScreen: 9
     },
     {
-      id: 4,
+      id: 5,
       label: 'Projects',
       icon: FolderGit2,
-      targetScreen: 4,
-      isActive: activeScreen === 4 && !menuOpen
+      targetScreen: 5,
+      isActive: activeScreen === 5 && !menuOpen
     },
     {
       id: 'menu',

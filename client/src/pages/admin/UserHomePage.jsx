@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Sparkles,
@@ -441,16 +441,18 @@ export const UserHomePage = () => {
               key={person._id}
               className="p-4 rounded-2xl bg-slate-50/70 border border-slate-100 hover:border-indigo-100 transition-all flex flex-col items-center text-center space-y-2.5 hover:shadow-xs"
             >
-              <div className="relative">
+              <Link to={`/p/${person.slug || person.userId || person._id}`} className="relative group cursor-pointer">
                 <img
                   src={person.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=e0e7ff&color=4f46e5`}
                   alt={person.name}
-                  className="w-14 h-14 rounded-2xl object-cover"
+                  className="w-14 h-14 rounded-2xl object-cover group-hover:scale-105 transition-transform"
                 />
                 <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white" />
-              </div>
+              </Link>
               <div className="min-w-0 w-full">
-                <h4 className="text-xs font-bold text-slate-900 truncate">{person.name}</h4>
+                <Link to={`/p/${person.slug || person.userId || person._id}`} className="hover:underline hover:text-indigo-600 transition-colors">
+                  <h4 className="text-xs font-bold text-slate-900 truncate">{person.name}</h4>
+                </Link>
                 <p className="text-[11px] text-slate-500 truncate">{person.designation || 'Specialist'}</p>
                 <p className="text-[10px] text-indigo-600 font-medium truncate mt-0.5">{person.department || 'OneWinq'}</p>
               </div>

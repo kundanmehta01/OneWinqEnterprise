@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Users,
@@ -17,7 +17,8 @@ import {
   Loader2,
   Trash2,
   Building2,
-  MessageSquare
+  MessageSquare,
+  User
 } from 'lucide-react';
 import { connectionApi } from '../../api/connectionApi';
 import { departmentApi } from '../../api/departmentApi';
@@ -408,15 +409,31 @@ export const ColleagueNetworkPage = () => {
                   >
                     <div>
                       <div className="flex items-start gap-3.5">
-                        <img
-                          src={avatar}
-                          alt={person.name}
-                          className="w-14 h-14 rounded-2xl object-cover object-center border border-slate-200 shrink-0"
-                        />
+                        {slug ? (
+                          <Link to={`/p/${slug}`} className="shrink-0 hover:opacity-90 transition-opacity">
+                            <img
+                              src={avatar}
+                              alt={person.name}
+                              className="w-14 h-14 rounded-2xl object-cover object-center border border-slate-200"
+                            />
+                          </Link>
+                        ) : (
+                          <img
+                            src={avatar}
+                            alt={person.name}
+                            className="w-14 h-14 rounded-2xl object-cover object-center border border-slate-200 shrink-0"
+                          />
+                        )}
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-purple-600 transition-colors">
-                            {person.name}
-                          </h3>
+                          {slug ? (
+                            <Link to={`/p/${slug}`} className="block text-sm font-bold text-slate-900 truncate hover:text-purple-600 transition-colors">
+                              {person.name}
+                            </Link>
+                          ) : (
+                            <h3 className="text-sm font-bold text-slate-900 truncate">
+                              {person.name}
+                            </h3>
+                          )}
                           <p className="text-xs text-purple-600 font-medium truncate">{headline}</p>
                           <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-1">
                             <Building2 className="w-3 h-3" />
@@ -428,15 +445,13 @@ export const ColleagueNetworkPage = () => {
 
                     <div className="pt-4 border-t border-slate-50 mt-4 flex items-center justify-between gap-2">
                       {slug ? (
-                        <a
-                          href={`/p/${slug}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-purple-600"
+                        <Link
+                          to={`/p/${slug}`}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 text-xs font-bold transition-all cursor-pointer shadow-2xs"
                         >
-                          <span>View Card</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
+                          <User className="w-3.5 h-3.5" />
+                          <span>View Profile</span>
+                        </Link>
                       ) : (
                         <span></span>
                       )}
@@ -549,19 +564,41 @@ export const ColleagueNetworkPage = () => {
                 return (
                   <div key={connId || idx} className="py-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      {avatar ? (
-                        <img
-                          src={avatar}
-                          alt={partner.name || 'Colleague'}
-                          className="w-10 h-10 rounded-2xl object-cover border border-slate-200"
-                        />
+                      {slug ? (
+                        <Link to={`/p/${slug}`} className="shrink-0 hover:opacity-90 transition-opacity">
+                          {avatar ? (
+                            <img
+                              src={avatar}
+                              alt={partner.name || 'Colleague'}
+                              className="w-10 h-10 rounded-2xl object-cover border border-slate-200"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm">
+                              {(partner.name || 'C').substring(0, 1).toUpperCase()}
+                            </div>
+                          )}
+                        </Link>
                       ) : (
-                        <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm">
-                          {(partner.name || 'C').substring(0, 1).toUpperCase()}
-                        </div>
+                        avatar ? (
+                          <img
+                            src={avatar}
+                            alt={partner.name || 'Colleague'}
+                            className="w-10 h-10 rounded-2xl object-cover border border-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shrink-0">
+                            {(partner.name || 'C').substring(0, 1).toUpperCase()}
+                          </div>
+                        )
                       )}
                       <div>
-                        <p className="text-xs font-bold text-slate-900">{partner.name || 'Colleague'}</p>
+                        {slug ? (
+                          <Link to={`/p/${slug}`} className="text-xs font-bold text-slate-900 hover:text-purple-600 transition-colors block">
+                            {partner.name || 'Colleague'}
+                          </Link>
+                        ) : (
+                          <p className="text-xs font-bold text-slate-900">{partner.name || 'Colleague'}</p>
+                        )}
                         <p className="text-[11px] text-slate-500">{partner.designation || 'Team Member'}</p>
                         <p className="text-[10px] text-slate-400">{partner.email}</p>
                       </div>
@@ -578,15 +615,13 @@ export const ColleagueNetworkPage = () => {
                         <span>Message</span>
                       </button>
                       {slug && (
-                        <a
-                          href={`/p/${slug}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center gap-1"
+                        <Link
+                          to={`/p/${slug}`}
+                          className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 text-xs font-bold flex items-center gap-1.5 transition-all"
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Digital Card</span>
-                        </a>
+                          <User className="w-3.5 h-3.5" />
+                          <span>View Profile</span>
+                        </Link>
                       )}
                       <button
                         onClick={() => setDisconnectingTarget({

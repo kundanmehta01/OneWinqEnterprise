@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Building2,
@@ -23,8 +23,9 @@ import {
   Briefcase,
   Menu,
   ChevronRight,
-  ChevronLeft,
-  Download
+  Download,
+  ArrowLeft,
+  Zap
 } from 'lucide-react';
 import { userProfileApi } from '../api/userProfileApi';
 import { TemplateRenderer } from '../components/templates/TemplateRenderer';
@@ -33,6 +34,7 @@ import { useSwipeGesture } from '../hooks/useSwipeGesture';
 
 export const PublicEmployeeProfilePage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [activeScreen, setActiveScreen] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -60,30 +62,54 @@ export const PublicEmployeeProfilePage = () => {
     enabled: Boolean(slug) && isQrModalOpen
   });
 
+  useEffect(() => {
+    setActiveScreen(1);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [slug]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeScreen]);
+
   const navLinks = [
-    { id: 1, label: 'Home', icon: Home },
+    { id: 1, label: 'Overview', icon: Home },
     { id: 2, label: 'About', icon: User },
     { id: 3, label: 'Experience', icon: Briefcase },
-    { id: 4, label: 'Projects', icon: FolderGit2 },
-    { id: 5, label: 'Achievements', icon: Award },
-    { id: 6, label: 'Media', icon: ImageIcon },
-    { id: 7, label: 'Blogs', icon: FileText },
-    { id: 8, label: 'Contact', icon: Mail },
+    { id: 4, label: 'Skills', icon: Zap },
+    { id: 5, label: 'Projects', icon: FolderGit2 },
+    { id: 6, label: 'Achievements', icon: Award },
+    { id: 7, label: 'Media', icon: ImageIcon },
+    { id: 8, label: 'Blogs', icon: FileText },
+    { id: 9, label: 'Contact', icon: Mail },
   ];
+
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/app/network');
+    }
+  };
 
   const handleSelectScreen = (screenId) => {
     setActiveScreen(screenId);
     setMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   };
 
   const handleNextScreen = () => {
-    const next = activeScreen < 8 ? activeScreen + 1 : 1;
+    const next = activeScreen < 9 ? activeScreen + 1 : 1;
     handleSelectScreen(next);
   };
 
   const handlePrevScreen = () => {
-    const prev = activeScreen > 1 ? activeScreen - 1 : 8;
+    const prev = activeScreen > 1 ? activeScreen - 1 : 9;
     handleSelectScreen(prev);
   };
 
@@ -173,8 +199,16 @@ END:VCARD`;
       {/* 1. Header with Desktop Navigation Links matching Company Profile Style */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 px-6 lg:px-12 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Left: Brand Logo & Clean Desktop Text Navigation Links */}
-          <div className="flex items-center gap-8 lg:gap-10">
+          {/* Left: Top-Left Back Button, Brand Logo & Clean Desktop Text Navigation Links */}
+          <div className="flex items-center gap-3 sm:gap-6 lg:gap-10">
+            <button
+              onClick={handleGoBack}
+              className="p-2 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 text-slate-700 transition-colors cursor-pointer"
+              title="Back to previous page"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+
             <button
               onClick={() => handleSelectScreen(1)}
               className="flex items-center gap-2 focus:outline-none group text-left cursor-pointer"
@@ -348,8 +382,6 @@ END:VCARD`;
         className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 lg:py-8 pb-24 lg:pb-8 touch-pan-y"
         {...swipeHandlers}
       >
-
-
         {/* Render Active Screen with Smooth Fade Transition */}
         <div key={activeScreen} className="animate-fadeIn">
           <TemplateRenderer
@@ -364,6 +396,27 @@ END:VCARD`;
           />
         </div>
       </main>
+
+      {/* Mobile Page Indicator Dots */}
+      <div className="fixed bottom-16 left-0 right-0 z-30 lg:hidden flex items-center justify-center pointer-events-none px-4">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 border border-purple-100/90 shadow-lg shadow-purple-900/10 backdrop-blur-md pointer-events-auto">
+          {navLinks.map((link) => {
+            const isActive = activeScreen === link.id;
+            return (
+              <button
+                key={link.id}
+                onClick={() => handleSelectScreen(link.id)}
+                className={`transition-all cursor-pointer ${
+                  isActive
+                    ? 'w-5 h-2 rounded-full bg-purple-600 shadow-2xs'
+                    : 'w-2 h-2 rounded-full bg-slate-300 hover:bg-purple-300'
+                }`}
+                title={link.label}
+              />
+            );
+          })}
+        </div>
+      </div>
 
       {/* 5. Mobile Bottom Dock Navigation Bar */}
       <UserDockNav
@@ -509,8 +562,8 @@ END:VCARD`;
       )}
 
       {/* 12. Clean Modern Footer (Matching Company Profile Style) */}
-      <footer className="bg-white border-t border-slate-100 mt-14 py-12 pb-28 lg:pb-12 px-6 lg:px-12">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-10 text-left">
+      <footer className="bg-white border-t border-slate-100 mt-6 sm:mt-8 py-8 pb-28 lg:pb-8 px-6 lg:px-12">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-left">
           <div className="space-y-3 md:col-span-2">
             <span className="text-xl font-black tracking-tight text-slate-900 font-display">
               onew<span className="text-purple-600">i</span>nq
@@ -524,9 +577,9 @@ END:VCARD`;
             <p className="text-xs font-bold uppercase tracking-wider text-slate-900">Explore Profile</p>
             <ul className="space-y-2 text-xs text-slate-600">
               <li><button onClick={() => handleSelectScreen(1)} className="hover:text-purple-600 cursor-pointer">Overview & Bio</button></li>
+              <li><button onClick={() => handleSelectScreen(2)} className="hover:text-purple-600 cursor-pointer">About</button></li>
               <li><button onClick={() => handleSelectScreen(3)} className="hover:text-purple-600 cursor-pointer">Work Experience</button></li>
-              <li><button onClick={() => handleSelectScreen(4)} className="hover:text-purple-600 cursor-pointer">Projects & Deliverables</button></li>
-              <li><button onClick={() => handleSelectScreen(5)} className="hover:text-purple-600 cursor-pointer">Achievements & Honors</button></li>
+              <li><button onClick={() => handleSelectScreen(4)} className="hover:text-purple-600 cursor-pointer">Skills & Tools</button></li>
             </ul>
           </div>
 
