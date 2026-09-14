@@ -28,6 +28,9 @@ import { useAuthStore } from '../../stores/authStore';
 import { ImageUploadInput } from '../../components/common/ImageUploadInput';
 import { TemplateRenderer } from '../../components/templates/TemplateRenderer';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
+import { MonthYearCalendarPicker } from '../../components/common/MonthYearCalendarPicker';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const EmployeeSelfProfilePage = () => {
   const { isSuperAdmin } = useAuthStore();
@@ -41,12 +44,12 @@ export const EmployeeSelfProfilePage = () => {
 
   const PROFILE_TABS = [
     { id: 'identity', label: 'Identity & Stats', icon: User },
-    { id: 'experience', label: 'Experience & Journey', icon: Briefcase },
+    { id: 'experience', label: 'Career Experience', icon: Briefcase },
     { id: 'skills', label: 'Skills & Badges', icon: Layers },
     { id: 'projects', label: 'Projects & Media', icon: Sparkles },
     { id: 'blogs', label: 'Blogs & Insights', icon: Globe },
     { id: 'social', label: 'Links & Social', icon: Globe },
-    { id: 'impact', label: 'Impact & Awards', icon: Award }
+    { id: 'impact', label: 'Awards & Honors', icon: Award }
   ];
 
   const handleNextTab = () => {
@@ -156,6 +159,64 @@ export const EmployeeSelfProfilePage = () => {
         return val;
       };
 
+      const mappedExperience = (draft.experience?.length ? draft.experience : published.experience || []).map(exp => {
+        let fromMonth = exp.fromMonth || '';
+        let fromYear = exp.fromYear || '';
+        let toMonth = exp.toMonth || '';
+        let toYear = exp.toYear || '';
+        let from = exp.from || '';
+        let to = exp.to || '';
+        const isPresent = Boolean(
+          exp.isCurrent ||
+          (exp.to && /present|current/i.test(exp.to)) ||
+          (exp.period && /present|current/i.test(exp.period)) ||
+          (exp.year && /present|current/i.test(exp.year))
+        );
+
+        if (!fromYear && from) {
+          const parts = from.trim().split(/\s+/);
+          if (parts.length >= 2 && MONTHS.includes(parts[0])) {
+            fromMonth = parts[0];
+            fromYear = parts.slice(1).join(' ');
+          } else {
+            fromYear = from.trim();
+          }
+        }
+        if (!toYear && to && !isPresent) {
+          const parts = to.trim().split(/\s+/);
+          if (parts.length >= 2 && MONTHS.includes(parts[0])) {
+            toMonth = parts[0];
+            toYear = parts.slice(1).join(' ');
+          } else {
+            toYear = to.trim();
+          }
+        }
+        if (isPresent) {
+          to = 'PRESENT';
+          toYear = 'PRESENT';
+          toMonth = '';
+        }
+
+        const fromFormatted = fromMonth && fromYear ? `${fromMonth} ${fromYear}` : (fromYear || from);
+        const toFormatted = isPresent ? 'PRESENT' : (toMonth && toYear ? `${toMonth} ${toYear}` : (toYear || to));
+        const period = fromFormatted && toFormatted ? (isPresent ? `${fromFormatted}- PRESENT` : `${fromFormatted}- ${toFormatted}`) : (fromFormatted || toFormatted || exp.period || '');
+
+        return {
+          ...exp,
+          company: exp.company || exp.title || '',
+          role: exp.role || exp.title || '',
+          title: exp.title || exp.role || '',
+          fromMonth,
+          fromYear,
+          from: fromFormatted,
+          toMonth,
+          toYear,
+          to: toFormatted,
+          isCurrent: isPresent,
+          period
+        };
+      });
+
       setFormData({
         headline: draft.headline ?? published.headline ?? member.designation ?? '',
         bio: draft.bio ?? published.bio ?? '',
@@ -171,8 +232,8 @@ export const EmployeeSelfProfilePage = () => {
           servicesCount: cleanStat(draft.overviewStats?.servicesCount ?? published.overviewStats?.servicesCount ?? draft.overviewStats?.services, '5+')
         },
         skills: draft.skills?.length ? draft.skills : published.skills || [],
-        experience: draft.experience?.length ? draft.experience : published.experience || [],
-        journey: draft.journey?.length ? draft.journey : published.journey || [],
+        experience: mappedExperience,
+        journey: mappedExperience,
         projects: draft.projects?.length ? draft.projects : published.projects || [],
         mediaGallery: draft.mediaGallery?.length ? draft.mediaGallery : published.mediaGallery || [],
         blogs: draft.blogs?.length ? draft.blogs : published.blogs || [],
@@ -194,7 +255,11 @@ export const EmployeeSelfProfilePage = () => {
   // Save Draft Mutation
   const saveDraftMutation = useMutation({
     mutationFn: async (payload) => {
-      return await userProfileApi.updateMyDraft(payload);
+      const cleanPayload = {
+        ...payload,
+        journey: payload.experience || []
+      };
+      return await userProfileApi.updateMyDraft(cleanPayload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
@@ -213,10 +278,14 @@ export const EmployeeSelfProfilePage = () => {
   // Submit for Approval Mutation
   const submitApprovalMutation = useMutation({
     mutationFn: async (note) => {
+      const payload = {
+        ...formData,
+        journey: formData.experience || []
+      };
       // 1. Ensure latest formData is saved to draft first!
-      await userProfileApi.updateMyDraft(formData);
+      await userProfileApi.updateMyDraft(payload);
       // 2. Submit for review with formData payload
-      return await userProfileApi.submitForApproval(note, formData);
+      return await userProfileApi.submitForApproval(note, payload);
     },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
@@ -296,33 +365,94 @@ END:VCARD`;
   };
 
   const addExperience = () => {
+    const newItem = {
+      company: '',
+      title: '',
+      role: '',
+      fromMonth: '',
+      fromYear: '',
+      from: '',
+      toMonth: '',
+      toYear: 'PRESENT',
+      to: 'PRESENT',
+      period: 'PRESENT',
+      location: '',
+      isCurrent: true
+    };
+    const next = [...formData.experience, newItem];
     setFormData({
       ...formData,
-      experience: [
-        ...formData.experience,
-        {
-          title: '',
-          company: '',
-          location: '',
-          startDate: null,
-          endDate: null,
-          isCurrent: true,
-          description: ''
-        }
-      ]
+      experience: next,
+      journey: next
     });
   };
 
   const updateExperience = (index, field, value) => {
     const next = [...formData.experience];
     next[index] = { ...next[index], [field]: value };
-    setFormData({ ...formData, experience: next });
+    setFormData({ ...formData, experience: next, journey: next });
+  };
+
+  const updateExperienceFrom = (index, month, year) => {
+    const next = [...formData.experience];
+    const exp = next[index];
+    const fromMonth = month;
+    const fromYear = year;
+    const fromStr = fromMonth && fromYear ? `${fromMonth} ${fromYear}` : (fromYear || fromMonth || '');
+    const toStr = exp.isCurrent ? 'PRESENT' : (exp.toMonth && exp.toYear ? `${exp.toMonth} ${exp.toYear}` : (exp.toYear || exp.toMonth || exp.to || ''));
+    const period = fromStr && toStr ? (exp.isCurrent ? `${fromStr}- PRESENT` : `${fromStr}- ${toStr}`) : (fromStr || toStr);
+    next[index] = {
+      ...exp,
+      fromMonth,
+      fromYear,
+      from: fromStr,
+      period
+    };
+    setFormData({ ...formData, experience: next, journey: next });
+  };
+
+  const updateExperienceTo = (index, month, year) => {
+    const next = [...formData.experience];
+    const exp = next[index];
+    const toMonth = month;
+    const toYear = year;
+    const fromStr = exp.fromMonth && exp.fromYear ? `${exp.fromMonth} ${exp.fromYear}` : (exp.fromYear || exp.fromMonth || exp.from || '');
+    const toStr = toMonth && toYear ? `${toMonth} ${toYear}` : (toYear || toMonth || '');
+    const period = fromStr && toStr ? `${fromStr}- ${toStr}` : (fromStr || toStr);
+    next[index] = {
+      ...exp,
+      toMonth,
+      toYear,
+      to: toStr,
+      period,
+      isCurrent: false
+    };
+    setFormData({ ...formData, experience: next, journey: next });
+  };
+
+  const toggleExperienceCurrent = (index, isCurrent) => {
+    const next = [...formData.experience];
+    const exp = next[index];
+    const fromStr = exp.fromMonth && exp.fromYear ? `${exp.fromMonth} ${exp.fromYear}` : (exp.fromYear || exp.fromMonth || exp.from || '');
+    const toStr = isCurrent ? 'PRESENT' : '';
+    const period = fromStr && toStr ? `${fromStr}- PRESENT` : (fromStr || toStr);
+    next[index] = {
+      ...exp,
+      isCurrent,
+      toMonth: isCurrent ? '' : exp.toMonth,
+      toYear: isCurrent ? 'PRESENT' : '',
+      to: toStr,
+      period
+    };
+    setFormData({ ...formData, experience: next, journey: next });
   };
 
   const removeExperience = (index) => {
+    const next = formData.experience.filter((_, i) => i !== index);
     setFormData({
       ...formData,
-      experience: formData.experience.filter((_, i) => i !== index)
+      experience: next,
+      journey: next
     });
   };
 
@@ -920,136 +1050,78 @@ END:VCARD`;
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Job Title</label>
-                          <input
-                            type="text"
-                            value={exp.title}
-                            onChange={(e) => updateExperience(idx, 'title', e.target.value)}
-                            placeholder="e.g. Lead Engineer"
-                            className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg"
-                          />
-                        </div>
-                        <div>
                           <label className="block text-[11px] font-semibold text-slate-600 mb-1">Company</label>
                           <input
                             type="text"
-                            value={exp.company}
+                            value={exp.company || ''}
                             onChange={(e) => updateExperience(idx, 'company', e.target.value)}
-                            placeholder="e.g. OneWinq Enterprise"
-                            className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg"
+                            placeholder="e.g. NexisparkX Technologies, Onewinq"
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Role / Job Title</label>
+                          <input
+                            type="text"
+                            value={exp.role || exp.title || ''}
+                            onChange={(e) => {
+                              updateExperience(idx, 'role', e.target.value);
+                              updateExperience(idx, 'title', e.target.value);
+                            }}
+                            placeholder="e.g. Full Stack developer, Founder"
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-purple-500"
                           />
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                        {/* From Section: Month & Year Calendar */}
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Location</label>
-                          <input
-                            type="text"
-                            value={exp.location}
-                            onChange={(e) => updateExperience(idx, 'location', e.target.value)}
-                            placeholder="e.g. Bengaluru, India"
-                            className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg"
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">From</label>
+                          <MonthYearCalendarPicker
+                            month={exp.fromMonth}
+                            year={exp.fromYear}
+                            onChange={({ month, year }) => updateExperienceFrom(idx, month, year)}
+                            placeholder="Select start date"
                           />
                         </div>
-                        <div className="flex items-center gap-2 pt-6">
+
+                        {/* To Section: Month & Year Calendar */}
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">To</label>
+                          <MonthYearCalendarPicker
+                            month={exp.toMonth}
+                            year={exp.toYear}
+                            disabled={exp.isCurrent}
+                            disabledText="PRESENT"
+                            onChange={({ month, year }) => updateExperienceTo(idx, month, year)}
+                            placeholder="Select end date"
+                          />
+                        </div>
+
+                        {/* Currently working here checkbox */}
+                        <div className="sm:col-span-2 flex items-center gap-2 pt-1 pb-1">
                           <input
                             type="checkbox"
                             id={`curr-${idx}`}
-                            checked={exp.isCurrent}
-                            onChange={(e) => updateExperience(idx, 'isCurrent', e.target.checked)}
-                            className="rounded text-purple-600"
+                            checked={Boolean(exp.isCurrent || exp.to === 'PRESENT')}
+                            onChange={(e) => toggleExperienceCurrent(idx, e.target.checked)}
+                            className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4 cursor-pointer"
                           />
-                          <label htmlFor={`curr-${idx}`} className="text-xs font-medium text-slate-700">
-                            Currently working here
+                          <label htmlFor={`curr-${idx}`} className="text-xs font-semibold text-purple-700 cursor-pointer flex items-center gap-1.5">
+                            <span>Currently working here (PRESENT)</span>
+                            {exp.isCurrent && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-100 text-purple-700 border border-purple-200 font-bold">
+                                Active
+                              </span>
+                            )}
                           </label>
                         </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">Description</label>
-                        <textarea
-                          rows={2}
-                          value={exp.description}
-                          onChange={(e) => updateExperience(idx, 'description', e.target.value)}
-                          placeholder="Brief description of responsibilities and achievements..."
-                          className="w-full p-2.5 text-xs bg-white border border-slate-200 rounded-lg"
-                        />
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-
-              {/* Career Journey Milestones */}
-              <div className="pt-6 border-t border-slate-100 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Career Milestones & Journey
-                    </h3>
-                    <p className="text-[11px] text-slate-400">Add chronological highlights (e.g. 2024, 2022, 2019).</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addJourney}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Milestone</span>
-                  </button>
-                </div>
-
-                {formData.journey.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">No custom milestones added. Fallback will derive from work experience.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {formData.journey.map((item, jIdx) => (
-                      <div key={jIdx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 relative group">
-                        <button
-                          type="button"
-                          onClick={() => removeJourney(jIdx)}
-                          className="absolute top-2.5 right-2.5 p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="grid grid-cols-3 gap-2 pr-6">
-                          <div>
-                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Year</label>
-                            <input
-                              type="text"
-                              value={item.year}
-                              onChange={(e) => updateJourney(jIdx, 'year', e.target.value)}
-                              placeholder="2024"
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Milestone Title</label>
-                            <input
-                              type="text"
-                              value={item.title}
-                              onChange={(e) => updateJourney(jIdx, 'title', e.target.value)}
-                              placeholder="e.g. Promoted to Senior Lead"
-                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Description</label>
-                          <input
-                            type="text"
-                            value={item.description || ''}
-                            onChange={(e) => updateJourney(jIdx, 'description', e.target.value)}
-                            placeholder="Brief context about this milestone..."
-                            className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
@@ -1419,54 +1491,11 @@ END:VCARD`;
             </div>
           )}
 
-          {/* TAB: IMPACT & AWARDS */}
+          {/* TAB: HONORS & AWARDS */}
           {activeTab === 'impact' && (
             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-6 animate-in fade-in">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900">Impact Metrics</h2>
-                  <p className="text-[11px] text-slate-400">Key enterprise figures highlighting your track record.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={addMetric}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Metric</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {formData.impactMetrics.map((met, idx) => (
-                  <div key={idx} className="p-3 rounded-xl border border-slate-200/80 bg-slate-50/40 flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={met.metric}
-                      onChange={(e) => updateMetric(idx, 'metric', e.target.value)}
-                      placeholder="Value (e.g. 50+)"
-                      className="w-28 px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg font-bold text-purple-600"
-                    />
-                    <input
-                      type="text"
-                      value={met.label}
-                      onChange={(e) => updateMetric(idx, 'label', e.target.value)}
-                      placeholder="Label (e.g. Enterprise Clients)"
-                      className="flex-1 px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeMetric(idx)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
               {/* Achievements & Honors Section */}
-              <div className="pt-6 border-t border-slate-100 space-y-4">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -1574,7 +1603,7 @@ END:VCARD`;
                     overviewStats: formData.overviewStats || profileData?.overviewStats,
                     skills: formData.skills || profileData?.skills || [],
                     experience: formData.experience || profileData?.experience || [],
-                    journey: formData.journey || profileData?.journey || [],
+                    journey: (formData.experience && formData.experience.length > 0) ? formData.experience : (profileData?.experience || profileData?.journey || []),
                     projects: formData.projects || profileData?.projects || [],
                     impactMetrics: formData.impactMetrics || profileData?.impactMetrics || [],
                     achievements: formData.achievements || profileData?.achievements || [],

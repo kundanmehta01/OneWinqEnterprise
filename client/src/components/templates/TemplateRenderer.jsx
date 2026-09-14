@@ -18,7 +18,9 @@ export const TemplateRenderer = ({
   onQrClick,
   onDownloadVCard,
   onShareClick,
-  isCompact = false
+  isCompact = false,
+  activeScreen,
+  onNavigate
 }) => {
   if (!profile) return null;
 
@@ -36,7 +38,9 @@ export const TemplateRenderer = ({
     onQrClick,
     onDownloadVCard,
     onShareClick,
-    isCompact
+    isCompact,
+    activeScreen,
+    onNavigate
   };
 
   switch (key) {

@@ -24,33 +24,73 @@ const memberEnrichments = {
       { name: 'Leadership', category: 'Management', proficiencyLevel: 'Expert', order: 6 },
       { name: 'Business Growth', category: 'Strategy', proficiencyLevel: 'Expert', order: 7 }
     ],
+    experience: [
+      {
+        company: 'NexisparkX Technologies',
+        title: 'Full Stack developer',
+        role: 'Full Stack developer',
+        from: '2024',
+        to: '25',
+        period: '2024-25',
+        isCurrent: false,
+        order: 1
+      },
+      {
+        company: 'NX Consultancy',
+        title: 'CEO',
+        role: 'CEO',
+        from: '2025',
+        to: '26',
+        period: '2025-26',
+        isCurrent: false,
+        order: 2
+      },
+      {
+        company: 'Onewinq',
+        title: 'Founder',
+        role: 'Founder',
+        from: '2026',
+        to: 'PRESENT',
+        period: '2026- PRESENT',
+        isCurrent: true,
+        order: 3
+      }
+    ],
     journey: [
       {
-        year: '2024',
-        title: 'Founded OneWinq',
-        description: 'Founded OneWinq with a vision to simplify digital identity and networking.',
+        company: 'NexisparkX Technologies',
+        title: 'NexisparkX Technologies',
+        role: 'Full Stack developer',
+        from: '2024',
+        to: '25',
+        period: '2024-25',
+        year: '2024-25',
+        isCurrent: false,
         order: 1,
         isVisible: true
       },
       {
-        year: '2022',
-        title: 'SaaS & AI Innovation',
-        description: 'Worked on multiple SaaS products and AI solutions.',
+        company: 'NX Consultancy',
+        title: 'NX Consultancy',
+        role: 'CEO',
+        from: '2025',
+        to: '26',
+        period: '2025-26',
+        year: '2025-26',
+        isCurrent: false,
         order: 2,
         isVisible: true
       },
       {
-        year: '2019',
-        title: 'Developer & Tech Enthusiast',
-        description: 'Started journey as developer and tech enthusiast.',
+        company: 'Onewinq',
+        title: 'Onewinq',
+        role: 'Founder',
+        from: '2026',
+        to: 'PRESENT',
+        period: '2026- PRESENT',
+        year: '2026- PRESENT',
+        isCurrent: true,
         order: 3,
-        isVisible: true
-      },
-      {
-        year: '2016',
-        title: 'Graduation & Entrepreneurship',
-        description: 'Graduated & explored entrepreneurship.',
-        order: 4,
         isVisible: true
       }
     ],
@@ -765,6 +805,12 @@ export async function enrichAllProfiles() {
           }
         ];
 
+    const enrichedExperience = (specific?.experience && specific.experience.length > 0)
+      ? specific.experience
+      : (pub.experience && pub.experience.length > 0)
+      ? pub.experience
+      : [];
+
     const updatedPublished = {
       ...pub,
       headline: specific?.headline || pub.headline,
@@ -772,6 +818,7 @@ export async function enrichAllProfiles() {
       skills: specific?.skills || pub.skills,
       overviewStats: enrichedStats,
       collaborationNote: specific?.collaborationNote || pub.collaborationNote || 'Open for collaboration, professional networking and exciting opportunities.',
+      experience: enrichedExperience,
       journey: enrichedJourney,
       projects: enrichedProjects,
       impactMetrics: enrichedImpact,

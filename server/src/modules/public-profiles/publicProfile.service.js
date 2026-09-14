@@ -185,9 +185,90 @@ class PublicProfileService {
     const experienceSummaryText = pub.about?.experienceSummary
       || `${dynamicOverviewStats.years || '5+'} in ${profile.memberId.departmentId?.name || 'Enterprise'} & ${profile.memberId.designation}.`;
 
-    const sortedJourney = (pub.journey && pub.journey.length > 0)
-      ? pub.journey.filter((j) => j.isVisible !== false).sort((a, b) => (a.order || 0) - (b.order || 0))
+    const normalizeExperienceItem = (item, idx) => {
+      const company = item.company || item.organization || item.title || '';
+      const role = item.role || item.designation || (item.company ? item.title : '') || item.subtitle || '';
+      const isPresent = Boolean(
+        item.isCurrent ||
+        (item.to && /present|current/i.test(item.to)) ||
+        (item.period && /present|current/i.test(item.period)) ||
+        (item.year && /present|current/i.test(item.year))
+      );
+
+      const fromMonth = item.fromMonth || '';
+      const fromYear = item.fromYear || item.from || '';
+      const toMonth = isPresent ? '' : (item.toMonth || '');
+      const toYear = isPresent ? 'PRESENT' : (item.toYear || item.to || '');
+
+      let from = fromMonth && fromYear ? `${fromMonth} ${fromYear}` : (fromYear || item.from || '');
+      let to = isPresent ? 'PRESENT' : (toMonth && toYear ? `${toMonth} ${toYear}` : (toYear || item.to || ''));
+
+      // If from/to not explicitly provided, derive from period, year, or dates
+      if (!from || (!to && !isPresent)) {
+        const rawRange = item.period || item.year || '';
+        if (rawRange.includes('-')) {
+          const parts = rawRange.split('-');
+          if (!from) from = parts[0].trim();
+          if (!to && !isPresent) to = parts[1].trim();
+        } else if (!from && rawRange) {
+          from = rawRange.trim();
+        }
+
+        if (!from && item.startDate) {
+          from = String(new Date(item.startDate).getFullYear());
+        }
+        if (!to && item.endDate && !isPresent) {
+          to = String(new Date(item.endDate).getFullYear());
+        }
+      }
+
+      let period = '';
+      if (from && to) {
+        period = isPresent ? `${from}- PRESENT` : `${from}- ${to}`;
+      } else if (from) {
+        period = isPresent ? `${from}- PRESENT` : from;
+      } else if (to) {
+        period = to;
+      } else if (item.period) {
+        period = item.period;
+      } else if (isPresent) {
+        period = 'PRESENT';
+      }
+
+      return {
+        _id: item._id,
+        company,
+        role,
+        title: role,
+        fromMonth,
+        fromYear,
+        from,
+        toMonth,
+        toYear,
+        to,
+        period,
+        isCurrent: isPresent,
+        order: item.order ?? idx
+      };
+    };
+
+    const expSource = (pub.experience && pub.experience.length > 0)
+      ? pub.experience
+      : (profile.draft?.experience && profile.draft.experience.length > 0)
+      ? profile.draft.experience
+      : (pub.journey && pub.journey.length > 0)
+      ? pub.journey
+      : (profile.draft?.journey && profile.draft.journey.length > 0)
+      ? profile.draft.journey
       : [];
+
+    const sortedExperience = expSource
+      .filter((item) => (item.company && item.company.trim()) || (item.role && item.role.trim()) || (item.title && item.title.trim()))
+      .map(normalizeExperienceItem)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    const sortedJourney = sortedExperience;
+
     const sortedProjects = (pub.projects && pub.projects.length > 0)
       ? pub.projects.sort((a, b) => (a.order || 0) - (b.order || 0))
       : [];
@@ -224,11 +305,11 @@ class PublicProfileService {
       introduction: introductionText,
       expertise: expertiseList,
       experienceSummary: experienceSummaryText,
-      experience: (pub.experience || []).sort((a, b) => (a.order || 0) - (b.order || 0))
+      experience: sortedExperience
     };
 
     const workAndImpactSection = {
-      title: 'My Work & Impact',
+      title: 'My Work',
       projects: sortedProjects,
       impact: sortedImpactMetrics
     };
@@ -290,7 +371,8 @@ class PublicProfileService {
       badgeLabel: pre.badgeLabel || 'Verified Member',
       overviewStats: dynamicOverviewStats,
       location: pub.location || { city: company?.locations?.[0]?.city || 'Indore', country: company?.locations?.[0]?.country || 'India' },
-      experience: (pub.experience || []).sort((a, b) => (a.order || 0) - (b.order || 0)),
+      experience: sortedExperience,
+      journey: sortedJourney,
       skills: sortedSkills,
       projects: sortedProjects,
       impactMetrics: sortedImpactMetrics,

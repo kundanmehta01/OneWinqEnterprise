@@ -46,7 +46,8 @@ const renderFormattedDiffValue = (val, field = '', isOld = false) => {
       return (
         <div className="flex flex-wrap gap-1 mt-1">
           {parsed.map((item, i) => {
-            const skillName = typeof item === 'object' ? item?.name : String(item);
+            const skillName = typeof item === 'object' ? (item?.name || item?.title || '') : String(item);
+            if (!skillName) return null;
             return (
               <span
                 key={i}
@@ -64,37 +65,103 @@ const renderFormattedDiffValue = (val, field = '', isOld = false) => {
       );
     }
 
-    // 2. Experience
-    if (fLower.includes('experience')) {
+    // 2. Experience & Journey
+    if (fLower.includes('experience') || fLower.includes('journey')) {
       return (
         <div className="space-y-1.5 mt-1 text-left">
-          {parsed.map((item, i) => {
-            if (typeof item !== 'object' || !item) return <div key={i}>{String(item)}</div>;
-            const start = formatDate(item.startDate);
-            const end = item.isCurrent ? 'Present' : formatDate(item.endDate);
-            const dateRange = start ? `${start} – ${end || 'Present'}` : '';
+          {parsed.map((rawItem, i) => {
+            let item = rawItem;
+            if (typeof item === 'string' && (item.trim().startsWith('{') || item.trim().startsWith('['))) {
+              try {
+                item = JSON.parse(item);
+              } catch (e) {}
+            }
+
+            if (typeof item !== 'object' || !item) {
+              return (
+                <div
+                  key={i}
+                  className={`p-2 rounded-xl border text-[11px] font-medium ${
+                    isOld
+                      ? 'bg-rose-50/50 border-rose-200 text-rose-800 line-through'
+                      : 'bg-emerald-50/50 border-emerald-200 text-emerald-900'
+                  }`}
+                >
+                  {String(item)}
+                </div>
+              );
+            }
+
+            const role = item.role || item.title || item.designation || '';
+            const company = item.company || item.organization || '';
+            const isPresent = Boolean(
+              item.isCurrent ||
+              (typeof item.to === 'string' && /present|current/i.test(item.to)) ||
+              (typeof item.period === 'string' && /present|current/i.test(item.period)) ||
+              (typeof item.year === 'string' && /present|current/i.test(item.year))
+            );
+
+            let dateRange = item.period || item.year || '';
+            if (!dateRange || dateRange.includes('undefined')) {
+              const fromStr = item.from || (item.fromMonth && item.fromYear ? `${item.fromMonth} ${item.fromYear}` : item.fromYear || '');
+              const toStr = isPresent ? 'PRESENT' : (item.to || (item.toMonth && item.toYear ? `${item.toMonth} ${item.toYear}` : item.toYear || ''));
+              if (fromStr && toStr) dateRange = isPresent ? `${fromStr}- PRESENT` : `${fromStr}- ${toStr}`;
+              else if (fromStr) dateRange = fromStr;
+              else if (toStr) dateRange = toStr;
+            }
+
+            let mainTitle = '';
+            let subTitle = '';
+            if (role && company) {
+              mainTitle = role;
+              subTitle = company;
+            } else if (company) {
+              mainTitle = company;
+              subTitle = '';
+            } else if (role) {
+              mainTitle = role;
+              subTitle = '';
+            } else {
+              mainTitle = dateRange ? `Role (${dateRange})` : 'Career Role';
+            }
 
             return (
               <div
                 key={i}
-                className={`p-2 rounded-xl border text-[11px] space-y-0.5 ${
+                className={`p-2.5 rounded-xl border text-[11px] space-y-1 ${
                   isOld
-                    ? 'bg-rose-50/50 border-rose-200/70 text-rose-900'
-                    : 'bg-emerald-50/50 border-emerald-200/70 text-emerald-950'
+                    ? 'bg-rose-50/60 border-rose-200/80 text-rose-900'
+                    : 'bg-emerald-50/60 border-emerald-200/80 text-emerald-950'
                 }`}
               >
-                <div className="font-bold flex items-center justify-between gap-2">
-                  <span className={isOld ? 'line-through text-rose-700' : 'text-slate-900'}>
-                    {item.title || 'Role Title'}
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`font-bold text-xs ${isOld ? 'line-through text-rose-700' : 'text-slate-900'}`}>
+                    {mainTitle}
                   </span>
-                  {dateRange && <span className="text-[10px] text-slate-400 font-medium shrink-0">{dateRange}</span>}
+                  {dateRange && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                        isPresent
+                          ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                          : isOld
+                          ? 'bg-rose-100/80 text-rose-700'
+                          : 'bg-emerald-100/80 text-emerald-700'
+                      }`}
+                    >
+                      {dateRange}
+                    </span>
+                  )}
                 </div>
-                <div className="text-[10px] text-slate-600 flex items-center gap-2">
-                  {item.company && <span className="font-medium text-slate-700">{item.company}</span>}
-                  {item.location && <span>• {item.location}</span>}
-                </div>
+
+                {subTitle && (
+                  <div className="text-[10px] text-slate-600 font-medium flex items-center gap-1.5">
+                    <span>{subTitle}</span>
+                    {item.location && <span>• {item.location}</span>}
+                  </div>
+                )}
+
                 {item.description && (
-                  <p className="text-[10px] text-slate-500 line-clamp-2 pt-0.5 italic">
+                  <p className="text-[10px] text-slate-500 line-clamp-2 italic pt-0.5">
                     "{item.description}"
                   </p>
                 )}
@@ -114,7 +181,7 @@ const renderFormattedDiffValue = (val, field = '', isOld = false) => {
             return (
               <div
                 key={i}
-                className={`p-2 rounded-xl border text-[11px] space-y-0.5 ${
+                className={`p-2.5 rounded-xl border text-[11px] space-y-0.5 ${
                   isOld
                     ? 'bg-rose-50/50 border-rose-200/70 text-rose-900'
                     : 'bg-emerald-50/50 border-emerald-200/70 text-emerald-950'
@@ -161,25 +228,144 @@ const renderFormattedDiffValue = (val, field = '', isOld = false) => {
       );
     }
 
-    // Fallback Array of items:
+    // 5. Achievements & Honors
+    if (fLower.includes('achievement') || fLower.includes('award') || fLower.includes('honor')) {
+      return (
+        <div className="space-y-1.5 mt-1 text-left">
+          {parsed.map((item, i) => {
+            if (typeof item !== 'object' || !item) return <div key={i}>{String(item)}</div>;
+            return (
+              <div
+                key={i}
+                className={`p-2 rounded-xl border text-[11px] space-y-0.5 ${
+                  isOld
+                    ? 'bg-rose-50/50 border-rose-200/70 text-rose-900'
+                    : 'bg-emerald-50/50 border-emerald-200/70 text-emerald-950'
+                }`}
+              >
+                <div className="font-bold flex items-center justify-between gap-2">
+                  <span className={isOld ? 'line-through text-rose-700' : 'text-slate-900'}>
+                    {item.title || 'Achievement'}
+                  </span>
+                  {item.badge && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+                {item.subtitle && <p className="text-[10px] text-slate-500">{item.subtitle}</p>}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // 6. Impact Metrics
+    if (fLower.includes('metric') || fLower.includes('impact')) {
+      return (
+        <div className="grid grid-cols-2 gap-1.5 mt-1 text-left">
+          {parsed.map((item, i) => {
+            if (typeof item !== 'object' || !item) return <div key={i}>{String(item)}</div>;
+            return (
+              <div key={i} className="p-2 rounded-xl bg-white border border-slate-100 space-y-0.5">
+                <span className={`text-xs font-black block ${isOld ? 'line-through text-rose-600' : 'text-purple-700'}`}>
+                  {item.prefix || ''}{item.metric || item.value || ''}{item.suffix || ''}
+                </span>
+                <span className="text-[10px] text-slate-500 block truncate">{item.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // 7. Fallback Array of items (formatted chips, never raw unformatted JSON blob):
     return (
-      <div className="flex flex-wrap gap-1 mt-1">
-        {parsed.map((item, i) => (
-          <span key={i} className="text-[10px] text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
-            {typeof item === 'object' ? (item.name || item.title || JSON.stringify(item)) : String(item)}
-          </span>
-        ))}
+      <div className="flex flex-wrap gap-1.5 mt-1">
+        {parsed.map((rawItem, i) => {
+          let item = rawItem;
+          if (typeof item === 'string' && (item.trim().startsWith('{') || item.trim().startsWith('['))) {
+            try { item = JSON.parse(item); } catch (e) {}
+          }
+
+          if (typeof item === 'object' && item !== null) {
+            const readable =
+              item.title ||
+              item.role ||
+              item.company ||
+              item.name ||
+              item.label ||
+              item.platform ||
+              item.metric ||
+              item.url ||
+              Object.entries(item)
+                .filter(([k, v]) => v && typeof v !== 'object' && k !== '_id' && k !== 'id')
+                .map(([k, v]) => `${k}: ${v}`)
+                .slice(0, 2)
+                .join(' | ');
+
+            return (
+              <span
+                key={i}
+                className={`text-[10px] font-medium px-2.5 py-1 rounded-lg border shadow-2xs ${
+                  isOld
+                    ? 'bg-rose-50/70 border-rose-200 text-rose-800 line-through'
+                    : 'bg-white border-slate-200 text-slate-800'
+                }`}
+              >
+                {readable || 'Item'}
+              </span>
+            );
+          }
+
+          return (
+            <span
+              key={i}
+              className={`text-[10px] font-medium px-2 py-0.5 rounded-md border ${
+                isOld
+                  ? 'bg-rose-50 border-rose-200 text-rose-700 line-through'
+                  : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              }`}
+            >
+              {String(item)}
+            </span>
+          );
+        })}
       </div>
     );
   }
 
-  // Handle Object (not array)
+  // Handle Object (not array, e.g. overviewStats, location)
   if (typeof parsed === 'object' && parsed !== null) {
     if (parsed.title || parsed.name) {
       return (
         <div className="text-[11px] font-medium text-slate-800">
-          <span className={isOld ? 'line-through text-rose-600' : 'text-emerald-700'}>{parsed.title || parsed.name}</span>
+          <span className={isOld ? 'line-through text-rose-600' : 'text-emerald-700 font-bold'}>
+            {parsed.title || parsed.name}
+          </span>
           {parsed.company && <span className="text-slate-500 text-[10px] block">{parsed.company}</span>}
+        </div>
+      );
+    }
+
+    // Key-value object presentation (e.g. overviewStats or location)
+    const validEntries = Object.entries(parsed).filter(
+      ([k, v]) => v !== null && v !== undefined && v !== '' && k !== '_id' && k !== 'id'
+    );
+    if (validEntries.length > 0) {
+      return (
+        <div className="grid grid-cols-2 gap-1.5 mt-1 text-[11px]">
+          {validEntries.map(([k, v]) => (
+            <div key={k} className="p-1.5 rounded-lg bg-white/90 border border-slate-200/80 shadow-2xs">
+              <span className="font-semibold text-slate-500 text-[10px] block capitalize">
+                {k.replace(/([A-Z])/g, ' $1')}:
+              </span>
+              <span className={`font-semibold text-xs ${isOld ? 'line-through text-rose-700' : 'text-slate-900'}`}>
+                {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+              </span>
+            </div>
+          ))}
         </div>
       );
     }
@@ -616,7 +802,9 @@ export const AdminProfileApprovalPage = () => {
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-slate-900 text-xs capitalize flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
-                                {diff.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
+                                {diff.field.toLowerCase().includes('journey') || diff.field.toLowerCase().includes('experience')
+                                  ? 'Experience'
+                                  : diff.field.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
                               </span>
                               <span className="text-[10px] text-purple-700 font-semibold bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
                                 Modified
