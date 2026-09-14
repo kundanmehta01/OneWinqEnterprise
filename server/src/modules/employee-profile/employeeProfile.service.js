@@ -329,6 +329,15 @@ class EmployeeProfileService {
       }
     }
 
+    // Keep experience and journey synchronized in draft so there are no stale seed milestones
+    if (updateData.experience !== undefined) {
+      draft.experience = updateData.experience;
+      draft.journey = updateData.experience;
+    } else if (updateData.journey !== undefined && (draft.experience === undefined || draft.experience.length === 0)) {
+      draft.experience = updateData.journey;
+      draft.journey = updateData.journey;
+    }
+
     profile.draft = draft;
     profile.calculateCompletionScore();
 
@@ -347,6 +356,9 @@ class EmployeeProfileService {
       profile.lastApprovedAt = new Date();
       profile.lastReviewedBy = userId;
     } else {
+      // Profile draft modified by employee awaiting review:
+      // DO NOT overwrite profile.published! profile.published must remain the previous live state
+      // so diffs correctly compare [old published state] -> [new draft state].
       if (profile.approvalStatus === 'approved' || profile.approvalStatus === 'changes_requested') {
         profile.approvalStatus = 'draft';
       }
@@ -375,7 +387,27 @@ class EmployeeProfileService {
 
     const publishedClean = profile.published ? profile.published.toObject() : {};
     const draftClean = profile.draft ? profile.draft.toObject() : {};
-    const diffSummary = calculateObjectDiff(publishedClean, draftClean);
+
+    // Synchronize draft experience & journey
+    if (draftClean.experience !== undefined) {
+      draftClean.journey = draftClean.experience;
+    }
+
+    // If published profile has stale seed journey (e.g. "Joined OneWinq as...") while experience was empty or different,
+    // sync published journey with published experience so diff reflects true experience changes accurately.
+    if (publishedClean.experience !== undefined) {
+      publishedClean.journey = publishedClean.experience;
+    }
+
+    let diffSummary = calculateObjectDiff(publishedClean, draftClean);
+
+    // If both experience and journey are in diffSummary, deduplicate so experience is the primary diff
+    const hasExpDiff = diffSummary.some((d) => d.field === 'experience');
+    if (hasExpDiff) {
+      diffSummary = diffSummary.filter((d) => d.field !== 'journey');
+    } else {
+      diffSummary = diffSummary.map((d) => (d.field === 'journey' ? { ...d, field: 'experience' } : d));
+    }
 
     // If user is administrator or founder, auto-approve and make published immediately
     if (isSuperOrAdmin) {

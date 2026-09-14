@@ -9,6 +9,56 @@ import { eventBus } from '../../events/appEventBus.js';
 import { APP_EVENTS } from '../../constants/events.constant.js';
 import { emailService } from '../../integrations/email/email.service.js';
 
+const normalizeApprovalDiffs = (approval) => {
+  if (!approval || !Array.isArray(approval.diffSummary)) return approval;
+
+  let needsSave = false;
+  const cleanedDiffs = approval.diffSummary.map((diff) => {
+    const fLower = (diff.field || '').toLowerCase();
+    if (fLower.includes('journey') || fLower.includes('experience')) {
+      const oldArr = Array.isArray(diff.oldValue) ? diff.oldValue : [];
+      const newArr = Array.isArray(diff.newValue) ? diff.newValue : [];
+
+      const isNewSeed = newArr.some(
+        (item) =>
+          typeof item?.title === 'string' &&
+          (item.title.includes('Joined OneWinq') ||
+            item.title.includes('Senior Professional Advancement') ||
+            item.year === '2024')
+      );
+      const isOldUserExp = oldArr.some((item) =>
+        Boolean(item?.company || item?.fromMonth || item?.toMonth || item?.from || item?.period || item?.isCurrent)
+      );
+
+      if (isNewSeed && isOldUserExp) {
+        needsSave = true;
+        return {
+          ...diff,
+          field: 'experience',
+          oldValue: [],
+          newValue: oldArr
+        };
+      }
+
+      if (diff.field === 'journey') {
+        needsSave = true;
+        return {
+          ...diff,
+          field: 'experience'
+        };
+      }
+    }
+    return diff;
+  });
+
+  if (needsSave && approval._id) {
+    ProfileApproval.findByIdAndUpdate(approval._id, { diffSummary: cleanedDiffs }).catch(() => {});
+  }
+
+  approval.diffSummary = cleanedDiffs;
+  return approval;
+};
+
 class ProfileApprovalService {
   async getAllApprovals(query = {}) {
     const { page, limit, skip, sort } = parsePagination(query, 20);
@@ -18,7 +68,7 @@ class ProfileApprovalService {
       filter.status = query.status;
     }
 
-    const [approvals, totalItems, pendingCount, approvedCount, rejectedCount] = await Promise.all([
+    const [rawApprovals, totalItems, pendingCount, approvedCount, rejectedCount] = await Promise.all([
       ProfileApproval.find(filter)
         .populate({
           path: 'memberId',
@@ -36,6 +86,8 @@ class ProfileApprovalService {
       ProfileApproval.countDocuments({ status: 'approved' }),
       ProfileApproval.countDocuments({ status: 'rejected' })
     ]);
+
+    const approvals = (rawApprovals || []).map(normalizeApprovalDiffs);
 
     return {
       approvals,
@@ -78,7 +130,7 @@ class ProfileApprovalService {
     if (!approval) {
       throw new NotFoundError('Profile approval request not found', ERROR_CODES.APPROVAL_NOT_FOUND);
     }
-    return approval;
+    return normalizeApprovalDiffs(approval);
   }
 
   async reviewApproval(id, { action, reviewNote = '', requestedChanges = [] }, reviewerContext = {}) {
@@ -109,6 +161,12 @@ class ProfileApprovalService {
 
       // Promote draft to published
       profile.published = approval.draftSnapshot;
+      if (profile.published) {
+        if (approval.draftSnapshot?.experience) {
+          profile.published.experience = approval.draftSnapshot.experience;
+          profile.published.journey = approval.draftSnapshot.experience;
+        }
+      }
       profile.approvalStatus = 'approved';
       profile.isLocked = false;
       profile.lastApprovedAt = new Date();

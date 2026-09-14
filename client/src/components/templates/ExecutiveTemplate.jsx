@@ -7,10 +7,12 @@ export const ExecutiveTemplate = ({
   onQrClick,
   onDownloadVCard,
   onShareClick,
-  isCompact = false
+  isCompact = false,
+  activeScreen,
+  onNavigate
 }) => {
-  const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#4f46e5';
-  const accentColor = profile.template?.layoutConfig?.colorPalette?.accent || '#6366f1';
+  const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#0f172a';
+  const accentColor = profile.template?.layoutConfig?.colorPalette?.accent || '#64748b';
 
   return (
     <IdentityFlowSections
@@ -20,6 +22,8 @@ export const ExecutiveTemplate = ({
       onDownloadVCard={onDownloadVCard}
       onShareClick={onShareClick}
       isCompact={isCompact}
+      activeScreen={activeScreen}
+      onNavigate={onNavigate}
       theme={{ primary: primaryColor, accent: accentColor }}
     />
   );

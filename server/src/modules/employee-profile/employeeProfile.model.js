@@ -2,12 +2,20 @@ import mongoose from 'mongoose';
 
 const experienceItemSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    company: { type: String, required: true },
+    company: { type: String, default: '' },
+    title: { type: String, default: '' },
+    role: { type: String, default: '' },
+    from: { type: String, default: '' },
+    to: { type: String, default: '' },
+    fromMonth: { type: String, default: '' },
+    toMonth: { type: String, default: '' },
+    fromYear: { type: String, default: '' },
+    toYear: { type: String, default: '' },
+    period: { type: String, default: '' },
+    isCurrent: { type: Boolean, default: false },
     location: { type: String, default: '' },
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
-    isCurrent: { type: Boolean, default: false },
     description: { type: String, default: '' },
     order: { type: Number, default: 0 }
   },
@@ -30,8 +38,18 @@ const skillItemSchema = new mongoose.Schema(
 
 const journeyItemSchema = new mongoose.Schema(
   {
-    year: { type: String, required: true },
-    title: { type: String, required: true },
+    company: { type: String, default: '' },
+    role: { type: String, default: '' },
+    title: { type: String, default: '' },
+    from: { type: String, default: '' },
+    to: { type: String, default: '' },
+    fromMonth: { type: String, default: '' },
+    toMonth: { type: String, default: '' },
+    fromYear: { type: String, default: '' },
+    toYear: { type: String, default: '' },
+    period: { type: String, default: '' },
+    year: { type: String, default: '' },
+    isCurrent: { type: Boolean, default: false },
     description: { type: String, default: '' },
     icon: { type: String, default: '' },
     order: { type: Number, default: 0 },

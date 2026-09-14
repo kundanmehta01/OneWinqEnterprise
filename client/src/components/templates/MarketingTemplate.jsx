@@ -7,7 +7,9 @@ export const MarketingTemplate = ({
   onQrClick,
   onDownloadVCard,
   onShareClick,
-  isCompact = false
+  isCompact = false,
+  activeScreen,
+  onNavigate
 }) => {
   const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#7c3aed';
   const accentColor = profile.template?.layoutConfig?.colorPalette?.accent || '#c084fc';
@@ -20,6 +22,8 @@ export const MarketingTemplate = ({
       onDownloadVCard={onDownloadVCard}
       onShareClick={onShareClick}
       isCompact={isCompact}
+      activeScreen={activeScreen}
+      onNavigate={onNavigate}
       theme={{ primary: primaryColor, accent: accentColor }}
     />
   );

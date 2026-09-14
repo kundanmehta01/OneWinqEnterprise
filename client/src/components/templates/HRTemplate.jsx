@@ -7,7 +7,9 @@ export const HRTemplate = ({
   onQrClick,
   onDownloadVCard,
   onShareClick,
-  isCompact = false
+  isCompact = false,
+  activeScreen,
+  onNavigate
 }) => {
   const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#0d9488';
   const accentColor = profile.template?.layoutConfig?.colorPalette?.accent || '#2dd4bf';
@@ -20,6 +22,8 @@ export const HRTemplate = ({
       onDownloadVCard={onDownloadVCard}
       onShareClick={onShareClick}
       isCompact={isCompact}
+      activeScreen={activeScreen}
+      onNavigate={onNavigate}
       theme={{ primary: primaryColor, accent: accentColor }}
     />
   );

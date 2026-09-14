@@ -6,7 +6,6 @@ import {
   Globe,
   ExternalLink,
   Award,
-  TrendingUp,
   FolderGit2,
   Mail,
   Phone,
@@ -14,27 +13,33 @@ import {
   Calendar,
   MessageSquare,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Image as ImageIcon,
   Video,
   FileText,
   Clock,
   Send,
-  UserCheck
+  UserCheck,
+  CheckCircle2,
+  Compass,
+  BookOpen,
+  Linkedin,
+  Instagram,
+  Facebook
 } from 'lucide-react';
 import { DigitalHeroCard } from './DigitalHeroCard';
 
 /**
  * Universal 8-Section Identity Flow Component
- * Implements the exact 8 screens/sections from the Founder Identity Flow:
- * 1. Overview (Unified Digital Hero Card)
+ * 1. Overview (Unified Digital Hero Card + Quick Hub)
  * 2. About (Introduction, Expertise, Experience)
- * 3. Journey (My Journey timeline)
- * 4. Work & Impact (My Work projects + Impact block)
- * 5. Achievements (My Achievements with icons + View All)
- * 6. Media & Gallery (Filter tabs: All, Photos, Videos, Events + View All)
- * 7. Blogs & Thoughts (List of articles with dates + View All)
- * 8. Connect & Contact (Let's Connect with contact info + Connect With Me & Share Profile)
+ * 3. Journey (Career Timeline)
+ * 4. Work / Projects (Featured Projects - Impact section removed)
+ * 5. Achievements (Honors & Certifications)
+ * 6. Media & Gallery (Filter tabs: All, Photos, Videos, Events)
+ * 7. Blogs & Thoughts (Articles with dates)
+ * 8. Connect & Contact (Contact channels + Send Contact)
  */
 export const IdentityFlowSections = ({
   profile,
@@ -43,6 +48,8 @@ export const IdentityFlowSections = ({
   onDownloadVCard,
   onShareClick,
   isCompact = false,
+  activeScreen,
+  onNavigate = () => {},
   theme = {}
 }) => {
   const [activeMediaTab, setActiveMediaTab] = useState('all');
@@ -74,11 +81,88 @@ export const IdentityFlowSections = ({
   const twitterLink = socialLinks.find(l => l.platform?.toLowerCase().includes('twitter') || l.platform?.toLowerCase().includes('x'));
   const otherSocials = socialLinks.filter(l => l !== linkedinLink && l !== twitterLink);
 
-  return (
-    <div className="space-y-8 animate-fadeIn max-w-4xl mx-auto">
-      {/* ────────────────────────────────────────────────────────────────
-          SCREEN 1: OVERVIEW (Unified Digital Hero Card)
-          ──────────────────────────────────────────────────────────────── */}
+  const projectsList = profile.workAndImpact?.projects || profile.projects || [];
+  const rawExperience = (profile.experience && profile.experience.length > 0)
+    ? profile.experience
+    : (profile.journey && profile.journey.length > 0)
+    ? profile.journey
+    : (profile.about?.experience || []);
+
+  const experienceList = rawExperience
+    .filter(item => (item.company && item.company.trim()) || (item.role && item.role.trim()) || (item.title && item.title.trim()))
+    .map((item, idx) => {
+      const company = item.company || item.organization || item.title || '';
+      const role = item.role || item.designation || (item.company ? item.title : '') || item.subtitle || '';
+      const isPresent = Boolean(
+        item.isCurrent ||
+        (typeof item.to === 'string' && /present|current/i.test(item.to)) ||
+        (typeof item.period === 'string' && /present|current/i.test(item.period)) ||
+        (typeof item.year === 'string' && /present|current/i.test(item.year))
+      );
+
+      const fromMonth = item.fromMonth || '';
+      const fromYear = item.fromYear || item.from || '';
+      const toMonth = isPresent ? '' : (item.toMonth || '');
+      const toYear = isPresent ? 'PRESENT' : (item.toYear || item.to || '');
+
+      let from = fromMonth && fromYear ? `${fromMonth} ${fromYear}` : (fromYear || item.from || '');
+      let to = isPresent ? 'PRESENT' : (toMonth && toYear ? `${toMonth} ${toYear}` : (toYear || item.to || ''));
+
+      if (!from || (!to && !isPresent)) {
+        const raw = item.period || item.year || '';
+        if (raw.includes('-')) {
+          const parts = raw.split('-');
+          if (!from) from = parts[0].trim();
+          if (!to && !isPresent) to = parts[1].trim();
+        } else if (!from && raw) {
+          from = raw.trim();
+        }
+
+        if (!from && item.startDate) {
+          from = String(new Date(item.startDate).getFullYear());
+        }
+        if (!to && item.endDate && !isPresent) {
+          to = String(new Date(item.endDate).getFullYear());
+        }
+      }
+
+      let period = '';
+      if (from && to) {
+        period = isPresent ? `${from}- PRESENT` : `${from}- ${to}`;
+      } else if (from) {
+        period = isPresent ? `${from}- PRESENT` : from;
+      } else if (to) {
+        period = to;
+      } else if (item.period) {
+        period = item.period;
+      } else if (isPresent) {
+        period = 'PRESENT';
+      }
+
+      return {
+        _id: item._id || idx,
+        company,
+        role,
+        title: role,
+        fromMonth,
+        fromYear,
+        from,
+        toMonth,
+        toYear,
+        to,
+        period,
+        isCurrent: isPresent
+      };
+    });
+  const journeyList = experienceList;
+  const achievementsList = profile.achievements || [];
+  const blogsList = profile.blogs || [];
+
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN 1: OVERVIEW (Hero Card + Navigation Hub)
+  // ────────────────────────────────────────────────────────────────
+  const renderScreen1 = () => (
+    <div className="space-y-6 animate-fadeIn">
       <section id="screen-1-overview">
         <DigitalHeroCard
           profile={profile}
@@ -90,257 +174,716 @@ export const IdentityFlowSections = ({
         />
       </section>
 
-      {/* ────────────────────────────────────────────────────────────────
-          SCREEN 2: ABOUT (Introduction, Expertise, Experience)
-          ──────────────────────────────────────────────────────────────── */}
-      <section id="screen-2-about" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-            <Sparkles className="w-4 h-4 shrink-0" /> {profile.about?.title || `About ${firstName}`}
-          </h3>
-          <span className="text-[11px] font-semibold text-slate-400 font-mono">02 / 08</span>
-        </div>
-
-        {/* 2.1 Introduction */}
-        <div className="space-y-2">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Introduction</h4>
-          <p className="text-sm text-slate-700 leading-relaxed font-sans">
-            {profile.about?.introduction || profile.bio || profile.headline || 'Dedicated professional passionate about building impactful technology solutions and fostering collaborative growth.'}
-          </p>
-        </div>
-
-        {/* 2.2 Expertise */}
-        {((profile.about?.expertise && profile.about.expertise.length > 0) || (profile.skills && profile.skills.length > 0)) && (
-          <div className="space-y-2.5 pt-2 border-t border-slate-100">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Expertise</h4>
-            <div className="flex flex-wrap gap-2">
-              {(profile.about?.expertise || profile.skills || []).map((skill, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
-                  style={{
-                    backgroundColor: `${primaryColor}10`,
-                    borderColor: `${primaryColor}30`,
-                    color: primaryColor
-                  }}
-                >
-                  {skill.name || skill}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 2.3 Experience Summary */}
-        <div className="space-y-2.5 pt-2 border-t border-slate-100">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience</h4>
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
-            {profile.about?.experienceSummary || `${profile.overviewStats?.years || profile.overviewStats?.yearsOfExperience || '5+'} years in ${departmentName} leadership, high-velocity execution, and driving enterprise digital transformation.`}
-          </p>
-
-          {/* Inline past positions if present */}
-          {(profile.about?.experience?.length > 0 || profile.experience?.length > 0) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-              {(profile.about?.experience || profile.experience || []).slice(0, 2).map((exp, idx) => (
-                <div key={idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 text-left">
-                  <div className="text-xs font-bold text-slate-900">{exp.title}</div>
-                  <div className="text-[11px] font-medium text-slate-500">{exp.company} • {exp.location || 'Remote'}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ────────────────────────────────────────────────────────────────
-          SCREEN 3: JOURNEY (Milestone Timeline)
-          ──────────────────────────────────────────────────────────────── */}
-      {profile.journey && profile.journey.length > 0 && (
-        <section id="screen-3-journey" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5">
+      {/* Quick Navigation Cards Hub (Shown in Tab/Screen mode) */}
+      {activeScreen !== undefined && !isCompact && (
+        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <Sparkles className="w-4 h-4 shrink-0" /> My Journey
-            </h3>
-            <span className="text-[11px] font-semibold text-slate-400 font-mono">03 / 08</span>
+            <div>
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-600" /> Explore {firstName}'s Profile
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Browse detailed background, track record, deliverables and direct channels.
+              </p>
+            </div>
+            <span className="text-[11px] font-semibold text-slate-400 font-mono">01 / 08</span>
           </div>
 
-          <div className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5" style={{ '--tw-before-bg': `${primaryColor}20` }}>
-            {profile.journey.map((step, idx) => (
-              <div key={idx} className="relative space-y-1">
-                {/* Node Dot */}
-                <div
-                  className="absolute -left-[23px] top-1 w-4 h-4 rounded-full bg-white border-2 flex items-center justify-center shadow-xs"
-                  style={{ borderColor: primaryColor }}
-                >
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: primaryColor }} />
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className="text-xs font-mono font-bold px-2 py-0.5 rounded-md"
-                    style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-                  >
-                    {step.year}
-                  </span>
-                  <h4 className="text-xs sm:text-sm font-bold text-slate-900">{step.title}</h4>
-                </div>
-
-                {step.description && (
-                  <p className="text-xs text-slate-600 leading-relaxed font-sans pt-0.5 pl-0.5">
-                    {step.description}
-                  </p>
-                )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+            <button
+              onClick={() => onNavigate(2)}
+              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-4 h-4" />
               </div>
+              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
+                <span>About & Bio</span>
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                {profile.about?.introduction || profile.headline || 'Professional biography, expertise and key focus areas.'}
+              </p>
+            </button>
+
+            <button
+              onClick={() => onNavigate(3)}
+              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                <Briefcase className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
+                <span>Work Experience</span>
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {experienceList.length > 0 ? `${experienceList.length} professional roles & track record.` : 'Professional roles and experience track record.'}
+              </p>
+            </button>
+
+            <button
+              onClick={() => onNavigate(4)}
+              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                <FolderGit2 className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
+                <span>Featured Projects</span>
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {projectsList.length > 0 ? `${projectsList.length} verified projects and portfolio initiatives.` : 'Key enterprise initiatives and delivered work.'}
+              </p>
+            </button>
+
+            <button
+              onClick={() => onNavigate(5)}
+              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                <Award className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
+                <span>Achievements</span>
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {achievementsList.length > 0 ? `${achievementsList.length} awards, certifications and recognitions.` : 'Certified credentials and industry honors.'}
+              </p>
+            </button>
+
+            <button
+              onClick={() => onNavigate(6)}
+              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                <ImageIcon className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
+                <span>Media & Gallery</span>
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {allMedia.length > 0 ? `${allMedia.length} media assets, photos, and highlights.` : 'Visual gallery and photo highlights.'}
+              </p>
+            </button>
+
+            <button
+              onClick={() => onNavigate(8)}
+              className="p-4 rounded-2xl bg-purple-600 text-white shadow-md shadow-purple-500/20 text-left transition-all hover:bg-purple-700 group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                <Mail className="w-4 h-4" />
+              </div>
+              <h4 className="text-xs font-bold text-white flex items-center justify-between">
+                <span>Connect Directly</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </h4>
+              <p className="text-[11px] text-purple-100 mt-1">
+                Save vCard, exchange contact details, or email directly.
+              </p>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN 2: ABOUT
+  // ────────────────────────────────────────────────────────────────
+  const renderScreen2 = () => (
+    <section id="screen-2-about" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-fadeIn">
+      {/* Top Header with Back Button */}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-3">
+          {activeScreen !== undefined && (
+            <button
+              type="button"
+              onClick={() => onNavigate(1)}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+              title="Back to Overview"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
+              <Sparkles className="w-4 h-4 shrink-0" /> {profile.about?.title || `About ${firstName}`}
+            </h3>
+            <p className="text-[11px] text-slate-400">Professional Summary, Core Expertise & Experience</p>
+          </div>
+        </div>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">02 / 08</span>
+      </div>
+
+      {/* 2.1 Introduction */}
+      <div className="space-y-2">
+        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Introduction</h4>
+        <p className="text-sm text-slate-700 leading-relaxed font-sans">
+          {profile.about?.introduction || profile.bio || profile.headline || 'Dedicated enterprise professional passionate about driving technology excellence and collaborative growth.'}
+        </p>
+      </div>
+
+      {/* 2.2 Expertise */}
+      {((profile.about?.expertise && profile.about.expertise.length > 0) || (profile.skills && profile.skills.length > 0)) && (
+        <div className="space-y-2.5 pt-2 border-t border-slate-100">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Core Expertise & Skills</h4>
+          <div className="flex flex-wrap gap-2">
+            {(profile.about?.expertise || profile.skills || []).map((skill, idx) => (
+              <span
+                key={idx}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+                style={{
+                  backgroundColor: `${primaryColor}10`,
+                  borderColor: `${primaryColor}30`,
+                  color: primaryColor
+                }}
+              >
+                {skill.name || skill}
+              </span>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
-      {/* ────────────────────────────────────────────────────────────────
-          SCREEN 4: WORK & IMPACT (Featured Projects + Impact block)
-          ──────────────────────────────────────────────────────────────── */}
-      <section id="screen-4-work-impact" className="space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-            <FolderGit2 className="w-4 h-4 shrink-0" /> {profile.workAndImpact?.title || 'My Work & Impact'}
-          </h3>
-          <span className="text-[11px] font-semibold text-slate-400 font-mono">04 / 08</span>
-        </div>
+      {/* 2.3 Experience Summary */}
+      <div className="space-y-2.5 pt-2 border-t border-slate-100">
+        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience</h4>
+        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+          {profile.about?.experienceSummary || `${profile.overviewStats?.years || profile.overviewStats?.yearsOfExperience || '5+'} years in ${departmentName} leadership, high-velocity execution, and driving enterprise digital transformation.`}
+        </p>
 
-        {/* 4.1 Featured Projects Grid */}
-        {(profile.workAndImpact?.projects || profile.projects) && (profile.workAndImpact?.projects || profile.projects).length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-            {(profile.workAndImpact?.projects || profile.projects).map((proj, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-2.5 flex flex-col justify-between hover:border-slate-300 transition-all"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className="px-2 py-0.5 rounded-full text-[10px] font-bold border"
-                      style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
-                    >
-                      {proj.badge || proj.status || 'Initiative'}
-                    </span>
-                    {proj.url && (
-                      <a
-                        href={proj.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-slate-400 hover:text-slate-700 transition-colors"
-                        title="View Project"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{proj.title}</h4>
-                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                    {proj.description}
-                  </p>
-                </div>
-
-                {proj.technologies && proj.technologies.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-2 border-t border-slate-100">
-                    {proj.technologies.map((t, tIdx) => (
-                      <span key={tIdx} className="px-1.5 py-0.5 rounded bg-slate-100 text-[9px] font-medium text-slate-600">
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                )}
+        {/* Inline past positions if present */}
+        {(profile.about?.experience?.length > 0 || profile.experience?.length > 0) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            {(profile.about?.experience || profile.experience || []).slice(0, 4).map((exp, idx) => (
+              <div key={idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 text-left">
+                <div className="text-xs font-bold text-slate-900">{exp.title}</div>
+                <div className="text-[11px] font-medium text-slate-500">{exp.company} • {exp.location || 'Remote'}</div>
               </div>
             ))}
           </div>
         )}
+      </div>
 
-        {/* 4.2 Impact Sub-block */}
-        {(profile.workAndImpact?.impact || profile.impactMetrics) && (profile.workAndImpact?.impact || profile.impactMetrics).length > 0 && (
-          <div
-            className="rounded-3xl p-5 sm:p-6 border shadow-xs space-y-3"
-            style={{ backgroundColor: `${primaryColor}08`, borderColor: `${primaryColor}25` }}
+      {/* Screen Navigation Footer */}
+      {activeScreen !== undefined && (
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+          <button
+            onClick={() => onNavigate(1)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: primaryColor }}>
-                <TrendingUp className="w-3.5 h-3.5" /> Impact Highlights
-              </h4>
-              <span className="text-[10px] font-medium text-slate-400">Measurable Outcomes</span>
-            </div>
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
+          </button>
+          <button
+            onClick={() => onNavigate(3)}
+            className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
+          >
+            Experience <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </section>
+  );
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              {(profile.workAndImpact?.impact || profile.impactMetrics).map((m, idx) => (
-                <div key={idx} className="bg-white/80 backdrop-blur-xs p-3.5 rounded-2xl border border-white/60 text-center shadow-2xs">
-                  <div className="text-lg sm:text-xl font-extrabold text-slate-900 font-mono">{m.metric}</div>
-                  <div className="text-[11px] font-medium text-slate-600 mt-0.5">{m.label}</div>
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN 3: EXPERIENCE (Timeline)
+  // ────────────────────────────────────────────────────────────────
+  const renderScreen3 = () => (
+    <div id="screen-3-experience" className="space-y-6 animate-fadeIn">
+      {/* Main Experience Timeline Card */}
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+        {/* Top Header with Purple Indicator Bar */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            {activeScreen !== undefined && (
+              <button
+                type="button"
+                onClick={() => onNavigate(1)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer mr-1"
+                title="Back to Overview"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <div className="w-1.5 h-5 rounded-full bg-purple-600" style={{ backgroundColor: primaryColor }} />
+            <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-slate-900">
+              Experience
+            </h3>
+          </div>
+          {activeScreen !== undefined && (
+            <span className="text-[11px] font-semibold text-slate-400 font-mono">03 / 08</span>
+          )}
+        </div>
+
+        {/* Timeline Items */}
+        {experienceList.length > 0 ? (
+          <div className="relative pl-7 space-y-7 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-3 before:w-[2px] before:bg-slate-200">
+            {experienceList.map((item, idx) => {
+              const isPresent = Boolean(
+                item.isCurrent ||
+                /present|current/i.test(item.period || '') ||
+                /present|current/i.test(item.year || '')
+              );
+
+              return (
+                <div key={idx} className="relative group">
+                  {/* Node Dot */}
+                  <div
+                    className={`absolute -left-[27px] top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-white transition-all ${
+                      isPresent
+                        ? 'border-purple-600 bg-purple-50 shadow-xs ring-4 ring-purple-100'
+                        : 'border-slate-300'
+                    }`}
+                    style={isPresent ? { borderColor: primaryColor } : {}}
+                  >
+                    <div
+                      className={`rounded-full ${
+                        isPresent
+                          ? 'w-2 h-2 bg-purple-600'
+                          : 'w-1.5 h-1.5 bg-slate-400'
+                      }`}
+                      style={isPresent ? { backgroundColor: primaryColor } : {}}
+                    />
+                  </div>
+
+                  {/* Experience Content */}
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <h4 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+                        {item.company || item.title}
+                      </h4>
+
+                      {item.period && (
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs whitespace-nowrap shrink-0 transition-colors ${
+                            isPresent
+                              ? 'bg-purple-100 text-purple-700 font-bold border border-purple-200/80 shadow-2xs'
+                              : 'bg-slate-100 text-slate-500 font-semibold'
+                          }`}
+                          style={
+                            isPresent
+                              ? {
+                                  backgroundColor: `${primaryColor}18`,
+                                  color: primaryColor,
+                                  borderColor: `${primaryColor}35`
+                                }
+                              : {}
+                          }
+                        >
+                          {item.period}
+                        </span>
+                      )}
+                    </div>
+
+                    {(item.role || item.title) && (
+                      <p
+                        className="text-xs sm:text-sm font-semibold text-purple-600 tracking-tight"
+                        style={{ color: primaryColor }}
+                      >
+                        {item.role || item.title}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+            <Briefcase className="w-8 h-8 text-slate-300 mx-auto" />
+            <h4 className="text-xs font-bold text-slate-700">Experience Records</h4>
+            <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+              {firstName}'s career and roles history is actively being updated.
+            </p>
+          </div>
+        )}
+
+        {/* Screen Navigation Footer */}
+        {activeScreen !== undefined && (
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+            <button
+              onClick={() => onNavigate(2)}
+              className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> About
+            </button>
+            <button
+              onClick={() => onNavigate(4)}
+              className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
+            >
+              Projects <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
       </section>
 
-      {/* ────────────────────────────────────────────────────────────────
-          SCREEN 5: ACHIEVEMENTS (Honors & Certifications)
-          ──────────────────────────────────────────────────────────────── */}
-      {profile.achievements && profile.achievements.length > 0 && (
-        <section id="screen-5-achievements" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      {/* Social Links Row (Matching Screenshot) */}
+      <div className="flex items-center justify-center gap-3 pt-1 pb-1 flex-wrap">
+        {linkedinLink ? (
+          <a
+            href={linkedinLink.url}
+            target="_blank"
+            rel="noreferrer"
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="LinkedIn"
+          >
+            <Linkedin className="w-4 h-4" />
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onConnectClick}
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="LinkedIn"
+          >
+            <Linkedin className="w-4 h-4" />
+          </button>
+        )}
+
+        {profile.socialLinks?.find(l => l.platform?.toLowerCase().includes('instagram')) ? (
+          <a
+            href={profile.socialLinks.find(l => l.platform?.toLowerCase().includes('instagram')).url}
+            target="_blank"
+            rel="noreferrer"
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Instagram"
+          >
+            <Instagram className="w-4 h-4" />
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onConnectClick}
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Instagram"
+          >
+            <Instagram className="w-4 h-4" />
+          </button>
+        )}
+
+        {profile.socialLinks?.find(l => l.platform?.toLowerCase().includes('facebook')) ? (
+          <a
+            href={profile.socialLinks.find(l => l.platform?.toLowerCase().includes('facebook')).url}
+            target="_blank"
+            rel="noreferrer"
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Facebook"
+          >
+            <Facebook className="w-4 h-4" />
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onConnectClick}
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Facebook"
+          >
+            <Facebook className="w-4 h-4" />
+          </button>
+        )}
+
+        {profile.socialLinks?.find(l => l.platform?.toLowerCase().includes('web') || l.platform?.toLowerCase().includes('portfolio')) ? (
+          <a
+            href={profile.socialLinks.find(l => l.platform?.toLowerCase().includes('web') || l.platform?.toLowerCase().includes('portfolio')).url}
+            target="_blank"
+            rel="noreferrer"
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Website"
+          >
+            <Globe className="w-4 h-4" />
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onConnectClick}
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Website"
+          >
+            <Globe className="w-4 h-4" />
+          </button>
+        )}
+
+        {profile.workEmail ? (
+          <a
+            href={`mailto:${profile.workEmail}`}
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Email"
+          >
+            <Mail className="w-4 h-4" />
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onConnectClick}
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Email"
+          >
+            <Mail className="w-4 h-4" />
+          </button>
+        )}
+
+        {profile.phone ? (
+          <a
+            href={`tel:${profile.phone}`}
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Phone"
+          >
+            <Phone className="w-4 h-4" />
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onConnectClick}
+            className="w-11 h-11 rounded-full bg-white hover:bg-purple-50 border border-slate-200 hover:border-purple-300 flex items-center justify-center text-slate-700 hover:text-purple-600 transition-all shadow-xs hover:scale-105"
+            title="Phone"
+          >
+            <Phone className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* "Get Your OneWinq Card" Promo Banner (Matching Screenshot) */}
+      <div className="rounded-3xl p-6 sm:p-7 bg-gradient-to-b from-[#0A0D18] via-[#0D1527] to-[#120F2E] text-white shadow-xl relative overflow-hidden space-y-3">
+        <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+          Get Your OneWinq Card
+        </h3>
+        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm">
+          Transform your professional identity into a tactile, effortless experience.
+        </p>
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={onConnectClick}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-slate-900 font-bold text-xs sm:text-sm hover:bg-slate-100 transition-all shadow-md cursor-pointer"
+          >
+            <span>Get Started</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN 4: WORK / PROJECTS (Impact Section REMOVED)
+  // ────────────────────────────────────────────────────────────────
+  const renderScreen4 = () => (
+    <section id="screen-4-work" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5 animate-fadeIn">
+      {/* Top Header with Back Button */}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-3">
+          {activeScreen !== undefined && (
+            <button
+              type="button"
+              onClick={() => onNavigate(1)}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+              title="Back to Overview"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
+              <FolderGit2 className="w-4 h-4 shrink-0" /> {profile.workAndImpact?.title || 'Featured Projects'}
+            </h3>
+            <p className="text-[11px] text-slate-400">Enterprise Solutions & Key Initiatives</p>
+          </div>
+        </div>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">04 / 08</span>
+      </div>
+
+      {/* Featured Projects Grid */}
+      {projectsList.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+          {projectsList.map((proj, idx) => (
+            <div
+              key={idx}
+              className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-2.5 flex flex-col justify-between hover:bg-white hover:shadow-xs transition-all"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                    style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
+                  >
+                    {proj.badge || proj.status || 'Initiative'}
+                  </span>
+                  {proj.url && (
+                    <a
+                      href={proj.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-slate-400 hover:text-slate-700 transition-colors"
+                      title="View Project"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{proj.title}</h4>
+                <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                  {proj.description}
+                </p>
+              </div>
+
+              {proj.technologies && proj.technologies.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-2 border-t border-slate-200/60">
+                  {proj.technologies.map((t, tIdx) => (
+                    <span key={tIdx} className="px-1.5 py-0.5 rounded bg-white text-[9px] font-medium text-slate-600 border border-slate-200/70">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+          <FolderGit2 className="w-8 h-8 text-slate-300 mx-auto" />
+          <h4 className="text-xs font-bold text-slate-700">Projects Portfolio</h4>
+          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+            {firstName}'s featured projects and technical initiatives will appear here once published.
+          </p>
+        </div>
+      )}
+
+      {/* Screen Navigation Footer */}
+      {activeScreen !== undefined && (
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+          <button
+            onClick={() => onNavigate(3)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Career Journey
+          </button>
+          <button
+            onClick={() => onNavigate(5)}
+            className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
+          >
+            Achievements <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </section>
+  );
+
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN 5: ACHIEVEMENTS
+  // ────────────────────────────────────────────────────────────────
+  const renderScreen5 = () => (
+    <section id="screen-5-achievements" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
+      {/* Top Header with Back Button */}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-3">
+          {activeScreen !== undefined && (
+            <button
+              type="button"
+              onClick={() => onNavigate(1)}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+              title="Back to Overview"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div>
             <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
               <Award className="w-4 h-4 shrink-0 text-amber-500" /> My Achievements
             </h3>
-            <span className="text-[11px] font-semibold text-slate-400 font-mono">05 / 08</span>
+            <p className="text-[11px] text-slate-400">Industry Honors, Certifications & Awards</p>
           </div>
+        </div>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">05 / 08</span>
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {profile.achievements.map((item, idx) => (
-              <div
-                key={idx}
-                className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex items-start gap-3.5 hover:bg-slate-50 transition-all"
-              >
-                <div
-                  className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-xs"
-                  style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-                >
-                  <Award className="w-5 h-5 text-amber-500" />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{item.title}</h4>
-                  <p className="text-[11px] font-medium text-slate-500 mt-0.5">{item.subtitle || item.issuer}</p>
-                  {item.description && (
-                    <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{item.description}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-2 text-center">
-            <button
-              onClick={onConnectClick}
-              className="text-xs font-bold hover:underline inline-flex items-center gap-1 transition-colors cursor-pointer"
-              style={{ color: primaryColor }}
+      {achievementsList.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {achievementsList.map((item, idx) => (
+            <div
+              key={idx}
+              className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex items-start gap-3.5 hover:bg-slate-50 transition-all"
             >
-              <span>View All Achievements</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </section>
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-xs"
+                style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+              >
+                <Award className="w-5 h-5 text-amber-500" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{item.title}</h4>
+                <p className="text-[11px] font-medium text-slate-500 mt-0.5">{item.subtitle || item.issuer}</p>
+                {item.description && (
+                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{item.description}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+          <Award className="w-8 h-8 text-amber-400 mx-auto" />
+          <h4 className="text-xs font-bold text-slate-700">Honors & Certifications</h4>
+          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+            {firstName}'s awards, credentials and industry certifications are maintained here.
+          </p>
+        </div>
       )}
 
-      {/* ────────────────────────────────────────────────────────────────
-          SCREEN 6: MEDIA / GALLERY (Photos, Videos, Events tabs)
-          ──────────────────────────────────────────────────────────────── */}
-      {allMedia.length > 0 && (
-        <section id="screen-6-media" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      {/* Screen Navigation Footer */}
+      {activeScreen !== undefined && (
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+          <button
+            onClick={() => onNavigate(4)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Projects
+          </button>
+          <button
+            onClick={() => onNavigate(6)}
+            className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
+          >
+            Media & Gallery <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </section>
+  );
+
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN 6: MEDIA & GALLERY
+  // ────────────────────────────────────────────────────────────────
+  const renderScreen6 = () => (
+    <section id="screen-6-media" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
+      {/* Top Header with Back Button */}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-3">
+          {activeScreen !== undefined && (
+            <button
+              type="button"
+              onClick={() => onNavigate(1)}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+              title="Back to Overview"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div>
             <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
               <ImageIcon className="w-4 h-4 shrink-0" /> Media & Gallery
             </h3>
-            <span className="text-[11px] font-semibold text-slate-400 font-mono">06 / 08</span>
+            <p className="text-[11px] text-slate-400">Photos, Videos, Press & Events</p>
           </div>
+        </div>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">06 / 08</span>
+      </div>
 
-          {/* Filter Tabs matching Screen 6 in Reference Image: All, Photos, Videos, Events */}
+      {allMedia.length > 0 ? (
+        <>
+          {/* Filter Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             {['all', 'photos', 'videos', 'events'].map(tab => (
               <button
@@ -384,199 +927,325 @@ export const IdentityFlowSections = ({
               </div>
             ))}
           </div>
-
-          <div className="pt-2 text-center">
-            <button
-              onClick={onConnectClick}
-              className="text-xs font-bold hover:underline inline-flex items-center gap-1 transition-colors cursor-pointer"
-              style={{ color: primaryColor }}
-            >
-              <span>View All Media</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────────
-          SCREEN 7: BLOGS & THOUGHTS (Publications & Articles)
-          ──────────────────────────────────────────────────────────────── */}
-      {profile.blogs && profile.blogs.length > 0 && (
-        <section id="screen-7-blogs" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <FileText className="w-4 h-4 shrink-0" /> Blogs & Thoughts
-            </h3>
-            <span className="text-[11px] font-semibold text-slate-400 font-mono">07 / 08</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {profile.blogs.map((b, idx) => (
-              <a
-                key={idx}
-                href={b.url || '#'}
-                target={b.url ? '_blank' : '_self'}
-                rel="noreferrer"
-                className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-200/70 hover:border-slate-300 transition-all flex gap-3 group"
-              >
-                {b.coverImage && (
-                  <img
-                    src={b.coverImage}
-                    alt={b.title}
-                    className="w-16 h-16 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
-                  />
-                )}
-                <div className="flex-1 min-w-0 space-y-1">
-                  <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-600 transition-colors line-clamp-2">
-                    {b.title}
-                  </h4>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                    <Clock className="w-3 h-3" />
-                    <span>{b.readTime || 'Published Article'}</span>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-
-          <div className="pt-2 text-center">
-            <button
-              onClick={onConnectClick}
-              className="text-xs font-bold hover:underline inline-flex items-center gap-1 transition-colors cursor-pointer"
-              style={{ color: primaryColor }}
-            >
-              <span>View All Blogs</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────────
-          SCREEN 8: CONNECT & CONTACT (Let's Connect card + Buttons)
-          ──────────────────────────────────────────────────────────────── */}
-      <section id="screen-8-connect" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-            <Mail className="w-4 h-4 shrink-0" /> {profile.connectAndContact?.title || "Let's Connect"}
-          </h3>
-          <span className="text-[11px] font-semibold text-slate-400 font-mono">08 / 08</span>
+        </>
+      ) : (
+        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+          <ImageIcon className="w-8 h-8 text-slate-300 mx-auto" />
+          <h4 className="text-xs font-bold text-slate-700">Media Portfolio</h4>
+          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+            {firstName}'s photos, event appearances, and video media will appear here once added.
+          </p>
         </div>
+      )}
 
-        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
-          {profile.connectAndContact?.note || profile.collaborationNote || 'Open for collaboration, speaking opportunities, and high-impact enterprise projects.'}
-        </p>
+      {/* Screen Navigation Footer */}
+      {activeScreen !== undefined && (
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+          <button
+            onClick={() => onNavigate(5)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Achievements
+          </button>
+          <button
+            onClick={() => onNavigate(7)}
+            className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
+          >
+            Blogs & Insights <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </section>
+  );
 
-        {/* Contact Details List */}
-        <div className="space-y-3">
-          {profile.workEmail && (
-            <a
-              href={`mailto:${profile.workEmail}`}
-              className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN 7: BLOGS & THOUGHTS
+  // ────────────────────────────────────────────────────────────────
+  const renderScreen7 = () => (
+    <section id="screen-7-blogs" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
+      {/* Top Header with Back Button */}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-3">
+          {activeScreen !== undefined && (
+            <button
+              type="button"
+              onClick={() => onNavigate(1)}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+              title="Back to Overview"
             >
-              <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-                <Mail className="w-4 h-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[10px] text-slate-400 font-medium">Email</div>
-                <div className="truncate text-slate-800">{profile.workEmail}</div>
-              </div>
-            </a>
+              <ArrowLeft className="w-4 h-4" />
+            </button>
           )}
+          <div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
+              <FileText className="w-4 h-4 shrink-0" /> Blogs & Insights
+            </h3>
+            <p className="text-[11px] text-slate-400">Publications, Thought Leadership & Articles</p>
+          </div>
+        </div>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">07 / 08</span>
+      </div>
 
-          {profile.phone && (
-            <a
-              href={`tel:${profile.phone}`}
-              className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
-            >
-              <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-                <Phone className="w-4 h-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[10px] text-slate-400 font-medium">Phone</div>
-                <div className="truncate text-slate-800">{profile.phone}</div>
-              </div>
-            </a>
-          )}
-
-          {linkedinLink && (
-            <a
-              href={linkedinLink.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
-            >
-              <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-                <Globe className="w-4 h-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[10px] text-slate-400 font-medium">LinkedIn</div>
-                <div className="truncate text-slate-800">{linkedinLink.url.replace(/^https?:\/\//, '')}</div>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-            </a>
-          )}
-
-          {twitterLink && (
-            <a
-              href={twitterLink.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
-            >
-              <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-                <Globe className="w-4 h-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[10px] text-slate-400 font-medium">Twitter / X</div>
-                <div className="truncate text-slate-800">{twitterLink.url.replace(/^https?:\/\//, '')}</div>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-            </a>
-          )}
-
-          {otherSocials.map((social, idx) => (
+      {blogsList.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {blogsList.map((b, idx) => (
             <a
               key={idx}
-              href={social.url}
-              target="_blank"
+              href={b.url || '#'}
+              target={b.url ? '_blank' : '_self'}
               rel="noreferrer"
-              className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
+              className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-200/70 hover:border-slate-300 transition-all flex gap-3 group"
             >
-              <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-                <Globe className="w-4 h-4" />
+              {b.coverImage && (
+                <img
+                  src={b.coverImage}
+                  alt={b.title}
+                  className="w-16 h-16 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
+                />
+              )}
+              <div className="flex-1 min-w-0 space-y-1">
+                <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-600 transition-colors line-clamp-2">
+                  {b.title}
+                </h4>
+                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                  <Clock className="w-3 h-3" />
+                  <span>{b.readTime || 'Published Article'}</span>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[10px] text-slate-400 font-medium">{social.platform}</div>
-                <div className="truncate text-slate-800">{social.url.replace(/^https?:\/\//, '')}</div>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             </a>
           ))}
         </div>
+      ) : (
+        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+          <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+          <h4 className="text-xs font-bold text-slate-700">Publications & Articles</h4>
+          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+            {firstName}'s articles and thought leadership pieces will appear here.
+          </p>
+        </div>
+      )}
 
-        {/* Big Action Buttons from Screen 8 in Reference Image: Connect With Me & Share Profile */}
-        <div className="space-y-2.5 pt-2">
+      {/* Screen Navigation Footer */}
+      {activeScreen !== undefined && (
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
           <button
-            onClick={onConnectClick}
-            className="w-full py-3.5 rounded-2xl text-white text-xs sm:text-sm font-bold shadow-md hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-            style={{ backgroundColor: primaryColor }}
+            onClick={() => onNavigate(6)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
-            <Send className="w-4 h-4" />
-            <span>Connect With Me</span>
+            <ArrowLeft className="w-3.5 h-3.5" /> Media & Gallery
           </button>
-
           <button
-            onClick={onShareClick}
-            className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+            onClick={() => onNavigate(8)}
+            className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
-            <Share2 className="w-4 h-4" />
-            <span>Share Profile</span>
+            Connect & Contact <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
-      </section>
+      )}
+    </section>
+  );
 
-      {/* Role Quote if configured */}
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN 8: CONNECT & CONTACT
+  // ────────────────────────────────────────────────────────────────
+  const renderScreen8 = () => (
+    <section id="screen-8-connect" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-fadeIn">
+      {/* Top Header with Back Button */}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center gap-3">
+          {activeScreen !== undefined && (
+            <button
+              type="button"
+              onClick={() => onNavigate(1)}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+              title="Back to Overview"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
+              <Mail className="w-4 h-4 shrink-0" /> {profile.connectAndContact?.title || "Let's Connect"}
+            </h3>
+            <p className="text-[11px] text-slate-400">Direct Contact Details, Channels & vCard</p>
+          </div>
+        </div>
+        <span className="text-[11px] font-semibold text-slate-400 font-mono">08 / 08</span>
+      </div>
+
+      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+        {profile.connectAndContact?.note || profile.collaborationNote || 'Open for collaboration, speaking opportunities, and high-impact enterprise projects.'}
+      </p>
+
+      {/* Contact Details List */}
+      <div className="space-y-3">
+        {profile.workEmail && (
+          <a
+            href={`mailto:${profile.workEmail}`}
+            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
+          >
+            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
+              <Mail className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] text-slate-400 font-medium">Email</div>
+              <div className="truncate text-slate-800">{profile.workEmail}</div>
+            </div>
+          </a>
+        )}
+
+        {profile.phone && (
+          <a
+            href={`tel:${profile.phone}`}
+            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
+          >
+            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
+              <Phone className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] text-slate-400 font-medium">Phone</div>
+              <div className="truncate text-slate-800">{profile.phone}</div>
+            </div>
+          </a>
+        )}
+
+        {linkedinLink && (
+          <a
+            href={linkedinLink.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
+          >
+            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
+              <Globe className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] text-slate-400 font-medium">LinkedIn</div>
+              <div className="truncate text-slate-800">{linkedinLink.url.replace(/^https?:\/\//, '')}</div>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+          </a>
+        )}
+
+        {twitterLink && (
+          <a
+            href={twitterLink.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
+          >
+            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
+              <Globe className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] text-slate-400 font-medium">Twitter / X</div>
+              <div className="truncate text-slate-800">{twitterLink.url.replace(/^https?:\/\//, '')}</div>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+          </a>
+        )}
+
+        {otherSocials.map((social, idx) => (
+          <a
+            key={idx}
+            href={social.url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
+          >
+            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
+              <Globe className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] text-slate-400 font-medium">{social.platform}</div>
+              <div className="truncate text-slate-800">{social.url.replace(/^https?:\/\//, '')}</div>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+          </a>
+        ))}
+      </div>
+
+      {/* Big Action Buttons */}
+      <div className="space-y-2.5 pt-2">
+        <button
+          onClick={onConnectClick}
+          className="w-full py-3.5 rounded-2xl text-white text-xs sm:text-sm font-bold shadow-md hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+          style={{ backgroundColor: primaryColor }}
+        >
+          <Send className="w-4 h-4" />
+          <span>Connect With Me</span>
+        </button>
+
+        <button
+          onClick={onDownloadVCard}
+          className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+        >
+          <UserCheck className="w-4 h-4" />
+          <span>Download Verified vCard (.vcf)</span>
+        </button>
+      </div>
+
+      {/* Screen Navigation Footer */}
+      {activeScreen !== undefined && (
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+          <button
+            onClick={() => onNavigate(7)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Blogs & Insights
+          </button>
+          <button
+            onClick={() => onNavigate(1)}
+            className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
+          >
+            Return to Overview <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </section>
+  );
+
+  // ────────────────────────────────────────────────────────────────
+  // SCREEN SELECTOR (When activeScreen is specified: 1 to 8)
+  // ────────────────────────────────────────────────────────────────
+  if (activeScreen !== undefined && activeScreen !== null && activeScreen !== 'all') {
+    switch (Number(activeScreen)) {
+      case 1:
+        return renderScreen1();
+      case 2:
+        return renderScreen2();
+      case 3:
+        return renderScreen3();
+      case 4:
+        return renderScreen4();
+      case 5:
+        return renderScreen5();
+      case 6:
+        return renderScreen6();
+      case 7:
+        return renderScreen7();
+      case 8:
+        return renderScreen8();
+      default:
+        return renderScreen1();
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // DEFAULT FULL CONTINUOUS VIEW (Fallback for previews without activeScreen)
+  // ────────────────────────────────────────────────────────────────
+  return (
+    <div className="space-y-8 animate-fadeIn max-w-4xl mx-auto">
+      {renderScreen1()}
+      {renderScreen2()}
+      {journeyList.length > 0 && renderScreen3()}
+      {renderScreen4()}
+      {achievementsList.length > 0 && renderScreen5()}
+      {allMedia.length > 0 && renderScreen6()}
+      {blogsList.length > 0 && renderScreen7()}
+      {renderScreen8()}
+
+      {/* Role Perspective Quote if configured */}
       {showQuote && roleQuote && (
         <div
           className="rounded-3xl p-6 border shadow-xs relative overflow-hidden"

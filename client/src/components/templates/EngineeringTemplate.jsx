@@ -7,7 +7,9 @@ export const EngineeringTemplate = ({
   onQrClick,
   onDownloadVCard,
   onShareClick,
-  isCompact = false
+  isCompact = false,
+  activeScreen,
+  onNavigate
 }) => {
   const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#0284c7';
   const accentColor = profile.template?.layoutConfig?.colorPalette?.accent || '#38bdf8';
@@ -20,6 +22,8 @@ export const EngineeringTemplate = ({
       onDownloadVCard={onDownloadVCard}
       onShareClick={onShareClick}
       isCompact={isCompact}
+      activeScreen={activeScreen}
+      onNavigate={onNavigate}
       theme={{ primary: primaryColor, accent: accentColor }}
     />
   );
