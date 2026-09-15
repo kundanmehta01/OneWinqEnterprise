@@ -2,21 +2,21 @@ import mongoose from 'mongoose';
 
 const experienceItemSchema = new mongoose.Schema(
   {
-    company: { type: String, default: '' },
-    title: { type: String, default: '' },
-    role: { type: String, default: '' },
-    from: { type: String, default: '' },
-    to: { type: String, default: '' },
-    fromMonth: { type: String, default: '' },
-    toMonth: { type: String, default: '' },
-    fromYear: { type: String, default: '' },
-    toYear: { type: String, default: '' },
-    period: { type: String, default: '' },
+    company: { type: String, default: '', maxlength: 100 },
+    title: { type: String, default: '', maxlength: 100 },
+    role: { type: String, default: '', maxlength: 100 },
+    from: { type: String, default: '', maxlength: 50 },
+    to: { type: String, default: '', maxlength: 50 },
+    fromMonth: { type: String, default: '', maxlength: 30 },
+    toMonth: { type: String, default: '', maxlength: 30 },
+    fromYear: { type: String, default: '', maxlength: 20 },
+    toYear: { type: String, default: '', maxlength: 20 },
+    period: { type: String, default: '', maxlength: 60 },
     isCurrent: { type: Boolean, default: false },
-    location: { type: String, default: '' },
+    location: { type: String, default: '', maxlength: 100 },
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
-    description: { type: String, default: '' },
+    description: { type: String, default: '', maxlength: 2000 },
     order: { type: Number, default: 0 }
   },
   { _id: true }
@@ -24,8 +24,8 @@ const experienceItemSchema = new mongoose.Schema(
 
 const skillItemSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    category: { type: String, default: 'General' },
+    name: { type: String, required: true, maxlength: 60 },
+    category: { type: String, default: 'General', maxlength: 50 },
     proficiencyLevel: {
       type: String,
       enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
@@ -38,20 +38,20 @@ const skillItemSchema = new mongoose.Schema(
 
 const journeyItemSchema = new mongoose.Schema(
   {
-    company: { type: String, default: '' },
-    role: { type: String, default: '' },
-    title: { type: String, default: '' },
-    from: { type: String, default: '' },
-    to: { type: String, default: '' },
-    fromMonth: { type: String, default: '' },
-    toMonth: { type: String, default: '' },
-    fromYear: { type: String, default: '' },
-    toYear: { type: String, default: '' },
-    period: { type: String, default: '' },
-    year: { type: String, default: '' },
+    company: { type: String, default: '', maxlength: 100 },
+    role: { type: String, default: '', maxlength: 100 },
+    title: { type: String, default: '', maxlength: 100 },
+    from: { type: String, default: '', maxlength: 50 },
+    to: { type: String, default: '', maxlength: 50 },
+    fromMonth: { type: String, default: '', maxlength: 30 },
+    toMonth: { type: String, default: '', maxlength: 30 },
+    fromYear: { type: String, default: '', maxlength: 20 },
+    toYear: { type: String, default: '', maxlength: 20 },
+    period: { type: String, default: '', maxlength: 60 },
+    year: { type: String, default: '', maxlength: 30 },
     isCurrent: { type: Boolean, default: false },
-    description: { type: String, default: '' },
-    icon: { type: String, default: '' },
+    description: { type: String, default: '', maxlength: 2000 },
+    icon: { type: String, default: '', maxlength: 50 },
     order: { type: Number, default: 0 },
     isVisible: { type: Boolean, default: true }
   },
@@ -60,8 +60,8 @@ const journeyItemSchema = new mongoose.Schema(
 
 const impactMetricItemSchema = new mongoose.Schema(
   {
-    metric: { type: String, required: true },
-    label: { type: String, required: true },
+    metric: { type: String, required: true, maxlength: 30 },
+    label: { type: String, required: true, maxlength: 100 },
     order: { type: Number, default: 0 }
   },
   { _id: true }
@@ -69,20 +69,20 @@ const impactMetricItemSchema = new mongoose.Schema(
 
 const projectItemSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    description: { type: String, default: '' },
-    role: { type: String, default: '' },
-    url: { type: String, default: '' },
-    imageUrl: { type: String, default: '' },
+    title: { type: String, required: true, maxlength: 150 },
+    description: { type: String, default: '', maxlength: 2000 },
+    role: { type: String, default: '', maxlength: 100 },
+    url: { type: String, default: '', maxlength: 1000 },
+    imageUrl: { type: String, default: '', maxlength: 1000 },
     status: {
       type: String,
       enum: ['all', 'ongoing', 'completed'],
       default: 'completed'
     },
-    badge: { type: String, default: '' },
+    badge: { type: String, default: '', maxlength: 50 },
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
-    technologies: [String],
+    technologies: [{ type: String, maxlength: 50 }],
     order: { type: Number, default: 0 }
   },
   { _id: true }
@@ -90,14 +90,14 @@ const projectItemSchema = new mongoose.Schema(
 
 const achievementItemSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    subtitle: { type: String, default: '' },
-    issuer: { type: String, default: '' },
+    title: { type: String, required: true, maxlength: 150 },
+    subtitle: { type: String, default: '', maxlength: 150 },
+    issuer: { type: String, default: '', maxlength: 100 },
     issueDate: { type: Date, default: null },
-    description: { type: String, default: '' },
-    certificateUrl: { type: String, default: '' },
-    icon: { type: String, default: '' },
-    badge: { type: String, default: '' },
+    description: { type: String, default: '', maxlength: 1500 },
+    certificateUrl: { type: String, default: '', maxlength: 1000 },
+    icon: { type: String, default: '', maxlength: 50 },
+    badge: { type: String, default: '', maxlength: 50 },
     isFeatured: { type: Boolean, default: true },
     order: { type: Number, default: 0 }
   },
@@ -106,8 +106,8 @@ const achievementItemSchema = new mongoose.Schema(
 
 const profileSocialLinkSchema = new mongoose.Schema(
   {
-    platform: { type: String, required: true },
-    url: { type: String, required: true },
+    platform: { type: String, required: true, maxlength: 50 },
+    url: { type: String, required: true, maxlength: 1000 },
     order: { type: Number, default: 0 },
     isVisible: { type: Boolean, default: true }
   },
@@ -116,8 +116,8 @@ const profileSocialLinkSchema = new mongoose.Schema(
 
 const customSectionSchema = new mongoose.Schema(
   {
-    sectionId: { type: String, required: true },
-    title: { type: String, required: true },
+    sectionId: { type: String, required: true, maxlength: 50 },
+    title: { type: String, required: true, maxlength: 100 },
     content: { type: mongoose.Schema.Types.Mixed, default: {} },
     order: { type: Number, default: 0 },
     isVisible: { type: Boolean, default: true }
@@ -127,14 +127,14 @@ const customSectionSchema = new mongoose.Schema(
 
 const profileMediaItemSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    url: { type: String, required: true },
+    title: { type: String, required: true, maxlength: 150 },
+    url: { type: String, required: true, maxlength: 1000 },
     type: {
       type: String,
       enum: ['all', 'photo', 'video', 'event'],
       default: 'photo'
     },
-    thumbnailUrl: { type: String, default: '' },
+    thumbnailUrl: { type: String, default: '', maxlength: 1000 },
     date: { type: Date, default: Date.now },
     order: { type: Number, default: 0 },
     isVisible: { type: Boolean, default: true }
@@ -144,14 +144,14 @@ const profileMediaItemSchema = new mongoose.Schema(
 
 const profileBlogItemSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    excerpt: { type: String, default: '' },
-    content: { type: String, default: '' },
-    url: { type: String, default: '' },
-    coverImage: { type: String, default: '' },
+    title: { type: String, required: true, maxlength: 200 },
+    excerpt: { type: String, default: '', maxlength: 500 },
+    content: { type: String, default: '', maxlength: 15000 },
+    url: { type: String, default: '', maxlength: 1000 },
+    coverImage: { type: String, default: '', maxlength: 1000 },
     publishedDate: { type: Date, default: Date.now },
-    readTime: { type: String, default: '5 min read' },
-    tags: [String],
+    readTime: { type: String, default: '5 min read', maxlength: 30 },
+    tags: [{ type: String, maxlength: 40 }],
     order: { type: Number, default: 0 },
     isVisible: { type: Boolean, default: true }
   },
@@ -160,47 +160,48 @@ const profileBlogItemSchema = new mongoose.Schema(
 
 const profileDataSchema = new mongoose.Schema(
   {
-    headline: { type: String, default: '' },
-    bio: { type: String, default: '' },
-    phone: { type: String, default: '' },
-    workEmail: { type: String, default: '' },
-    avatarUrl: { type: String, default: '' },
+    headline: { type: String, default: '', maxlength: 255 },
+    bio: { type: String, default: '', maxlength: 2000 },
+    phone: { type: String, default: '', maxlength: 30 },
+    workEmail: { type: String, default: '', maxlength: 100 },
+    avatarUrl: { type: String, default: '', maxlength: 1000 },
     collaborationNote: {
       type: String,
-      default: 'Open for collaboration, speaking opportunities and new ideas.'
+      default: 'Open for collaboration, speaking opportunities and new ideas.',
+      maxlength: 500
     },
     overviewStats: {
-      connectionsCount: { type: String, default: '' },
-      connections: { type: String, default: '' },
-      projectsCount: { type: String, default: '' },
-      projects: { type: String, default: '' },
-      yearsOfExperience: { type: String, default: '' },
-      years: { type: String, default: '' },
-      servicesCount: { type: String, default: '' },
-      services: { type: String, default: '' },
+      connectionsCount: { type: String, default: '', maxlength: 30 },
+      connections: { type: String, default: '', maxlength: 30 },
+      projectsCount: { type: String, default: '', maxlength: 30 },
+      projects: { type: String, default: '', maxlength: 30 },
+      yearsOfExperience: { type: String, default: '', maxlength: 30 },
+      years: { type: String, default: '', maxlength: 30 },
+      servicesCount: { type: String, default: '', maxlength: 30 },
+      services: { type: String, default: '', maxlength: 30 },
       customMetrics: [
         {
-          label: { type: String, default: '' },
-          value: { type: String, default: '' }
+          label: { type: String, default: '', maxlength: 50 },
+          value: { type: String, default: '', maxlength: 30 }
         }
       ]
     },
     location: {
-      city: { type: String, default: '' },
-      country: { type: String, default: '' }
+      city: { type: String, default: '', maxlength: 100 },
+      country: { type: String, default: '', maxlength: 100 }
     },
     about: {
-      title: { type: String, default: '' },
-      introduction: { type: String, default: '' },
-      expertise: [{ type: String }],
-      experienceSummary: { type: String, default: '' }
+      title: { type: String, default: '', maxlength: 100 },
+      introduction: { type: String, default: '', maxlength: 2000 },
+      expertise: [{ type: String, maxlength: 60 }],
+      experienceSummary: { type: String, default: '', maxlength: 2000 }
     },
     connectAndContact: {
-      title: { type: String, default: "Let's Connect" },
-      note: { type: String, default: 'Open for collaboration, speaking opportunities and new ideas.' },
-      workEmail: { type: String, default: '' },
-      phone: { type: String, default: '' },
-      ctaButtonText: { type: String, default: 'Connect With Me' }
+      title: { type: String, default: "Let's Connect", maxlength: 100 },
+      note: { type: String, default: 'Open for collaboration, speaking opportunities and new ideas.', maxlength: 500 },
+      workEmail: { type: String, default: '', maxlength: 100 },
+      phone: { type: String, default: '', maxlength: 30 },
+      ctaButtonText: { type: String, default: 'Connect With Me', maxlength: 50 }
     },
     experience: [experienceItemSchema],
     journey: [journeyItemSchema],
@@ -237,7 +238,8 @@ const employeeProfileSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      index: true
+      index: true,
+      maxlength: 100
     },
     templateId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -250,12 +252,12 @@ const employeeProfileSchema = new mongoose.Schema(
       default: 1
     },
     themeOverrides: {
-      primaryColor: { type: String, default: '' },
-      secondaryColor: { type: String, default: '' },
-      accentColor: { type: String, default: '' },
-      fontHeading: { type: String, default: '' },
-      fontBody: { type: String, default: '' },
-      customCss: { type: String, default: '' }
+      primaryColor: { type: String, default: '', maxlength: 30 },
+      secondaryColor: { type: String, default: '', maxlength: 30 },
+      accentColor: { type: String, default: '', maxlength: 30 },
+      fontHeading: { type: String, default: '', maxlength: 50 },
+      fontBody: { type: String, default: '', maxlength: 50 },
+      customCss: { type: String, default: '', maxlength: 5000 }
     },
     visibility: {
       type: String,
