@@ -1037,7 +1037,7 @@ END:VCARD`;
 
       {/* 4. Main Full-Screen Canvas with Mobile Touch Swipe (Matching Company Profile) */}
       <main
-        className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 lg:py-8 pb-36 lg:pb-8 touch-pan-y"
+        className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-5 sm:py-6 lg:py-8 pb-16 sm:pb-20 lg:pb-8 touch-pan-y"
         {...swipeHandlers}
       >
         {/* Render Active Screen with Smooth Fade Transition */}
@@ -1220,7 +1220,7 @@ END:VCARD`;
       )}
 
       {/* 12. Clean Modern Footer (Matching Company Profile Style) */}
-      <footer className="bg-white border-t border-slate-100 mt-6 sm:mt-8 py-8 pb-28 lg:pb-8 px-6 lg:px-12">
+      <footer className="bg-white border-t border-slate-100 py-7 pb-24 lg:pb-8 px-5 sm:px-6 lg:px-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-left">
           <div className="space-y-3 md:col-span-2">
             <span className="text-xl font-black tracking-tight text-slate-900 font-display">

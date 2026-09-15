@@ -158,6 +158,12 @@ export const EmployeeSelfProfilePage = () => {
         if (!val || val === legacy || (legacy === '248+' && val === '248')) return '';
         return val;
       };
+      const formatLocationInput = (location) => {
+        if (!location) return '';
+        if (typeof location === 'string') return location === '[object Object]' ? '' : location;
+        if (typeof location === 'object') return [location.city, location.country].filter(Boolean).join(', ') || location.address || '';
+        return '';
+      };
 
       const mappedExperience = (draft.experience?.length ? draft.experience : published.experience || []).map(exp => {
         let fromMonth = exp.fromMonth || '';
@@ -222,7 +228,7 @@ export const EmployeeSelfProfilePage = () => {
         bio: draft.bio ?? published.bio ?? '',
         phone: draft.phone ?? published.phone ?? '',
         workEmail: draft.workEmail ?? published.workEmail ?? '',
-        location: draft.location ?? published.location ?? '',
+        location: formatLocationInput(draft.location ?? published.location ?? ''),
         avatarUrl: draft.avatarUrl ?? published.avatarUrl ?? '',
         collaborationNote: draft.collaborationNote ?? published.collaborationNote ?? '',
         overviewStats: {
@@ -1599,8 +1605,8 @@ END:VCARD`;
                     coverUrl: profileData?.coverUrl,
                     workEmail: formData.workEmail || profileData?.workEmail,
                     phone: formData.phone || profileData?.phone,
-                    location: { city: formData.location || profileData?.location?.city || '' },
-                    overviewStats: formData.overviewStats || profileData?.overviewStats,
+                    location: formData.location || profileData?.location || '',
+                    overviewStats: profileData?.overviewStats || formData.overviewStats,
                     skills: formData.skills || profileData?.skills || [],
                     experience: formData.experience || profileData?.experience || [],
                     journey: (formData.experience && formData.experience.length > 0) ? formData.experience : (profileData?.experience || profileData?.journey || []),
