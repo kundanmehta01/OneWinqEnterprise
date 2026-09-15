@@ -7,7 +7,6 @@ import {
   ExternalLink,
   Award,
   FolderGit2,
-  Mail,
   Phone,
   Share2,
   Calendar,
@@ -308,7 +307,7 @@ export const IdentityFlowSections = ({
               className="p-4 rounded-2xl bg-purple-600 text-white shadow-md shadow-purple-500/20 text-left transition-all hover:bg-purple-700 group cursor-pointer sm:col-span-2 md:col-span-2"
             >
               <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                <Mail className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4" />
               </div>
               <h4 className="text-xs font-bold text-white flex items-center justify-between">
                 <span>Contact Diary</span>
@@ -365,19 +364,23 @@ export const IdentityFlowSections = ({
         <div className="space-y-2.5 pt-2 border-t border-slate-100">
           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Core Focus Areas</h4>
           <div className="flex flex-wrap gap-2">
-            {(profile.about?.expertise || profile.skills || []).map((skill, idx) => (
-              <span
-                key={idx}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
-                style={{
-                  backgroundColor: `${primaryColor}10`,
-                  borderColor: `${primaryColor}30`,
-                  color: primaryColor
-                }}
-              >
-                {skill.name || skill}
-              </span>
-            ))}
+            {(profile.about?.expertise || profile.skills || []).map((skill, idx) => {
+              const skillName = typeof skill === 'string' ? skill : (skill.name || skill.title || skill.label || '');
+              if (!skillName) return null;
+              return (
+                <span
+                  key={idx}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+                  style={{
+                    backgroundColor: `${primaryColor}10`,
+                    borderColor: `${primaryColor}30`,
+                    color: primaryColor
+                  }}
+                >
+                  {skillName}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}
@@ -386,7 +389,9 @@ export const IdentityFlowSections = ({
       <div className="space-y-2.5 pt-2 border-t border-slate-100">
         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience Overview</h4>
         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
-          {profile.about?.experienceSummary || `${profile.overviewStats?.years || profile.overviewStats?.yearsOfExperience || '5+'} years in ${departmentName} leadership, high-velocity execution, and driving enterprise digital transformation.`}
+          {profile.about?.experienceSummary || (profile.overviewStats?.years || profile.overviewStats?.yearsOfExperience
+            ? `${profile.overviewStats.years || profile.overviewStats.yearsOfExperience} years of experience in ${departmentName}.`
+            : `Experience in ${departmentName}.`)}
         </p>
       </div>
 
@@ -414,8 +419,8 @@ export const IdentityFlowSections = ({
   // SCREEN 3: WORK EXPERIENCE
   // ────────────────────────────────────────────────────────────────
   const renderScreen3 = () => (
-    <div id="screen-3-experience" className="space-y-6 animate-fadeIn">
-      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+    <div id="screen-3-experience" className="space-y-4 sm:space-y-6 animate-fadeIn">
+      <section className="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200/80 shadow-xs space-y-5 sm:space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             {activeScreen !== undefined && (
@@ -439,7 +444,7 @@ export const IdentityFlowSections = ({
         </div>
 
         {experienceList.length > 0 ? (
-          <div className="relative pl-7 space-y-7 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-3 before:w-[2px] before:bg-slate-200">
+          <div className="relative pl-6 sm:pl-7 space-y-4 sm:space-y-6 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-3 before:w-[2px] before:bg-slate-200">
             {experienceList.map((item, idx) => {
               const isPresent = Boolean(
                 item.isCurrent ||
@@ -448,7 +453,7 @@ export const IdentityFlowSections = ({
               );
 
               return (
-                <div key={idx} className="relative group">
+                <div key={idx} className="relative group rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 sm:p-5 transition-colors hover:border-purple-200 hover:bg-white">
                   <div
                     className={`absolute -left-[27px] top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-white transition-all ${
                       isPresent
@@ -468,8 +473,8 @@ export const IdentityFlowSections = ({
                   </div>
 
                   <div className="space-y-0.5">
-                    <div className="flex items-center justify-between gap-3">
-                      <h4 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                      <h4 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight break-words">
                         {item.company || item.title}
                       </h4>
 
@@ -518,8 +523,7 @@ export const IdentityFlowSections = ({
           </div>
         )}
 
-        {/* Dynamic Social & Contact Icons */}
-        <div className="pt-8 pb-4 flex flex-wrap items-center justify-center gap-3 border-t border-slate-50 mt-6">
+        <div className="pt-6 pb-1 flex flex-wrap items-center justify-center gap-3 border-t border-slate-100 mt-5">
           {(profile.linkedin || profile.socialLinks?.linkedin) && (
             <a href={profile.linkedin || profile.socialLinks?.linkedin} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
               <Linkedin className="w-4 h-4" />
@@ -538,11 +542,6 @@ export const IdentityFlowSections = ({
           {(profile.website || profile.socialLinks?.website) && (
             <a href={profile.website || profile.socialLinks?.website} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
               <Globe className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.email || profile.contact?.email || profile.workEmail) && (
-            <a href={`mailto:${profile.email || profile.contact?.email || profile.workEmail}`} className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Mail className="w-4 h-4" />
             </a>
           )}
           {(profile.phone || profile.contact?.phone || profile.companyPhone) && (
@@ -1055,7 +1054,7 @@ export const IdentityFlowSections = ({
           )}
           <div>
             <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <Mail className="w-4 h-4 shrink-0" /> Contact Diary
+              <MessageSquare className="w-4 h-4 shrink-0" /> Contact Diary
             </h3>
             <p className="text-[11px] text-slate-400">Direct Contact Details, Channels & vCard</p>
           </div>
@@ -1068,20 +1067,6 @@ export const IdentityFlowSections = ({
       </p>
 
       <div className="space-y-3">
-        {profile.workEmail && (
-          <a
-            href={`mailto:${profile.workEmail}`}
-            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
-          >
-            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-              <Mail className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-slate-400 font-medium">Email</div>
-              <div className="truncate text-slate-800">{profile.workEmail}</div>
-            </div>
-          </a>
-        )}
 
         {profile.phone && (
           <a
