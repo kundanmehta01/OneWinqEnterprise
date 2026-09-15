@@ -365,19 +365,23 @@ export const IdentityFlowSections = ({
         <div className="space-y-2.5 pt-2 border-t border-slate-100">
           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Core Focus Areas</h4>
           <div className="flex flex-wrap gap-2">
-            {(profile.about?.expertise || profile.skills || []).map((skill, idx) => (
-              <span
-                key={idx}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
-                style={{
-                  backgroundColor: `${primaryColor}10`,
-                  borderColor: `${primaryColor}30`,
-                  color: primaryColor
-                }}
-              >
-                {skill.name || skill}
-              </span>
-            ))}
+            {(profile.about?.expertise || profile.skills || []).map((skill, idx) => {
+              const skillName = typeof skill === 'string' ? skill : (skill.name || skill.title || skill.label || '');
+              if (!skillName) return null;
+              return (
+                <span
+                  key={idx}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
+                  style={{
+                    backgroundColor: `${primaryColor}10`,
+                    borderColor: `${primaryColor}30`,
+                    color: primaryColor
+                  }}
+                >
+                  {skillName}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}
