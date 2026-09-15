@@ -518,6 +518,41 @@ export const IdentityFlowSections = ({
           </div>
         )}
 
+        {/* Dynamic Social & Contact Icons */}
+        <div className="pt-8 pb-4 flex flex-wrap items-center justify-center gap-3 border-t border-slate-50 mt-6">
+          {(profile.linkedin || profile.socialLinks?.linkedin) && (
+            <a href={profile.linkedin || profile.socialLinks?.linkedin} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
+              <Linkedin className="w-4 h-4" />
+            </a>
+          )}
+          {(profile.instagram || profile.socialLinks?.instagram) && (
+            <a href={profile.instagram || profile.socialLinks?.instagram} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
+              <Instagram className="w-4 h-4" />
+            </a>
+          )}
+          {(profile.whatsapp || profile.contact?.whatsapp || profile.phone || profile.contact?.phone) && (
+            <a href={`https://wa.me/${profile.whatsapp || profile.contact?.whatsapp || profile.phone || profile.contact?.phone}`} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
+              <MessageSquare className="w-4 h-4" />
+            </a>
+          )}
+          {(profile.website || profile.socialLinks?.website) && (
+            <a href={profile.website || profile.socialLinks?.website} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
+              <Globe className="w-4 h-4" />
+            </a>
+          )}
+          {(profile.email || profile.contact?.email || profile.workEmail) && (
+            <a href={`mailto:${profile.email || profile.contact?.email || profile.workEmail}`} className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
+              <Mail className="w-4 h-4" />
+            </a>
+          )}
+          {(profile.phone || profile.contact?.phone || profile.companyPhone) && (
+            <a href={`tel:${profile.phone || profile.contact?.phone || profile.companyPhone}`} className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
+              <Phone className="w-4 h-4" />
+            </a>
+          )}
+        </div>
+
+
         {activeScreen !== undefined && (
           <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
             <button
