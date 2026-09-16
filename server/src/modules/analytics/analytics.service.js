@@ -8,9 +8,10 @@ class AnalyticsService {
   async recordEvent({ eventType, targetType = 'EMPLOYEE', targetId, slug, templateId, metadata = {}, ipAddress = '', userAgent = '', referer = '' }) {
     try {
       const ipHash = ipAddress ? crypto.createHash('sha256').update(ipAddress).digest('hex').substring(0, 16) : '';
+      const normalizedEventType = (eventType || 'PROFILE_VIEW').toUpperCase();
 
       const event = await AnalyticsEvent.create({
-        eventType,
+        eventType: normalizedEventType,
         targetType,
         targetId: targetId || null,
         slug: slug || '',
