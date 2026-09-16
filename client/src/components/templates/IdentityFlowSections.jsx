@@ -28,6 +28,7 @@ import {
   Facebook,
   Zap
 } from 'lucide-react';
+import { FaLinkedinIn, FaInstagram, FaGithub, FaTwitter, FaYoutube, FaGlobe } from 'react-icons/fa';
 import { DigitalHeroCard } from './DigitalHeroCard';
 
 /**
@@ -80,6 +81,15 @@ export const IdentityFlowSections = ({
   const linkedinLink = socialLinks.find(l => l.platform?.toLowerCase().includes('linkedin'));
   const twitterLink = socialLinks.find(l => l.platform?.toLowerCase().includes('twitter') || l.platform?.toLowerCase().includes('x'));
   const otherSocials = socialLinks.filter(l => l !== linkedinLink && l !== twitterLink);
+  const SocialIcon = ({ platform, className = 'w-4 h-4' }) => {
+    const name = String(platform || '').toLowerCase();
+    if (name.includes('linkedin')) return <FaLinkedinIn className={className} />;
+    if (name.includes('instagram')) return <FaInstagram className={className} />;
+    if (name.includes('github')) return <FaGithub className={className} />;
+    if (name.includes('twitter') || name === 'x') return <FaTwitter className={className} />;
+    if (name.includes('youtube')) return <FaYoutube className={className} />;
+    return <FaGlobe className={className} />;
+  };
 
   const projectsList = profile.workAndImpact?.projects || profile.projects || [];
   const rawExperience = (profile.experience && profile.experience.length > 0)
@@ -523,32 +533,24 @@ export const IdentityFlowSections = ({
           </div>
         )}
 
-        <div className="pt-6 pb-1 flex flex-wrap items-center justify-center gap-3 border-t border-slate-100 mt-5">
-          {(profile.linkedin || profile.socialLinks?.linkedin) && (
-            <a href={profile.linkedin || profile.socialLinks?.linkedin} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Linkedin className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.instagram || profile.socialLinks?.instagram) && (
-            <a href={profile.instagram || profile.socialLinks?.instagram} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Instagram className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.whatsapp || profile.contact?.whatsapp || profile.phone || profile.contact?.phone) && (
-            <a href={`https://wa.me/${profile.whatsapp || profile.contact?.whatsapp || profile.phone || profile.contact?.phone}`} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <MessageSquare className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.website || profile.socialLinks?.website) && (
-            <a href={profile.website || profile.socialLinks?.website} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Globe className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.phone || profile.contact?.phone || profile.companyPhone) && (
-            <a href={`tel:${profile.phone || profile.contact?.phone || profile.companyPhone}`} className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Phone className="w-4 h-4" />
-            </a>
-          )}
+        <div className={`relative overflow-hidden bg-gradient-to-br from-[#071126] via-[#0c1731] to-[#292563] text-white shadow-xl shadow-indigo-950/15 ${
+          isCompact ? 'rounded-2xl px-4 py-5' : 'rounded-[2.25rem] px-6 py-7 sm:px-10 sm:py-9'
+        }`}>
+          <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
+          <div className="absolute -bottom-24 right-24 h-48 w-48 rounded-full bg-purple-500/15 blur-3xl" />
+          <div className="relative max-w-2xl">
+            <h4 className={`${isCompact ? 'text-lg' : 'text-2xl sm:text-4xl'} font-extrabold tracking-tight`}>Get Your OneWinq Card</h4>
+            <p className={`${isCompact ? 'mt-1.5 text-xs' : 'mt-3 text-base sm:text-xl'} max-w-xl leading-relaxed text-slate-300`}>
+              Transform your professional identity into a tactile, effortless experience.
+            </p>
+            <button
+              type="button"
+              onClick={onConnectClick}
+              className={`${isCompact ? 'mt-4 gap-2 px-4 py-2 text-xs' : 'mt-7 gap-4 px-7 py-3.5 text-base sm:px-9 sm:py-4 sm:text-lg'} inline-flex items-center rounded-full bg-white font-extrabold text-slate-950 shadow-lg transition-transform hover:scale-[1.03] active:scale-[0.98]`}
+            >
+              Get Started <ArrowRight className="h-5 w-5 stroke-[2.5]" />
+            </button>
+          </div>
         </div>
 
 
@@ -697,7 +699,7 @@ export const IdentityFlowSections = ({
       </div>
 
       {projectsList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+        <div className={`grid grid-cols-1 gap-3.5 ${isCompact ? '' : 'sm:grid-cols-2 md:grid-cols-3'}`}>
           {projectsList.map((proj, idx) => (
             <div
               key={idx}
@@ -798,7 +800,7 @@ export const IdentityFlowSections = ({
       </div>
 
       {achievementsList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className={`grid grid-cols-1 gap-3.5 ${isCompact ? '' : 'sm:grid-cols-2'}`}>
           {achievementsList.map((item, idx) => (
             <div
               key={idx}
@@ -895,7 +897,7 @@ export const IdentityFlowSections = ({
             ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 pt-1">
+          <div className={`grid grid-cols-1 gap-3.5 pt-1 ${isCompact ? '' : 'sm:grid-cols-2 md:grid-cols-3'}`}>
             {(filteredMedia.length > 0 ? filteredMedia : allMedia).map((item, idx) => (
               <div
                 key={idx}
@@ -978,7 +980,7 @@ export const IdentityFlowSections = ({
       </div>
 
       {blogsList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className={`grid grid-cols-1 gap-3.5 ${isCompact ? '' : 'sm:grid-cols-2'}`}>
           {blogsList.map((b, idx) => (
             <a
               key={idx}
@@ -1091,7 +1093,7 @@ export const IdentityFlowSections = ({
             className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
           >
             <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-              <Globe className="w-4 h-4" />
+              <SocialIcon platform="linkedin" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] text-slate-400 font-medium">LinkedIn</div>
@@ -1109,7 +1111,7 @@ export const IdentityFlowSections = ({
             className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
           >
             <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-              <Globe className="w-4 h-4" />
+              <SocialIcon platform="twitter" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] text-slate-400 font-medium">Twitter / X</div>
@@ -1128,7 +1130,7 @@ export const IdentityFlowSections = ({
             className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
           >
             <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-              <Globe className="w-4 h-4" />
+              <SocialIcon platform={social.platform} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] text-slate-400 font-medium">{social.platform}</div>
