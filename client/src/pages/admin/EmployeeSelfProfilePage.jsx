@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { userProfileApi } from '../../api/userProfileApi';
 import { useAuthStore } from '../../stores/authStore';
+import { ImageUploadInput } from '../../components/common/ImageUploadInput';
 import { TemplateRenderer } from '../../components/templates/TemplateRenderer';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 import { MonthYearCalendarPicker } from '../../components/common/MonthYearCalendarPicker';
@@ -42,13 +43,13 @@ export const EmployeeSelfProfilePage = () => {
   const [copiedLink, setCopiedLink] = useState(false);
 
   const PROFILE_TABS = [
-    { id: 'identity', label: 'About', icon: User },
-    { id: 'experience', label: 'Work Experience', icon: Briefcase },
-    { id: 'skills', label: 'Skills & Tools', icon: Layers },
-    { id: 'projects', label: 'Projects', icon: Sparkles },
-    { id: 'impact', label: 'Achievements', icon: Award },
-    { id: 'blogs', label: 'Blogs & Thoughts', icon: Globe },
-    { id: 'social', label: 'Contact Diary', icon: Phone }
+    { id: 'identity', label: 'Identity & Stats', icon: User },
+    { id: 'experience', label: 'Career Experience', icon: Briefcase },
+    { id: 'skills', label: 'Skills & Badges', icon: Layers },
+    { id: 'projects', label: 'Projects & Media', icon: Sparkles },
+    { id: 'blogs', label: 'Blogs & Insights', icon: Globe },
+    { id: 'social', label: 'Links & Social', icon: Globe },
+    { id: 'impact', label: 'Awards & Honors', icon: Award }
   ];
 
   const handleNextTab = () => {
@@ -128,7 +129,6 @@ export const EmployeeSelfProfilePage = () => {
     workEmail: '',
     location: '',
     avatarUrl: '',
-    coverUrl: '',
     collaborationNote: '',
     overviewStats: {
       connectionsCount: '',
@@ -230,7 +230,6 @@ export const EmployeeSelfProfilePage = () => {
         workEmail: draft.workEmail ?? published.workEmail ?? '',
         location: formatLocationInput(draft.location ?? published.location ?? ''),
         avatarUrl: draft.avatarUrl ?? published.avatarUrl ?? '',
-        coverUrl: draft.coverUrl ?? published.coverUrl ?? profileData.coverUrl ?? '',
         collaborationNote: draft.collaborationNote ?? published.collaborationNote ?? '',
         overviewStats: {
           connectionsCount: cleanStat(draft.overviewStats?.connectionsCount ?? published.overviewStats?.connectionsCount ?? draft.overviewStats?.connections, '248+'),
@@ -640,7 +639,7 @@ END:VCARD`;
   const completionScore = profileData?.completionScore || 75;
 
   return (
-    <div className="space-y-3.5 max-w-[1440px] mx-auto pb-8">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -660,12 +659,12 @@ END:VCARD`;
       )}
 
       {/* 1. Header Banner & Profile Status */}
-      <div className="bg-white rounded-2xl p-4 lg:p-5 border border-slate-100 shadow-sm relative overflow-hidden">
+      <div className="bg-white rounded-3xl p-6 lg:p-8 border border-slate-100 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-purple-100/50 via-indigo-50/30 to-transparent rounded-full -mr-20 -mt-20 pointer-events-none blur-2xl"></div>
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center text-base font-bold shadow-md shadow-purple-200 shrink-0 overflow-hidden">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center text-xl font-bold shadow-md shadow-purple-200 shrink-0 overflow-hidden">
               {formData.avatarUrl ? (
                 <img
                   src={formData.avatarUrl}
@@ -679,7 +678,7 @@ END:VCARD`;
 
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-lg font-bold text-slate-900 tracking-tight">{memberName}</h1>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{memberName}</h1>
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize border ${
                     status === 'approved'
@@ -706,8 +705,8 @@ END:VCARD`;
               </p>
 
               {/* Completion Bar */}
-              <div className="flex items-center gap-3 mt-2 max-w-xs">
-                <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="flex items-center gap-3 mt-3 max-w-xs">
+                <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full transition-all duration-500"
                     style={{ width: `${completionScore}%` }}
@@ -719,13 +718,13 @@ END:VCARD`;
           </div>
 
           {/* Action Button Group */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             {profileData?.slug && (
               <a
                 href={`/p/${profileData.slug}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-semibold border border-slate-200 transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors"
               >
                 <Eye className="w-3.5 h-3.5 text-purple-600" />
                 <span>View Live</span>
@@ -734,7 +733,7 @@ END:VCARD`;
 
             <button
               onClick={() => setIsQrModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-semibold border border-purple-200 transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 transition-colors"
             >
               <QrCode className="w-3.5 h-3.5" />
               <span>Share & QR</span>
@@ -743,7 +742,7 @@ END:VCARD`;
             <button
               onClick={handleSaveDraft}
               disabled={saveDraftMutation.isPending || isLocked}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold shadow-sm transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{saveDraftMutation.isPending ? 'Saving...' : 'Save Draft'}</span>
@@ -752,7 +751,7 @@ END:VCARD`;
             <button
               onClick={() => setIsSubmitModalOpen(true)}
               disabled={isLocked || status === 'pending_review'}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-[11px] font-semibold shadow-md shadow-purple-200 transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-purple-200 transition-all disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{status === 'pending_review' ? 'In Review' : 'Submit for Approval'}</span>
@@ -812,33 +811,33 @@ END:VCARD`;
         )}
       </div>
 
-      {/* 2. Profile editor section navigation */}
-      <div className="bg-white rounded-2xl p-1.5 border border-slate-100 shadow-sm flex items-center gap-1 overflow-x-auto scrollbar-none">
-        {PROFILE_TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              id={`profile-tab-${tab.id}`}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                isActive
-                  ? 'bg-purple-600 text-white shadow-sm shadow-purple-200'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 3. Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      {/* 2. Main Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Interactive Form Sections with Mobile Swipe Gesture (8 Cols) */}
-        <div className="lg:col-span-8 space-y-4 touch-pan-y" {...swipeHandlers}>
+        <div className="lg:col-span-8 space-y-6 touch-pan-y" {...swipeHandlers}>
+          {/* Section Tabs */}
+          <div className="bg-white rounded-2xl p-2 border border-slate-100 shadow-sm flex items-center gap-1 overflow-x-auto scrollbar-none">
+            {PROFILE_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  id={`profile-tab-${tab.id}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-purple-600 text-white shadow-sm shadow-purple-200'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Mobile Swipe Indicator Hint */}
           <div className="lg:hidden flex items-center justify-between text-[11px] text-slate-400 px-2 select-none">
             <span>← Swipe right</span>
@@ -850,80 +849,163 @@ END:VCARD`;
 
           {/* TAB 1: IDENTITY & BIO */}
           {activeTab === 'identity' && (
-            <div className="bg-white rounded-2xl p-5 lg:p-6 border border-slate-100 shadow-sm space-y-5 animate-in fade-in">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Basic Information</h2>
-                <p className="mt-1 text-xs text-slate-400">Update your personal and professional details</p>
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-6 animate-in fade-in">
+              <h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
+                Profile Identity & Media
+              </h2>
+
+              {/* Avatar Upload */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Profile Photo (Avatar)
+                  </label>
+                  <span className="text-[11px] text-purple-600 font-semibold">User Photo</span>
+                </div>
+                <ImageUploadInput
+                  value={formData.avatarUrl}
+                  onChange={(val) => setFormData({ ...formData, avatarUrl: val })}
+                  folder="avatars"
+                  placeholder="https://... or upload local image"
+                />
+                <p className="text-[11px] text-slate-400">
+                  Recommended: Square portrait image (500x500px). The profile banner is managed globally by company organization branding.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Full Name</label>
-                  <input
-                    type="text"
-                    value={memberName}
-                    readOnly
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-600 cursor-not-allowed"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Designation</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Headline / Role</label>
                   <input
                     type="text"
                     value={formData.headline}
                     onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
-                    placeholder="e.g. Team Member"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Company</label>
-                  <input
-                    type="text"
-                    value="OneWinq Enterprise"
-                    readOnly
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-600 cursor-not-allowed"
+                    placeholder="e.g. Senior Full-Stack Engineer"
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Work Location</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Work Location</label>
                   <input
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="e.g. Indore, India"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    placeholder="e.g. Bangalore, India (Hybrid)"
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Work Email</label>
+                  <input
+                    type="email"
+                    value={formData.workEmail}
+                    onChange={(e) => setFormData({ ...formData, workEmail: e.target.value })}
+                    placeholder="name@onewinq.com"
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Direct Phone</label>
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+91 98765 43210"
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Bio</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Bio / Executive Summary</label>
                 <textarea
-                  rows={5}
+                  rows={4}
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="Passionate about building modern web applications and creating user-friendly digital experiences."
-                  className="w-full p-3.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  placeholder="Share your expertise, key focus areas, and leadership journey..."
+                  className="w-full p-3 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  About Me
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Collaboration Note (Callout Banner)
                 </label>
                 <input
                   type="text"
                   value={formData.collaborationNote}
                   onChange={(e) => setFormData({ ...formData, collaborationNote: e.target.value })}
-                  placeholder="Tell colleagues what you focus on and how you contribute."
-                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  placeholder="e.g. Open for tech mentorship, cross-team architecture reviews, and AI initiatives."
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
               </div>
 
+              {/* Overview Metrics & Counters */}
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-900">
+                    Overview Counters (Digital Card Stats)
+                  </label>
+                  <span className="text-[10px] text-purple-600 font-semibold">Live Dynamic Stats</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Connections</label>
+                    <input
+                      type="text"
+                      value={formData.overviewStats?.connectionsCount || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        overviewStats: { ...formData.overviewStats, connectionsCount: e.target.value }
+                      })}
+                      placeholder="e.g. 500+"
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Projects</label>
+                    <input
+                      type="text"
+                      value={formData.overviewStats?.projectsCount || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        overviewStats: { ...formData.overviewStats, projectsCount: e.target.value }
+                      })}
+                      placeholder="e.g. 25+"
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Years Exp.</label>
+                    <input
+                      type="text"
+                      value={formData.overviewStats?.yearsOfExperience || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        overviewStats: { ...formData.overviewStats, yearsOfExperience: e.target.value }
+                      })}
+                      placeholder="e.g. 8+"
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">Services</label>
+                    <input
+                      type="text"
+                      value={formData.overviewStats?.servicesCount || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        overviewStats: { ...formData.overviewStats, servicesCount: e.target.value }
+                      })}
+                      placeholder="e.g. 10+"
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1492,21 +1574,24 @@ END:VCARD`;
         </div>
 
         {/* Right Column: Live Digital Card Preview (4 Cols) */}
-        <div className="lg:col-span-4 mt-1 lg:mt-0">
-          <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl p-3 sm:p-4 border border-slate-100 shadow-sm space-y-3 lg:sticky lg:top-24 lg:max-w-none">
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-4 sticky top-24">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-900">Profile Preview</span>
+                <span className="text-xs font-bold text-slate-900">Live Dynamic Template</span>
+                <span className="text-[10px] text-purple-700 font-bold bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full capitalize">
+                  {profileData?.template?.name || profileData?.template?.key || 'Default'}
+                </span>
               </div>
               <span className="text-[10px] text-purple-600 font-semibold bg-purple-50 px-2 py-0.5 rounded-full">
-                Live Preview
+                Interactive
               </span>
             </div>
 
             {/* Live Template Renderer Clean Container */}
             <div className="w-full rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
               {/* Scrollable Viewport */}
-              <div className="max-h-[58vh] sm:max-h-[620px] lg:max-h-[calc(100vh-11rem)] overflow-y-auto p-1.5 sm:p-2 md:p-3 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent overscroll-contain">
+              <div className="max-h-[620px] overflow-y-auto p-2 sm:p-3 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
                 <TemplateRenderer
                   templateKey={profileData?.template?.key}
                   isCompact={true}
@@ -1517,7 +1602,7 @@ END:VCARD`;
                     headline: formData.headline || profileData?.headline,
                     bio: formData.bio || profileData?.bio,
                     avatarUrl: formData.avatarUrl || profileData?.avatarUrl,
-                    coverUrl: formData.coverUrl || profileData?.coverUrl,
+                    coverUrl: profileData?.coverUrl,
                     workEmail: formData.workEmail || profileData?.workEmail,
                     phone: formData.phone || profileData?.phone,
                     location: formData.location || profileData?.location || '',
@@ -1540,6 +1625,16 @@ END:VCARD`;
                   onShareClick={handleCopyPublicLink}
                 />
               </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-purple-50/60 border border-purple-100 text-xs text-purple-900 space-y-1">
+              <p className="font-semibold flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                Dynamic NFC Smart Tap
+              </p>
+              <p className="text-[11px] text-purple-800">
+                Assigned template resolves dynamically based on your department & role. Any NFC card tap will render this layout.
+              </p>
             </div>
           </div>
         </div>

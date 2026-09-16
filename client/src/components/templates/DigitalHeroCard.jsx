@@ -335,7 +335,7 @@ import {
   QrCode,
   MessageSquare
 } from 'lucide-react';
-import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaPhone, FaGlobe, FaGithub, FaTwitter, FaYoutube } from 'react-icons/fa';
+import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaPhone, FaGlobe } from 'react-icons/fa';
 
 /**
  * Standard Digital Hero Card Component
@@ -418,30 +418,12 @@ export const DigitalHeroCard = ({
   };
   const locationLabel = formatLocation(profile.location);
 
-  // A profile stores social links as an array. Resolve that array first, while
-  // retaining the legacy individual fields used by older employee profiles.
-  const socialLinkList = Array.isArray(profile.socialLinks)
-    ? profile.socialLinks.filter((link) => link?.url && link?.isVisible !== false)
-    : [];
-  const findSocialUrl = (...names) => socialLinkList.find((link) =>
-    names.some((name) => String(link.platform || '').toLowerCase().includes(name))
-  )?.url;
-  const legacySocials = !Array.isArray(profile.socialLinks) ? (profile.socialLinks || {}) : {};
-  const linkedinUrl = profile.linkedin || findSocialUrl('linkedin') || legacySocials.linkedin || profile.contact?.linkedin;
-  const instagramUrl = profile.instagram || findSocialUrl('instagram') || legacySocials.instagram || profile.contact?.instagram;
+  // Dynamic social/contact links from profile data
+  const linkedinUrl = profile.linkedin || profile.socialLinks?.linkedin || profile.contact?.linkedin;
+  const instagramUrl = profile.instagram || profile.socialLinks?.instagram || profile.contact?.instagram;
   const whatsappNum = profile.whatsapp || profile.contact?.whatsapp || profile.phone || profile.contact?.phone;
   const phoneNum = profile.phone || profile.contact?.phone;
-  const websiteUrl = profile.website || findSocialUrl('portfolio', 'website') || legacySocials.website || profile.contact?.website;
-  const knownPlatforms = new Set(['linkedin', 'instagram', 'portfolio', 'website']);
-  const additionalSocials = socialLinkList
-    .filter((link) => ![...knownPlatforms].some((name) => String(link.platform || '').toLowerCase().includes(name)))
-    .map((link) => {
-      const platform = String(link.platform || '').toLowerCase();
-      if (platform.includes('github')) return { ...link, Icon: FaGithub, color: '#24292f', label: 'GitHub' };
-      if (platform.includes('twitter') || platform === 'x') return { ...link, Icon: FaTwitter, color: '#1d9bf0', label: 'Twitter / X' };
-      if (platform.includes('youtube')) return { ...link, Icon: FaYoutube, color: '#ff0000', label: 'YouTube' };
-      return { ...link, Icon: FaGlobe, color: '#64748b', label: link.platform || 'Link' };
-    });
+  const websiteUrl = profile.website || profile.socialLinks?.website || profile.contact?.website;
 
   // Build social icon list dynamically (only present items)
   const socialIcons = [
@@ -479,14 +461,7 @@ export const DigitalHeroCard = ({
       Icon: FaGlobe,
       label: 'Website',
       color: '#64748b'
-    },
-    ...additionalSocials.map(({ url, Icon, label, color }, index) => ({
-      key: `social-${index}-${label}`,
-      href: url,
-      Icon,
-      label,
-      color
-    }))
+    }
   ].filter(Boolean);
 
   return (
