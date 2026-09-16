@@ -328,14 +328,14 @@ import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   Building2,
-  Mail,
   MapPin,
   Sparkles,
   Share2,
   Download,
-  QrCode
+  QrCode,
+  MessageSquare
 } from 'lucide-react';
-import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaPhone, FaEnvelope, FaGlobe } from 'react-icons/fa';
+import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaPhone, FaGlobe } from 'react-icons/fa';
 
 /**
  * Standard Digital Hero Card Component
@@ -376,18 +376,14 @@ export const DigitalHeroCard = ({
 
   if (!profile) return null;
 
-  const coverUrl = profile.coverUrl;
+  // Company branding wins over any older profile-level value so all members see
+  // the organization banner consistently.
+  const coverUrl = profile.companyBranding?.coverUrl || profile.companyBranding?.bannerUrl || profile.coverUrl || '';
   const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#7c3aed';
   const ctaText = profile.ctaButtonText || profile.template?.predefinedDetails?.ctaButtonText || 'Get in Touch';
   const badgeText = profile.badgeLabel || profile.template?.predefinedDetails?.badgeLabel || '';
   const showBadge = profile.template?.layoutConfig?.showBadge !== false;
   const departmentName = profile.department?.name || profile.department || 'Enterprise';
-
-  // Legacy static dummy values to filter out
-  const legacyConnections = ['248', '248+', '150', '150+', '500+'];
-  const legacyProjects = ['25+', '25', '10+', '10'];
-  const legacyYears = ['8+', '8', '5+', '5'];
-  const legacyServices = ['5+', '5', '6+', '6'];
 
   const realProjects = (profile.projects || profile.workAndImpact?.projects || []).length;
   const realServices = (profile.skills || []).length;
@@ -396,43 +392,37 @@ export const DigitalHeroCard = ({
   const experienceList = profile.experience || profile.about?.experience || [];
   if (experienceList.length > 0) {
     experienceList.forEach((exp) => {
-      const start = exp.startDate ? new Date(exp.startDate) : null;
-      const end = exp.endDate ? new Date(exp.endDate) : (exp.isCurrent ? new Date() : null);
+      const start = exp.startDate ? new Date(exp.startDate) : (exp.from ? new Date(exp.from) : null);
+      const end = exp.endDate ? new Date(exp.endDate) : (exp.to && !/present|current/i.test(exp.to) ? new Date(exp.to) : (exp.isCurrent ? new Date() : null));
       if (start && end && !isNaN(start.getTime()) && !isNaN(end.getTime())) {
         const diff = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24 * 365.25)));
         calculatedYears += diff;
-      } else {
-        calculatedYears += 1;
       }
     });
   }
 
-  const rawConn = profile.overviewStats?.connections ?? profile.overviewStats?.connectionsCount ?? profile.stats?.connectionsCount;
-  const isCustomConn = rawConn && !legacyConnections.includes(String(rawConn).trim());
-  const displayConnections = isCustomConn
-    ? rawConn
-    : (profile.connectionsCount !== undefined && profile.connectionsCount !== null)
-    ? (profile.connectionsCount > 0 ? `${profile.connectionsCount}+` : '0')
-    : (profile.cardTapCount > 0 ? `${profile.cardTapCount}+` : '0');
+  const formatStat = (value) => {
+    const numeric = Number.parseInt(String(value ?? ''), 10);
+    return Number.isFinite(numeric) && numeric > 0 ? `${numeric}+` : '0';
+  };
+  const displayConnections = formatStat(profile.overviewStats?.connections ?? profile.overviewStats?.connectionsCount ?? profile.stats?.connectionsCount ?? profile.connectionsCount);
+  const displayProjects = formatStat(realProjects);
+  const displayYears = formatStat(calculatedYears || profile.overviewStats?.yearsOfExperience || profile.overviewStats?.years);
+  const displayServices = formatStat(realServices);
 
-  const rawProj = profile.overviewStats?.projects ?? profile.overviewStats?.projectsCount ?? profile.stats?.projectsCount;
-  const isCustomProj = rawProj && !legacyProjects.includes(String(rawProj).trim());
-  const displayProjects = isCustomProj ? rawProj : (realProjects > 0 ? `${realProjects}+` : '0');
-
-  const rawYears = profile.overviewStats?.years ?? profile.overviewStats?.yearsOfExperience ?? profile.stats?.yearsOfExperience;
-  const isCustomYears = rawYears && !legacyYears.includes(String(rawYears).trim());
-  const displayYears = isCustomYears ? rawYears : (calculatedYears > 0 ? `${calculatedYears}+` : '1+');
-
-  const rawServ = profile.overviewStats?.services ?? profile.overviewStats?.servicesCount ?? profile.stats?.servicesCount;
-  const isCustomServ = rawServ && !legacyServices.includes(String(rawServ).trim());
-  const displayServices = isCustomServ ? rawServ : (realServices > 0 ? `${realServices}+` : '0');
+  const formatLocation = (location) => {
+    if (!location) return '';
+    if (typeof location === 'string') return location === '[object Object]' ? '' : location.trim();
+    if (typeof location === 'object') return [location.city, location.country].filter(Boolean).join(', ') || location.address || '';
+    return '';
+  };
+  const locationLabel = formatLocation(profile.location);
 
   // Dynamic social/contact links from profile data
   const linkedinUrl = profile.linkedin || profile.socialLinks?.linkedin || profile.contact?.linkedin;
   const instagramUrl = profile.instagram || profile.socialLinks?.instagram || profile.contact?.instagram;
   const whatsappNum = profile.whatsapp || profile.contact?.whatsapp || profile.phone || profile.contact?.phone;
   const phoneNum = profile.phone || profile.contact?.phone;
-  const emailAddr = profile.email || profile.contact?.email || profile.workEmail;
   const websiteUrl = profile.website || profile.socialLinks?.website || profile.contact?.website;
 
   // Build social icon list dynamically (only present items)
@@ -457,13 +447,6 @@ export const DigitalHeroCard = ({
       Icon: FaWhatsapp,
       label: 'WhatsApp',
       color: '#25D366'
-    },
-    emailAddr && {
-      key: 'email',
-      href: `mailto:${emailAddr}`,
-      Icon: FaEnvelope,
-      label: 'Email',
-      color: '#7c3aed'
     },
     phoneNum && {
       key: 'phone',
@@ -559,10 +542,10 @@ export const DigitalHeroCard = ({
                 {profile.companyName}
               </span>
             )}
-            {(profile.location?.city || profile.location?.country) && (
+            {locationLabel && (
               <span className="flex items-center gap-1">
                 <MapPin className="w-4 h-4 text-slate-400" />
-                {[profile.location?.city, profile.location?.country].filter(Boolean).join(', ')}
+                {locationLabel}
               </span>
             )}
           </div>
@@ -595,8 +578,8 @@ export const DigitalHeroCard = ({
             <a
               key={key}
               href={href}
-              target={key !== 'phone' && key !== 'email' ? '_blank' : undefined}
-              rel={key !== 'phone' && key !== 'email' ? 'noopener noreferrer' : undefined}
+              target={key !== 'phone' ? '_blank' : undefined}
+              rel={key !== 'phone' ? 'noopener noreferrer' : undefined}
               title={label}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 hover:shadow-md flex items-center justify-center transition-all hover:scale-110 cursor-pointer shrink-0"
               style={{ color }}
@@ -631,7 +614,7 @@ export const DigitalHeroCard = ({
             className="w-full sm:w-auto px-5 sm:px-7 py-2.5 sm:py-3 rounded-2xl text-white text-xs sm:text-sm font-bold shadow-md shadow-purple-500/10 transition-all hover:scale-[1.03] active:scale-95 cursor-pointer flex items-center justify-center gap-2 min-w-[150px] sm:min-w-[170px]"
             style={{ backgroundColor: primaryColor || '#7c3aed' }}
           >
-            <Mail className="w-4 h-4" /> {ctaText}
+            <MessageSquare className="w-4 h-4" /> {ctaText}
           </button>
 
           <button
