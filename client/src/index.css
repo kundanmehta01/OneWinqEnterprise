@@ -27,6 +27,21 @@
   }
 }
 
+@keyframes slideLeft {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@layer utilities {
+  .animate-slideLeft {
+    animation: slideLeft 0.25s ease-out both;
+  }
+}
+
 @layer components {
   /* Clean White + Purple Solid Cards */
   .clean-card {
