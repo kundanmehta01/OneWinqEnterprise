@@ -63,4 +63,15 @@ const swaggerOptions = {
   apis: ['./src/modules/**/*.routes.js', './src/routes/*.js']
 };
 
-export const swaggerSpec = swaggerJsDoc(swaggerOptions);
+let swaggerSpec = {
+  openapi: '3.0.0',
+  info: { title: 'OneWinq API', version: '1.0.0' }
+};
+
+try {
+  swaggerSpec = swaggerJsDoc(swaggerOptions);
+} catch (err) {
+  // Gracefully fallback if filesystem scanning fails in serverless bundle
+}
+
+export { swaggerSpec };

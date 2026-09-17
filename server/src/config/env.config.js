@@ -65,9 +65,12 @@ const parseEnv = () => {
     result.error.issues.forEach((issue) => {
       console.error(`   - ${issue.path.join('.')}: ${issue.message}`);
     });
-    process.exit(1);
+    // Do not crash serverless process on Vercel cold starts
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
   }
-  return result.data;
+  return result.success ? result.data : envSchema.parse({});
 };
 
 export const env = parseEnv();

@@ -31,19 +31,25 @@ export const createApp = () => {
   // 3. CORS configuration
   const rawOrigins = (env.FRONTEND_URL || 'http://localhost:3000').split(',').map((u) => u.trim().replace(/\/+$/, ''));
   const allowedOrigins = Array.from(new Set([...rawOrigins, 'http://localhost:3000']));
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV === 'development') {
-          return callback(null, true);
-        }
-        return callback(new Error('CORS blocked by origin policy'));
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id']
-    })
-  );
+  const corsOptions = {
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        env.NODE_ENV === 'development'
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS blocked by origin policy'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id']
+  };
+
+  app.use(cors(corsOptions));
+  app.options('*', cors(corsOptions));
 
   // 4. Response compression
   app.use(compression());
