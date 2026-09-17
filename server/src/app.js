@@ -4,8 +4,6 @@ import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 import path from 'path';
-import swaggerUi from 'swagger-ui-express';
-
 import { env } from './config/env.config.js';
 import { logger } from './config/logger.config.js';
 import { swaggerSpec } from './config/swagger.config.js';
@@ -33,19 +31,22 @@ export const createApp = () => {
   const allowedOrigins = Array.from(new Set([...rawOrigins, 'http://localhost:3000']));
   const corsOptions = {
     origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const normalizedOrigin = origin.replace(/\/+$/, '').toLowerCase();
       if (
-        !origin ||
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app') ||
+        allowedOrigins.some((o) => o.toLowerCase() === normalizedOrigin) ||
+        normalizedOrigin.endsWith('.vercel.app') ||
+        normalizedOrigin.includes('localhost') ||
+        normalizedOrigin.includes('127.0.0.1') ||
         env.NODE_ENV === 'development'
       ) {
         return callback(null, true);
       }
-      return callback(new Error('CORS blocked by origin policy'));
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id']
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'Accept', 'Origin', 'X-Requested-With']
   };
 
   app.use(cors(corsOptions));
@@ -78,12 +79,25 @@ export const createApp = () => {
     );
   }
 
-  // 9. Static uploads directory serving
-  const uploadsDir = path.resolve(process.cwd(), env.STORAGE_LOCAL_UPLOAD_DIR);
-  app.use('/uploads', express.static(uploadsDir));
+  // 9. Static uploads directory serving (local only)
+  if (!process.env.VERCEL) {
+    const uploadsDir = path.resolve(process.cwd(), env.STORAGE_LOCAL_UPLOAD_DIR);
+    app.use('/uploads', express.static(uploadsDir));
+  }
 
   // 10. Swagger / OpenAPI Documentation
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  if (!process.env.VERCEL) {
+    import('swagger-ui-express')
+      .then((mod) => {
+        const swaggerUi = mod.default || mod;
+        app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+      })
+      .catch(() => {});
+  } else {
+    app.get('/api-docs', (req, res) => {
+      res.json({ message: 'Swagger UI is disabled on serverless runtime. Access /api-docs.json for OpenAPI spec.' });
+    });
+  }
   app.get('/api-docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);

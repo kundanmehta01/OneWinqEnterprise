@@ -5,13 +5,19 @@ import { logger } from '../../config/logger.config.js';
 
 export class LocalStorageProvider {
   constructor() {
-    this.uploadDir = path.resolve(process.cwd(), env.STORAGE_LOCAL_UPLOAD_DIR);
+    this.uploadDir = process.env.VERCEL
+      ? path.join('/tmp', 'uploads')
+      : path.resolve(process.cwd(), env.STORAGE_LOCAL_UPLOAD_DIR);
     this.ensureDirectoryExists(this.uploadDir);
   }
 
   ensureDirectoryExists(dir) {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch (err) {
+      logger.warn(`[LocalStorageProvider] Directory creation skipped or not permitted (${err.message}).`);
     }
   }
 
