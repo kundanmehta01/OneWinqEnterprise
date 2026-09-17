@@ -29,7 +29,8 @@ export const createApp = () => {
   );
 
   // 3. CORS configuration
-  const allowedOrigins = [env.FRONTEND_URL, 'http://localhost:3000'];
+  const rawOrigins = (env.FRONTEND_URL || 'http://localhost:3000').split(',').map((u) => u.trim().replace(/\/+$/, ''));
+  const allowedOrigins = Array.from(new Set([...rawOrigins, 'http://localhost:3000']));
   app.use(
     cors({
       origin: (origin, callback) => {
