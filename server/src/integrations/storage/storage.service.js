@@ -6,6 +6,11 @@ import { logger } from '../../config/logger.config.js';
 class StorageService {
   constructor() {
     this.providerType = env.STORAGE_PROVIDER;
+
+    // In serverless environments, default to Cloudinary if cloud name is provided
+    if (process.env.VERCEL && this.providerType === 'local' && env.CLOUDINARY_CLOUD_NAME) {
+      this.providerType = 'cloudinary';
+    }
     
     switch (this.providerType) {
       case 'cloudinary':

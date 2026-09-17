@@ -35,20 +35,37 @@ class UploadService {
     const ext = path.extname(file.originalname).toLowerCase() || '.bin';
     const uniqueFilename = `${uuidv4()}${ext}`;
 
-    const uploadResult = await storageService.uploadFile({
-      buffer: file.buffer,
-      filename: uniqueFilename,
-      mimeType: file.mimetype,
-      subfolder: entityType
-    });
+    try {
+      const uploadResult = await storageService.uploadFile({
+        buffer: file.buffer,
+        filename: uniqueFilename,
+        mimeType: file.mimetype,
+        subfolder: entityType
+      });
 
-    return {
-      url: uploadResult.url,
-      filename: uniqueFilename,
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size
-    };
+      return {
+        url: uploadResult.url,
+        filename: uniqueFilename,
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size
+      };
+    } catch (storageError) {
+      // In serverless environments, if cloud storage is unconfigured or rejected, gracefully fallback to Data URL for images under 5MB
+      if (file.mimetype.startsWith('image/') && file.size <= 5 * 1024 * 1024) {
+        const base64Str = file.buffer.toString('base64');
+        const dataUrl = `data:${file.mimetype};base64,${base64Str}`;
+        return {
+          url: dataUrl,
+          filename: uniqueFilename,
+          originalName: file.originalname,
+          mimeType: file.mimetype,
+          size: file.size,
+          provider: 'data-url'
+        };
+      }
+      throw storageError;
+    }
   }
 }
 
