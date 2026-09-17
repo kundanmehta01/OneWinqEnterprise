@@ -83,8 +83,26 @@ export const createApp = () => {
     res.send(swaggerSpec);
   });
 
+  // Auto-connect to DB in serverless environments (e.g. Vercel)
+  let isDbConnected = false;
+  app.use(async (req, res, next) => {
+    if (process.env.VERCEL && !isDbConnected) {
+      try {
+        const { connectDB } = await import('./config/db.config.js');
+        await connectDB();
+        isDbConnected = true;
+      } catch (err) {
+        logger.warn(`Serverless DB connection warning: ${err.message}`);
+      }
+    }
+    next();
+  });
+
   // 11. API Routes
   app.use('/api/v1', v1Routes);
+
+  // Favicon handler
+  app.get('/favicon.ico', (req, res) => res.status(204).end());
 
   // 12. 404 & Error Handling
   app.use(notFoundHandler);
