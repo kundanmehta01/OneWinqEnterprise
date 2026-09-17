@@ -110,7 +110,14 @@ export const ImageUploadInput = ({
         <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
           <button
             type="button"
-            onClick={() => setMode('upload')}
+            onClick={() => {
+              if (mode !== 'upload') {
+                setMode('upload');
+                setUploadError('');
+                onChange('');
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }
+            }}
             className={`px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-all ${
               mode === 'upload'
                 ? 'bg-purple-600 text-white shadow-2xs'
@@ -121,7 +128,14 @@ export const ImageUploadInput = ({
           </button>
           <button
             type="button"
-            onClick={() => setMode('url')}
+            onClick={() => {
+              if (mode !== 'url') {
+                setMode('url');
+                setUploadError('');
+                onChange('');
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }
+            }}
             className={`px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-all ${
               mode === 'url'
                 ? 'bg-purple-600 text-white shadow-2xs'

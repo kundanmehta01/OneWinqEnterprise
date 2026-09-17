@@ -11,8 +11,9 @@ export const HRTemplate = ({
   activeScreen,
   onNavigate
 }) => {
-  const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#0d9488';
-  const accentColor = profile.template?.layoutConfig?.colorPalette?.accent || '#2dd4bf';
+  const primaryColor = profile.themeOverrides?.primaryColor || profile.template?.themeOverrides?.primaryColor || profile.template?.layoutConfig?.colorPalette?.primary || '#0d9488';
+  const secondaryColor = profile.themeOverrides?.secondaryColor || profile.template?.themeOverrides?.secondaryColor || profile.template?.layoutConfig?.colorPalette?.secondary || '#134e4a';
+  const accentColor = profile.themeOverrides?.accentColor || profile.template?.themeOverrides?.accentColor || profile.template?.layoutConfig?.colorPalette?.accent || '#2dd4bf';
 
   return (
     <IdentityFlowSections
@@ -24,7 +25,7 @@ export const HRTemplate = ({
       isCompact={isCompact}
       activeScreen={activeScreen}
       onNavigate={onNavigate}
-      theme={{ primary: primaryColor, accent: accentColor }}
+      theme={{ primary: primaryColor, secondary: secondaryColor, accent: accentColor }}
     />
   );
 };

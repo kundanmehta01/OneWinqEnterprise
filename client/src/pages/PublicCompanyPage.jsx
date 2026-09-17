@@ -63,7 +63,7 @@ export const PublicCompanyPage = () => {
     { id: 2, label: 'About' },
     { id: 3, label: 'Products & Services' },
     { id: 4, label: 'Team' },
-    { id: 5, label: 'Projects' },
+    { id: 5, label: 'Our Clients' },
     { id: 6, label: 'Achievements' },
     { id: 7, label: 'Media' },
     { id: 8, label: 'Contact' },

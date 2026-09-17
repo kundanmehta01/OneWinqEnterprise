@@ -23,7 +23,7 @@ router.post(
 
 router.post(
   '/refresh-token',
-  validate({ body: refreshTokenSchema.partial() }),
+  validate({ body: refreshTokenSchema }),
   authController.refreshToken.bind(authController)
 );
 

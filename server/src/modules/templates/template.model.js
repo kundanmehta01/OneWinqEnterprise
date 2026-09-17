@@ -56,6 +56,7 @@ const templateSchema = new mongoose.Schema(
         'manager',
         'management',
         'engineering',
+        'product',
         'hr',
         'sales',
         'marketing',

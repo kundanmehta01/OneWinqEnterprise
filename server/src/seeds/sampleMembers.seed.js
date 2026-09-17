@@ -827,7 +827,13 @@ export const seedSampleMembers = async () => {
       blogs: item.blogs || [],
       socialLinks: item.socialLinks || [
         { platform: 'LinkedIn', url: `https://linkedin.com/in/${slug}`, isVisible: true, order: 1 }
-      ]
+      ],
+      about: item.about || {
+        title: `About ${member.name?.trim().split(' ')[0] || 'Member'}`,
+        introduction: item.bio || `Dedicated ${item.designation} at OneWinq Enterprise passionate about driving technology excellence and collaborative innovation.`,
+        expertise: `Specialized in ${item.designation}, systems architecture, operational optimization, and delivering enterprise solutions at scale.`,
+        experienceSummary: `Proven background in high-velocity execution, team leadership, and driving digital transformation across enterprise ecosystems.`
+      }
     };
 
     let profile = await EmployeeProfile.findOne({ memberId: member._id });

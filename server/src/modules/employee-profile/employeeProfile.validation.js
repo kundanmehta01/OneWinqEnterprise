@@ -79,6 +79,7 @@ const achievementSchema = z.object({
   certificateUrl: z.string().url('Invalid certificate URL format').max(1000, 'Certificate URL cannot exceed 1000 characters').optional().or(z.literal('')),
   icon: z.string().max(50, 'Icon cannot exceed 50 characters').optional(),
   badge: z.string().max(50, 'Badge cannot exceed 50 characters').optional(),
+  imageUrl: z.string().max(1000, 'Image URL cannot exceed 1000 characters').optional().or(z.literal('')),
   isFeatured: z.boolean().default(true),
   order: z.number().int().default(0)
 });
@@ -103,12 +104,67 @@ const customSectionSchema = z.object({
 const profileMediaSchema = z.object({
   _id: z.string().optional(),
   title: z.string().trim().min(1, 'Media title is required').max(150, 'Media title cannot exceed 150 characters'),
-  url: z.string().url('Invalid media URL').max(1000, 'Media URL cannot exceed 1000 characters'),
+  url: z.string().trim().min(1, 'Media URL is required').max(1000, 'Media URL cannot exceed 1000 characters'),
   type: z.enum(['all', 'photo', 'video', 'event']).default('photo'),
+  mediaOption: z.enum(['photo_url', 'photo_upload', 'video_upload', 'video_url']).optional(),
+  uploadUrl: z.string().max(1000).optional().or(z.literal('')),
+  linkUrl: z.string().max(1000).optional().or(z.literal('')),
   thumbnailUrl: z.string().max(1000, 'Thumbnail URL cannot exceed 1000 characters').optional().or(z.literal('')),
   date: z.string().datetime().optional().nullable().or(z.date().optional()),
   order: z.number().int().default(0),
   isVisible: z.boolean().default(true)
+}).superRefine((data, ctx) => {
+  // Strict Validation 1: If client sends dual fields uploadUrl and linkUrl, reject
+  if (data.uploadUrl && data.uploadUrl.trim() && data.linkUrl && data.linkUrl.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Cannot provide both an uploaded file and a web URL. Exactly one must be selected.',
+      path: ['url']
+    });
+    return;
+  }
+
+  const u = (data.url || '').trim();
+  const isLocalUpload = /^\/?uploads\//i.test(u) || u.includes('/uploads/');
+  const isWebUrl = /^https?:\/\/[^\s]+$/i.test(u);
+
+  if (!isLocalUpload && !isWebUrl) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Media URL must be either a valid web URL (http:// or https://) or an uploaded file path (/uploads/...).',
+      path: ['url']
+    });
+    return;
+  }
+
+  // Strict Validation 2: Ensure url matches the chosen dropdown mediaOption
+  if (data.mediaOption) {
+    if (data.mediaOption === 'photo_upload' && !isLocalUpload) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Option "Upload Image" requires an uploaded file from device (/uploads/...), not an external web link.',
+        path: ['url']
+      });
+    } else if (data.mediaOption === 'photo_url' && isLocalUpload) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Option "Upload Image URL" requires an external web link (http:// or https://), not a local upload path.',
+        path: ['url']
+      });
+    } else if (data.mediaOption === 'video_upload' && !isLocalUpload) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Option "Upload Video" requires an uploaded video file from device (/uploads/...), not an external web link.',
+        path: ['url']
+      });
+    } else if (data.mediaOption === 'video_url' && isLocalUpload) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Option "Upload Video URL" requires an external video URL (e.g. YouTube, Vimeo, or HTTP video link), not a local upload path.',
+        path: ['url']
+      });
+    }
+  }
 });
 
 const profileBlogSchema = z.object({
@@ -149,14 +205,21 @@ export const updateDraftProfileSchema = z.object({
   about: z.object({
     title: z.string().trim().max(100, 'About title cannot exceed 100 characters').optional(),
     introduction: z.string().trim().max(2000, 'Introduction cannot exceed 2000 characters').optional(),
-    expertise: z.array(z.string().trim().max(60, 'Expertise item cannot exceed 60 characters')).max(50, 'Cannot exceed 50 expertise items').optional(),
-    experienceSummary: z.string().trim().max(2000, 'Experience summary cannot exceed 2000 characters').optional()
+    expertise: z.union([
+      z.string().trim().max(2000, 'Expertise cannot exceed 2000 characters'),
+      z.array(z.string().trim().max(60, 'Expertise item cannot exceed 60 characters')).max(50, 'Cannot exceed 50 expertise items')
+    ]).optional(),
+    experienceSummary: z.string().trim().max(2000, 'Experience summary cannot exceed 2000 characters').optional(),
+    experience: z.string().trim().max(2000, 'Experience cannot exceed 2000 characters').optional()
   }).optional(),
   connectAndContact: z.object({
     title: z.string().trim().max(100, 'Title cannot exceed 100 characters').optional(),
     note: z.string().trim().max(500, 'Note cannot exceed 500 characters').optional(),
     workEmail: z.string().email('Invalid email address').max(100, 'Email cannot exceed 100 characters').optional().or(z.literal('')),
     phone: z.string().trim().max(30, 'Phone number cannot exceed 30 characters').optional().or(z.literal('')),
+    linkedin: z.string().max(1000).optional().or(z.literal('')),
+    twitter: z.string().max(1000).optional().or(z.literal('')),
+    socialLinks: z.array(socialLinkSchema).optional(),
     ctaButtonText: z.string().trim().max(50, 'CTA button text cannot exceed 50 characters').optional()
   }).optional(),
   location: z.union([
@@ -171,7 +234,7 @@ export const updateDraftProfileSchema = z.object({
   ]).optional(),
   experience: z.array(experienceSchema).max(50, 'Cannot exceed 50 experience entries').optional(),
   journey: z.array(journeySchema).max(50, 'Cannot exceed 50 journey entries').optional(),
-  skills: z.array(skillSchema).max(100, 'Cannot exceed 100 skills').optional(),
+  skills: z.any().optional(),
   projects: z.array(projectSchema).max(50, 'Cannot exceed 50 projects').optional(),
   impactMetrics: z.array(impactMetricSchema).max(20, 'Cannot exceed 20 impact metrics').optional(),
   achievements: z.array(achievementSchema).max(50, 'Cannot exceed 50 achievements').optional(),

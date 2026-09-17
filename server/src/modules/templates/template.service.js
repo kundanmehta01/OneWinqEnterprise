@@ -111,10 +111,39 @@ class TemplateService {
     if (updateData.category) template.category = updateData.category;
     if (updateData.description !== undefined) template.description = updateData.description;
     if (updateData.previewImageUrl !== undefined) template.previewImageUrl = updateData.previewImageUrl;
-    if (updateData.layoutConfig) template.layoutConfig = { ...template.layoutConfig, ...updateData.layoutConfig };
-    if (updateData.predefinedDetails) template.predefinedDetails = { ...template.predefinedDetails, ...updateData.predefinedDetails };
-    if (updateData.availableSections) template.availableSections = updateData.availableSections;
-    if (updateData.sectionOrder) template.sectionOrder = updateData.sectionOrder;
+
+    if (updateData.layoutConfig) {
+      const currentLayout = template.layoutConfig ? (typeof template.layoutConfig.toObject === 'function' ? template.layoutConfig.toObject() : template.layoutConfig) : {};
+      const currentPalette = currentLayout.colorPalette || {};
+      const newPalette = {
+        ...currentPalette,
+        ...(updateData.layoutConfig.colorPalette || {})
+      };
+      template.layoutConfig = {
+        ...currentLayout,
+        ...updateData.layoutConfig,
+        colorPalette: newPalette
+      };
+      template.markModified('layoutConfig');
+    }
+
+    if (updateData.predefinedDetails) {
+      const currentPre = template.predefinedDetails ? (typeof template.predefinedDetails.toObject === 'function' ? template.predefinedDetails.toObject() : template.predefinedDetails) : {};
+      template.predefinedDetails = {
+        ...currentPre,
+        ...updateData.predefinedDetails
+      };
+      template.markModified('predefinedDetails');
+    }
+
+    if (updateData.availableSections) {
+      template.availableSections = updateData.availableSections;
+      template.markModified('availableSections');
+    }
+    if (updateData.sectionOrder) {
+      template.sectionOrder = updateData.sectionOrder;
+      template.markModified('sectionOrder');
+    }
     if (updateData.isActive !== undefined) template.isActive = updateData.isActive;
 
     await template.save();

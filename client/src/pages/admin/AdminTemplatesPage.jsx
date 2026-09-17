@@ -47,7 +47,8 @@ export const AdminTemplatesPage = () => {
   const { data: templatesResponse, isLoading } = useQuery({
     queryKey: ['admin-templates'],
     queryFn: async () => {
-      const res = await templateApi.getAll();
+      const res = await templateApi.getAll({ includeArchived: false });
+      // Admin page: fetch all templates regardless of isActive status
       if (Array.isArray(res)) return res;
       if (Array.isArray(res?.data)) return res.data;
       return [];

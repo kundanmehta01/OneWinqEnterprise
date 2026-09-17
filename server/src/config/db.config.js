@@ -35,7 +35,15 @@ export const connectDB = async (uri = env.MONGODB_URI) => {
 
     mongoose.connection.on('disconnected', () => {
       isConnected = false;
-      logger.warn('MongoDB disconnected. Attempting reconnection...');
+      logger.warn('MongoDB disconnected. Waiting for reconnection...');
+      if (memoryServerInstance) {
+        setTimeout(() => {
+          if (mongoose.connection.readyState === 0) {
+            logger.error('Local MongoDB connection permanently lost. Restarting server to restore connection...');
+            process.exit(1);
+          }
+        }, 4000);
+      }
     });
 
     mongoose.connection.on('reconnected', () => {
@@ -54,27 +62,33 @@ export const connectDB = async (uri = env.MONGODB_URI) => {
         fs.mkdirSync(localDbDir, { recursive: true });
       }
 
-      // Check and cleanup stale mongod.lock file if present
+      // 1. Check if an active local MongoDB instance is already running
+      const uriFile = path.join(localDbDir, 'active_uri.txt');
+      if (fs.existsSync(uriFile)) {
+        try {
+          const cachedUri = fs.readFileSync(uriFile, 'utf8').trim();
+          if (cachedUri.startsWith('mongodb://')) {
+            logger.info(`Found existing local DB URI at ${cachedUri}. Connecting...`);
+            const conn = await mongoose.connect(cachedUri, { ...options, serverSelectionTimeoutMS: 2000 });
+            isConnected = true;
+            logger.info(`✅ Connected to already running Local MongoDB at ${cachedUri}`);
+            return conn;
+          }
+        } catch (reuseErr) {
+          logger.warn(`Could not connect to cached local instance (${reuseErr.message}).`);
+          try { fs.unlinkSync(uriFile); } catch (_) {}
+        }
+      }
+
+      // 2. Check and cleanup stale mongod.lock file if safe
       const lockFile = path.join(localDbDir, 'mongod.lock');
       if (fs.existsSync(lockFile)) {
         try {
           fs.unlinkSync(lockFile);
           logger.info('🧹 Cleaned up stale mongod.lock before starting local DB.');
         } catch (_) {
-          try {
-            const { execSync } = await import('child_process');
-            if (process.platform === 'win32') {
-              execSync('taskkill /F /IM mongod* 2>nul || exit 0', { shell: 'cmd.exe' });
-            } else {
-              execSync('pkill -9 mongod || true');
-            }
-            if (fs.existsSync(lockFile)) {
-              fs.unlinkSync(lockFile);
-            }
-            logger.info('🧹 Released lingering mongod process and cleared lock.');
-          } catch (cleanErr) {
-            logger.warn(`Could not clear lock file: ${cleanErr.message}`);
-          }
+          // File is locked by another running mongod process
+          logger.warn('mongod.lock is locked. Proceeding with MongoMemoryServer startup.');
         }
       }
 
@@ -86,6 +100,10 @@ export const connectDB = async (uri = env.MONGODB_URI) => {
         }
       });
       const memoryUri = memoryServerInstance.getUri('onewinq');
+
+      try {
+        fs.writeFileSync(uriFile, memoryUri, 'utf8');
+      } catch (_) {}
 
       const conn = await mongoose.connect(memoryUri, options);
       isConnected = true;
@@ -165,6 +183,10 @@ export const disconnectDB = async () => {
     if (memoryServerInstance) {
       await memoryServerInstance.stop({ doCleanup: false });
       memoryServerInstance = null;
+      try {
+        const uriFile = path.join(path.resolve(process.cwd(), 'data', 'db'), 'active_uri.txt');
+        if (fs.existsSync(uriFile)) fs.unlinkSync(uriFile);
+      } catch (_) {}
     }
     isConnected = false;
     logger.info('MongoDB connection closed.');

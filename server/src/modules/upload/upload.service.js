@@ -10,7 +10,11 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/webp',
   'image/svg+xml',
   'image/gif',
-  'application/pdf'
+  'application/pdf',
+  'video/mp4',
+  'video/webm',
+  'video/ogg',
+  'video/quicktime'
 ]);
 
 class UploadService {
@@ -20,12 +24,12 @@ class UploadService {
     }
 
     if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      throw new BadRequestError(`Unsupported file type: ${file.mimetype}. Allowed types: JPEG, PNG, WEBP, SVG, GIF, PDF`, ERROR_CODES.UNSUPPORTED_FILE_TYPE);
+      throw new BadRequestError(`Unsupported file type: ${file.mimetype}. Allowed types: JPEG, PNG, WEBP, SVG, GIF, PDF, MP4, WEBM, OGG, MOV`, ERROR_CODES.UNSUPPORTED_FILE_TYPE);
     }
 
-    const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+    const maxSizeBytes = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSizeBytes) {
-      throw new BadRequestError('File size exceeds maximum limit of 10MB', ERROR_CODES.FILE_SIZE_EXCEEDED);
+      throw new BadRequestError('File size exceeds maximum limit of 50MB', ERROR_CODES.FILE_SIZE_EXCEEDED);
     }
 
     const ext = path.extname(file.originalname).toLowerCase() || '.bin';

@@ -34,7 +34,7 @@ export class AuthController {
 
   async refreshToken(req, res, next) {
     try {
-      const refreshTokenString = req.body.refreshToken || req.cookies?.refreshToken;
+      const refreshTokenString = req.body?.refreshToken || req.cookies?.refreshToken;
       const ipAddress = req.auditContext?.ipAddress || req.ip;
       const userAgent = req.auditContext?.userAgent || req.headers['user-agent'];
 

@@ -192,123 +192,47 @@ export const UserHomePage = () => {
         </div>
       )}
 
-      {/* 1. TOP ROW: Welcome Hero Banner (Left) & My Digital Card (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* Left: Welcome Banner */}
-        <div className="lg:col-span-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-[#0d1224] to-[#1e1b4b] text-white p-7 md:p-9 flex flex-col justify-between shadow-xl border border-slate-800/80 group">
-          {/* Architectural City Background Graphics */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.25),transparent_60%)] pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-35 bg-cover bg-center pointer-events-none mix-blend-screen"
-               style={{ backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80')` }}
-          />
-          <div className="absolute right-6 top-6 hidden md:block text-right pointer-events-none opacity-80">
-            <span className="text-[11px] uppercase tracking-widest font-mono text-indigo-300 font-semibold block">onewinq</span>
-            <p className="font-serif italic text-sm text-indigo-100/90 leading-snug mt-1">
-              One Identity<br />Infinite Possibilities
-            </p>
-          </div>
-
-          {/* Banner Content */}
-          <div className="relative z-10 space-y-3 max-w-lg">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <span>Good Morning, <span className="bg-gradient-to-r from-white via-indigo-100 to-indigo-300 bg-clip-text text-transparent">{firstName}</span></span>
-              <span className="inline-block hover:rotate-12 transition-transform cursor-default">👋</span>
-            </h1>
-            <p className="text-xs md:text-sm text-slate-300 font-medium leading-relaxed">
-              Build your identity. Connect with your people. Make a bigger impact together.
-            </p>
-          </div>
-
-          {/* Badges Pill Row */}
-          <div className="relative z-10 flex flex-wrap items-center gap-2.5 pt-6 mt-4 border-t border-slate-800/60">
-            {hero.designation && (
-              <span className="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs text-indigo-200 font-semibold backdrop-blur-md shadow-xs">
-                {hero.designation}
-              </span>
-            )}
-            {hero.department && (
-              <span className="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs text-slate-200 font-medium backdrop-blur-md shadow-xs">
-                {hero.department}
-              </span>
-            )}
-            <span className="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs text-slate-300 font-medium backdrop-blur-md shadow-xs flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-indigo-400" />
-              {formatLocation(hero.location)}
-            </span>
-          </div>
+      {/* 1. TOP ROW: Welcome Hero Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-[#0d1224] to-[#1e1b4b] text-white p-7 md:p-9 flex flex-col justify-between shadow-xl border border-slate-800/80 group">
+        {/* Architectural City Background Graphics */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.25),transparent_60%)] pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-35 bg-cover bg-center pointer-events-none mix-blend-screen"
+             style={{ backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80')` }}
+        />
+        <div className="absolute right-6 top-6 hidden md:block text-right pointer-events-none opacity-80">
+          <span className="text-[11px] uppercase tracking-widest font-mono text-indigo-300 font-semibold block">onewinq</span>
+          <p className="font-serif italic text-sm text-indigo-100/90 leading-snug mt-1">
+            One Identity<br />Infinite Possibilities
+          </p>
         </div>
 
-        {/* Right: My Digital Card Preview */}
-        <div className="lg:col-span-4 flex flex-col justify-between p-5 rounded-3xl bg-white border border-slate-100 shadow-sm">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="text-sm font-bold text-slate-900 font-display">My Digital Card</h3>
-            <NavLink
-              to={`/p/${profileSlug}`}
-              target="_blank"
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
-            >
-              View All
-            </NavLink>
-          </div>
+        {/* Banner Content */}
+        <div className="relative z-10 space-y-3 max-w-lg">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
+            <span>Good Morning, <span className="bg-gradient-to-r from-white via-indigo-100 to-indigo-300 bg-clip-text text-transparent">{firstName}</span></span>
+            <span className="inline-block hover:rotate-12 transition-transform cursor-default">👋</span>
+          </h1>
+          <p className="text-xs md:text-sm text-slate-300 font-medium leading-relaxed">
+            Build your identity. Connect with your people. Make a bigger impact together.
+          </p>
+        </div>
 
-          {/* Dark Digital Smart Card Widget */}
-          <div className="relative p-5 rounded-2xl bg-gradient-to-br from-[#0c0f1d] via-[#141b2f] to-[#1e1e38] text-white shadow-lg border border-slate-800 flex flex-col justify-between overflow-hidden">
-            {/* Top row */}
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs tracking-tight text-indigo-400 font-mono">onewinq</span>
-              {hero.nfcCard ? (
-                <span className="text-[10px] text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full backdrop-blur-sm border border-emerald-500/30 flex items-center gap-1 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  {hero.nfcCard.cardUid} • {hero.nfcCard.status === 'active' ? 'Active' : 'Pending'}
-                </span>
-              ) : (
-                <span className="text-[10px] text-slate-400 bg-white/10 px-2 py-0.5 rounded-full backdrop-blur-sm">NFC Digital</span>
-              )}
-            </div>
-
-            {/* Middle Card info */}
-            <div className="flex items-center gap-3 my-4">
-              <div className="relative shrink-0">
-                <img
-                  src={hero.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=6366f1&color=fff`}
-                  alt={displayName}
-                  className="w-14 h-14 rounded-2xl object-cover ring-2 ring-indigo-400/30 shadow-md"
-                />
-                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-slate-900" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="text-sm font-bold text-white truncate">{displayName}</h4>
-                <p className="text-xs text-indigo-200 font-medium truncate">{hero.designation || 'Software Engineer'}</p>
-                <p className="text-[11px] text-slate-400 truncate mt-0.5">{hero.department || 'Engineering'}</p>
-                <p className="text-[10px] text-slate-500 truncate">{hero.companyName || 'Nexisparkx Technologies'}</p>
-              </div>
-
-              {/* QR Code Widget */}
-              <div className="p-1.5 bg-white rounded-xl shadow-xs shrink-0 flex flex-col items-center">
-                <img src={qrUrl} alt="QR Code" className="w-14 h-14 rounded" />
-                <span className="text-[8px] font-bold text-slate-800 tracking-tighter mt-0.5">Scan to Connect</span>
-              </div>
-            </div>
-
-            {/* Card Footer Actions */}
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <NavLink
-                to={`/p/${profileSlug}`}
-                target="_blank"
-                className="py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs text-center flex items-center justify-center gap-1.5 shadow-sm transition-all"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>View Card</span>
-              </NavLink>
-              <button
-                onClick={handleCopyLink}
-                className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 border border-white/10 transition-all"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Share'}</span>
-              </button>
-            </div>
-          </div>
+        {/* Badges Pill Row */}
+        <div className="relative z-10 flex flex-wrap items-center gap-2.5 pt-6 mt-4 border-t border-slate-800/60">
+          {hero.designation && (
+            <span className="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs text-indigo-200 font-semibold backdrop-blur-md shadow-xs">
+              {hero.designation}
+            </span>
+          )}
+          {hero.department && (
+            <span className="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs text-slate-200 font-medium backdrop-blur-md shadow-xs">
+              {hero.department}
+            </span>
+          )}
+          <span className="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs text-slate-300 font-medium backdrop-blur-md shadow-xs flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-indigo-400" />
+            {formatLocation(hero.location)}
+          </span>
         </div>
       </div>
 

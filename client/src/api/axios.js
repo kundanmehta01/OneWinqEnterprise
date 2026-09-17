@@ -61,6 +61,16 @@ api.interceptors.response.use(
 
       const refreshToken = localStorage.getItem('onewinq_refresh_token');
 
+      if (!refreshToken) {
+        processQueue(new Error('No refresh token available'), null);
+        localStorage.removeItem('onewinq_access_token');
+        localStorage.removeItem('onewinq_refresh_token');
+        localStorage.removeItem('onewinq_user');
+        window.dispatchEvent(new Event('onewinq_auth_expired'));
+        isRefreshing = false;
+        return Promise.reject(error);
+      }
+
       try {
         const refreshResponse = await axios.post('/api/v1/auth/refresh-token', {
           refreshToken,

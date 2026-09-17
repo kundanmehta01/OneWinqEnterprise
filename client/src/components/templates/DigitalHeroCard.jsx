@@ -7,7 +7,8 @@ import {
   Sparkles,
   Share2,
   Download,
-  QrCode
+  QrCode,
+  Phone
 } from 'lucide-react';
 import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaPhone, FaEnvelope, FaGlobe } from 'react-icons/fa';
 
@@ -51,7 +52,9 @@ export const DigitalHeroCard = ({
   if (!profile) return null;
 
   const coverUrl = profile.coverUrl;
-  const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#7c3aed';
+  const primaryColor = profile.themeOverrides?.primaryColor || profile.template?.themeOverrides?.primaryColor || profile.template?.layoutConfig?.colorPalette?.primary || '#7c3aed';
+  const secondaryColor = profile.themeOverrides?.secondaryColor || profile.template?.themeOverrides?.secondaryColor || profile.template?.layoutConfig?.colorPalette?.secondary || '#4f46e5';
+  const accentColor = profile.themeOverrides?.accentColor || profile.template?.themeOverrides?.accentColor || profile.template?.layoutConfig?.colorPalette?.accent || '#a855f7';
   const ctaText = profile.ctaButtonText || profile.template?.predefinedDetails?.ctaButtonText || 'Get in Touch';
   const badgeText = profile.badgeLabel || profile.template?.predefinedDetails?.badgeLabel || '';
   const showBadge = profile.template?.layoutConfig?.showBadge !== false;
@@ -163,7 +166,7 @@ export const DigitalHeroCard = ({
         style={{
           background: coverUrl
             ? undefined
-            : 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #6366f1 100%)'
+            : `linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 50%, ${secondaryColor} 100%)`
         }}
       >
         {coverUrl ? (
@@ -193,15 +196,22 @@ export const DigitalHeroCard = ({
                   className="w-full h-full object-cover object-center rounded-2xl"
                 />
               ) : (
-                <div className="w-full h-full rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex flex-col items-center justify-center">
+                <div
+                  className="w-full h-full rounded-2xl text-white flex flex-col items-center justify-center"
+                  style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}
+                >
                   <Sparkles className="w-10 h-10 text-white" />
-                  <span className="text-[10px] font-black uppercase tracking-wider mt-1 text-purple-100">
+                  <span className="text-[10px] font-black uppercase tracking-wider mt-1 text-white/90">
                     {profile.name?.slice(0, 6) || 'OWQ'}
                   </span>
                 </div>
               )}
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-purple-600 text-white p-1.5 rounded-full ring-4 ring-white shadow-md" title="OneWinq Verified Employee">
+            <div
+              className="absolute -bottom-1 -right-1 text-white p-1.5 rounded-full ring-4 ring-white shadow-md"
+              style={{ backgroundColor: primaryColor }}
+              title="OneWinq Verified Employee"
+            >
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
@@ -210,8 +220,15 @@ export const DigitalHeroCard = ({
         {/* Identity Block */}
         <div className="space-y-1.5 max-w-2xl mx-auto min-w-0">
           {showBadge && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold max-w-full">
-              <ShieldCheck className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+            <div
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold max-w-full"
+              style={{
+                backgroundColor: `${primaryColor}15`,
+                color: primaryColor,
+                border: `1px solid ${primaryColor}30`
+              }}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" style={{ color: primaryColor }} />
               <span className="truncate">{badgeText || 'OneWinq Verified Member'} • {departmentName}</span>
             </div>
           )}
@@ -220,7 +237,7 @@ export const DigitalHeroCard = ({
             {profile.name}
           </h1>
 
-          <p className="text-sm sm:text-base font-semibold text-purple-600">
+          <p className="text-sm sm:text-base font-semibold" style={{ color: primaryColor }}>
             {(!profile.designation || profile.designation.toLowerCase() === 'team member') && profile.role?.name && profile.role.name !== 'Employee'
               ? profile.role.name
               : profile.designation || 'Team Member'}
@@ -229,7 +246,7 @@ export const DigitalHeroCard = ({
           <div className="flex flex-wrap items-center justify-center gap-y-1 gap-x-4 text-xs text-slate-500 pt-1">
             {profile.companyName && (
               <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                <Building2 className="w-3.5 h-3.5 text-purple-500" />
+                <Building2 className="w-3.5 h-3.5" style={{ color: primaryColor }} />
                 {profile.companyName}
               </span>
             )}
@@ -242,8 +259,8 @@ export const DigitalHeroCard = ({
           </div>
         </div>
 
-        {/* Overview Stats Bar */}
-        <div className="grid grid-cols-4 gap-2 py-2.5 px-4 max-w-md mx-auto bg-slate-50/80 rounded-2xl border border-slate-100 text-center">
+        {/* Overview Stats Bar (Connections, Projects, Years) */}
+        <div className="grid grid-cols-3 gap-2 py-2.5 px-4 max-w-sm mx-auto bg-slate-50/80 rounded-2xl border border-slate-100 text-center">
           <div>
             <div className="text-xs sm:text-sm font-extrabold text-slate-900">{displayConnections}</div>
             <div className="text-[10px] text-slate-400 font-medium">Connections</div>
@@ -255,10 +272,6 @@ export const DigitalHeroCard = ({
           <div>
             <div className="text-xs sm:text-sm font-extrabold text-slate-900">{displayYears}</div>
             <div className="text-[10px] text-slate-400 font-medium">Years</div>
-          </div>
-          <div>
-            <div className="text-xs sm:text-sm font-extrabold text-slate-900">{displayServices}</div>
-            <div className="text-[10px] text-slate-400 font-medium">Skills</div>
           </div>
         </div>
 
@@ -278,42 +291,51 @@ export const DigitalHeroCard = ({
           >
             <Download className="w-4 h-4" /> Download Profile
           </button>
+        </div>
 
-          <button
-            onClick={onQrClick}
-            className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
-            title="Show QR Code"
+        {/* Quick Action Links: Call, Email, Share, QR (in exact respective order) */}
+        <div className="flex items-center justify-center gap-3 pt-1 pb-1">
+          {/* 1. Call */}
+          <a
+            href={phoneNum ? `tel:${String(phoneNum).replace(/\s+/g, '')}` : '#'}
+            onClick={!phoneNum ? onConnectClick : undefined}
+            title="Call"
+            className="w-11 h-11 rounded-full border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 shadow-xs hover:shadow-md flex items-center justify-center text-sky-500 transition-all hover:scale-110 cursor-pointer"
           >
-            <QrCode className="w-4 h-4" />
-          </button>
+            <Phone className="w-4 h-4" />
+          </a>
 
+          {/* 2. Email */}
+          <a
+            href={emailAddr ? `mailto:${emailAddr}` : '#'}
+            onClick={!emailAddr ? onConnectClick : undefined}
+            title="Email"
+            className="w-11 h-11 rounded-full border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 shadow-xs hover:shadow-md flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+            style={{ color: primaryColor }}
+          >
+            <Mail className="w-4 h-4" />
+          </a>
+
+          {/* 3. Share */}
           <button
+            type="button"
             onClick={onShareClick}
-            className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
             title="Share Profile"
+            className="w-11 h-11 rounded-full border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 shadow-xs hover:shadow-md flex items-center justify-center text-slate-700 transition-all hover:scale-110 cursor-pointer"
           >
             <Share2 className="w-4 h-4" />
           </button>
-        </div>
 
-        {/* Social & Contact Icons Row */}
-        {socialIcons.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-1 pb-1">
-            {socialIcons.map(({ key, href, Icon, label, color }) => (
-              <a
-                key={key}
-                href={href}
-                target={key !== 'phone' && key !== 'email' ? '_blank' : undefined}
-                rel={key !== 'phone' && key !== 'email' ? 'noopener noreferrer' : undefined}
-                title={label}
-                className="w-11 h-11 rounded-full border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 hover:shadow-md flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
-                style={{ color }}
-              >
-                <Icon size={18} />
-              </a>
-            ))}
-          </div>
-        )}
+          {/* 4. QR */}
+          <button
+            type="button"
+            onClick={onQrClick}
+            title="Show QR Code"
+            className="w-11 h-11 rounded-full border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 shadow-xs hover:shadow-md flex items-center justify-center text-slate-700 transition-all hover:scale-110 cursor-pointer"
+          >
+            <QrCode className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

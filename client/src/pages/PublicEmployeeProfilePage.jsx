@@ -116,12 +116,11 @@ export const PublicEmployeeProfilePage = () => {
     { id: 1, label: 'Overview', icon: Home },
     { id: 2, label: 'About', icon: User },
     { id: 3, label: 'Experience', icon: Briefcase },
-    { id: 4, label: 'Skills', icon: Zap },
-    { id: 5, label: 'Projects', icon: FolderGit2 },
-    { id: 6, label: 'Achievements', icon: Award },
-    { id: 7, label: 'Media', icon: ImageIcon },
-    { id: 8, label: 'Blogs', icon: FileText },
-    { id: 9, label: 'Contact', icon: Mail },
+    { id: 4, label: 'Projects', icon: FolderGit2 },
+    { id: 5, label: 'Achievements', icon: Award },
+    { id: 6, label: 'Media', icon: ImageIcon },
+    { id: 7, label: 'Blogs', icon: FileText },
+    { id: 8, label: 'Contact', icon: Mail },
   ];
 
   const handleGoBack = () => {
@@ -135,18 +134,16 @@ export const PublicEmployeeProfilePage = () => {
   const handleSelectScreen = (screenId) => {
     setActiveScreen(screenId);
     setMenuOpen(false);
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleNextScreen = () => {
-    const next = activeScreen < 9 ? activeScreen + 1 : 1;
+    const next = activeScreen < 8 ? activeScreen + 1 : 1;
     handleSelectScreen(next);
   };
 
   const handlePrevScreen = () => {
-    const prev = activeScreen > 1 ? activeScreen - 1 : 9;
+    const prev = activeScreen > 1 ? activeScreen - 1 : 8;
     handleSelectScreen(prev);
   };
 
@@ -233,11 +230,11 @@ END:VCARD`;
 
   return (
     <div className="min-h-screen bg-[#fbfaff] text-slate-900 flex flex-col selection:bg-purple-600 selection:text-white antialiased">
-      {/* 1. Header with Desktop Navigation Links matching Company Profile Style */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 px-6 lg:px-12 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Left: Top-Left Back Button, Brand Logo & Clean Desktop Text Navigation Links */}
-          <div className="flex items-center gap-3 sm:gap-6 lg:gap-10">
+      {/* 1. Header with onewinq Logo & Connect Button (Menu bar removed) */}
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 h-16 sm:h-20 flex items-center justify-between">
+          {/* Left: Back Button + onewinq Logo */}
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={handleGoBack}
               className="p-2 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 text-slate-700 transition-colors cursor-pointer"
@@ -257,34 +254,10 @@ END:VCARD`;
                 Verified
               </span>
             </button>
-
-            {/* Clean Desktop Navigation Links (matching Company Profile style) */}
-            <nav className="hidden lg:flex items-center gap-7 text-sm font-medium">
-              {navLinks.map((link) => {
-                const isActive = activeScreen === link.id;
-                return (
-                  <button
-                    key={link.id}
-                    onClick={() => handleSelectScreen(link.id)}
-                    className={`transition-colors relative py-1 cursor-pointer ${
-                      isActive
-                        ? 'text-purple-600 font-bold'
-                        : 'text-slate-600 hover:text-purple-600'
-                    }`}
-                  >
-                    {link.label}
-                    {isActive && (
-                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600 rounded-full" />
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
           </div>
 
-          {/* Right Action Buttons */}
+          {/* Right: Share, Connect & Company Buttons */}
           <div className="flex items-center gap-2.5">
-
             <button
               onClick={handleCopyLink}
               className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
@@ -295,7 +268,7 @@ END:VCARD`;
 
             <button
               onClick={() => setIsConnectModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm shadow-purple-200 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm shadow-purple-200 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <UserCheck className="w-3.5 h-3.5" />
               <span>Connect</span>
@@ -307,23 +280,6 @@ END:VCARD`;
             >
               Company
             </Link>
-
-            {/* Mobile Header Right Menu & Connect Button */}
-            <button
-              onClick={() => setIsConnectModalOpen(true)}
-              className="flex sm:hidden items-center gap-1 px-3 py-1.5 rounded-full bg-purple-600 text-white text-xs font-bold shadow-sm"
-            >
-              <UserCheck className="w-3 h-3" />
-              <span>Connect</span>
-            </button>
-
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer lg:hidden"
-              title="Open Navigation Menu"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </header>
@@ -409,7 +365,7 @@ END:VCARD`;
 
       {/* 4. Main Full-Screen Canvas with Mobile Touch Swipe (Matching Company Profile) */}
       <main
-        className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 lg:py-8 pb-36 lg:pb-8 touch-pan-y"
+        className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 lg:py-8 pb-24 lg:pb-8 touch-pan-y"
         {...swipeHandlers}
       >
         {/* Render Active Screen with Smooth Fade Transition */}
@@ -426,27 +382,6 @@ END:VCARD`;
           />
         </div>
       </main>
-
-      {/* Mobile Page Indicator Dots */}
-      <div className="fixed bottom-[88px] left-0 right-0 z-30 lg:hidden flex items-center justify-center pointer-events-none px-4">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 border border-purple-100/90 shadow-lg shadow-purple-900/10 backdrop-blur-md pointer-events-auto">
-          {navLinks.map((link) => {
-            const isActive = activeScreen === link.id;
-            return (
-              <button
-                key={link.id}
-                onClick={() => handleSelectScreen(link.id)}
-                className={`transition-all cursor-pointer ${
-                  isActive
-                    ? 'w-5 h-2 rounded-full bg-purple-600 shadow-2xs'
-                    : 'w-2 h-2 rounded-full bg-slate-300 hover:bg-purple-300'
-                }`}
-                title={link.label}
-              />
-            );
-          })}
-        </div>
-      </div>
 
       {/* 5. Mobile Bottom Dock Navigation Bar */}
       <UserDockNav
@@ -609,7 +544,7 @@ END:VCARD`;
               <li><button onClick={() => handleSelectScreen(1)} className="hover:text-purple-600 cursor-pointer">Overview & Bio</button></li>
               <li><button onClick={() => handleSelectScreen(2)} className="hover:text-purple-600 cursor-pointer">About</button></li>
               <li><button onClick={() => handleSelectScreen(3)} className="hover:text-purple-600 cursor-pointer">Work Experience</button></li>
-              <li><button onClick={() => handleSelectScreen(4)} className="hover:text-purple-600 cursor-pointer">Skills & Tools</button></li>
+              <li><button onClick={() => handleSelectScreen(4)} className="hover:text-purple-600 cursor-pointer">Featured Projects</button></li>
             </ul>
           </div>
 

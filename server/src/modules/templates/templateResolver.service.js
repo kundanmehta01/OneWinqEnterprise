@@ -1,9 +1,10 @@
 import { Template } from './template.model.js';
 import { Department } from '../departments/department.model.js';
+import { Role } from '../roles/role.model.js';
 
 /**
- * Keyword tables for department-based template resolution.
- * Templates are strictly resolved according to the member's DEPARTMENT (not roles).
+ * Keyword tables for role/designation/department-based template resolution.
+ * Templates resolve dynamically: Role -> Designation -> Department -> Fallback.
  */
 const DEPARTMENT_KEYWORD_MAP = [
   {
@@ -95,19 +96,30 @@ const PRIMARY_COLORS = {
 
 class TemplateResolverService {
   /**
-   * Resolves the appropriate template for a team member strictly according to DEPARTMENT:
-   * 1. Department Explicit Template Binding (deptDoc.templateId)
-   * 2. Department Keyword / Slug Matching (e.g. engineering, sales, marketing, hr, executive)
-   * 3. Organization Default Fallback (for members with no department or unmapped departments)
+   * Resolves the appropriate template for a team member dynamically:
+   * 1. ROLE Keyword Matching (e.g. 'HR Admin' -> hr, 'Content Admin' -> marketing)
+   * 2. DESIGNATION Keyword Matching (e.g. 'HR Administrator' -> hr)
+   * 3. Department Explicit Template Binding (deptDoc.templateId)
+   * 4. Department Keyword / Slug Matching (e.g. engineering, sales, marketing, hr, executive)
+   * 5. Explicit templateId fallback (e.g. previously stored profile template)
+   * 6. Organization Default Fallback
    *
    * @param {Object} context
    * @param {Object|string} [context.department] - Department document, populated object, or departmentId
-   * @param {Object|string} [context.role] - Kept for signature compatibility; NOT used for template choice
-   * @param {string} [context.designation] - Kept for signature compatibility; NOT used for template choice
+   * @param {Object|string} [context.role] - Role document, populated object, or roleId
+   * @param {string} [context.designation] - Member designation text
+   * @param {Object|string} [context.templateId] - Explicit template reference; used only as a fallback
    * @returns {Promise<Object>} { _id, templateId, key, name, category, layoutConfig, predefinedDetails }
    */
-  async resolveTemplateForMember({ department = {}, role = {}, designation = '' } = {}) {
-    // 1. Normalize: load full department with templateId if only an ID was provided
+  async resolveTemplateForMember({ department = {}, role = {}, designation = '', templateId = null, themeOverrides = null } = {}) {
+    // ── 1. Normalize inputs (accept docs, populated objects, or raw ids) ──
+    let roleDoc = role;
+    if (typeof roleDoc === 'string' || (roleDoc?._id && !roleDoc?.name && !roleDoc?.slug)) {
+      try {
+        roleDoc = await Role.findById(roleDoc?._id || roleDoc).lean();
+      } catch (_) {}
+    }
+
     let deptDoc = department;
     if (typeof deptDoc === 'string' || (deptDoc?._id && !deptDoc?.slug && !deptDoc?.name && !deptDoc?.templateId)) {
       try {
@@ -115,50 +127,99 @@ class TemplateResolverService {
       } catch (_) {}
     }
 
-    // Priority 1: Department explicit template binding
-    if (deptDoc?.templateId) {
+    // ── 2. Resolve category key: Role -> Designation -> Department ──
+    let match = null;
+    let boundTemplateDoc = null;
+
+    // Priority 1: ROLE keyword matching (e.g. 'HR Admin' -> hr)
+    const roleText = `${roleDoc?.name || ''} ${roleDoc?.slug || ''}`;
+    match = matchDepartmentKeyword(roleText);
+
+    // Priority 2: DESIGNATION keyword matching (e.g. 'HR Administrator' -> hr)
+    if (!match) {
+      match = matchDepartmentKeyword(designation);
+    }
+
+    // Priority 3: Department explicit template binding
+    if (!match && deptDoc?.templateId) {
       try {
-        let bound = deptDoc.templateId;
-        // If already populated with template details
+        const bound = deptDoc.templateId;
         if (typeof bound === 'object' && (bound?.category || bound?.layoutConfig || bound?.slug)) {
-          return this._buildReturn(bound._id, bound.category || bound.slug, bound.name, bound);
-        }
-        // If templateId is an ObjectId or reference string
-        if (typeof bound === 'string' || bound?._id) {
-          const dbTpl = await Template.findById(bound._id || bound).lean();
-          if (dbTpl) {
-            return this._buildReturn(dbTpl._id, dbTpl.category || dbTpl.slug, dbTpl.name, dbTpl);
-          }
+          boundTemplateDoc = bound;
+        } else if (typeof bound === 'string' || bound?._id) {
+          boundTemplateDoc = await Template.findById(bound._id || bound).lean();
         }
       } catch (_) {}
     }
 
-    // Priority 2: Department keyword matching (slug + key + name)
-    const deptText = `${deptDoc?.slug || ''} ${deptDoc?.key || ''} ${deptDoc?.name || ''}`;
-    const match = matchDepartmentKeyword(deptText);
+    // Priority 4: Department keyword matching
+    if (!match && !boundTemplateDoc) {
+      const deptText = `${deptDoc?.slug || ''} ${deptDoc?.key || ''} ${deptDoc?.name || ''}`;
+      match = matchDepartmentKeyword(deptText);
+    }
 
-    const resolvedKey = match?.key || 'default';
-    const resolvedName = match?.name || 'Enterprise Employee Profile';
+    // ── 3. Load DB template for the resolved key / binding ──
+    const resolvedKey = match?.key || null;
+    let dbTemplate = boundTemplateDoc;
+    if (!dbTemplate && resolvedKey) {
+      try {
+        dbTemplate = await Template.findOne({
+          $or: [{ slug: `${resolvedKey}-profile` }, { category: resolvedKey }, { slug: resolvedKey }],
+          isActive: true,
+          isArchived: false
+        }).lean();
+      } catch (_) {}
+    }
 
-    // Look up DB template for styling & layout config
-    let dbTemplate = null;
-    try {
-      dbTemplate = await Template.findOne({
-        $or: [{ slug: `${resolvedKey}-profile` }, { category: resolvedKey }, { slug: resolvedKey }],
-        isActive: true,
-        isArchived: false
-      }).lean();
+    // Fallback A: explicit templateId (e.g. previously stored profile template)
+    if (!dbTemplate && templateId) {
+      try {
+        const tplDoc = typeof templateId === 'object' && templateId._id
+          ? templateId
+          : await Template.findById(templateId).lean();
+        if (tplDoc && (tplDoc.category || tplDoc.slug || tplDoc.layoutConfig)) {
+          const tplKey = tplDoc.category || (tplDoc.slug ? tplDoc.slug.replace(/-profile$/, '') : 'default');
+          return this._buildReturn(tplDoc._id, tplKey, tplDoc.name, tplDoc, themeOverrides);
+        }
+      } catch (_) {}
+    }
 
-      if (!dbTemplate) {
+    // Fallback B: organization default template
+    if (!dbTemplate) {
+      try {
         dbTemplate = await Template.findOne({ isDefault: true, isActive: true, isArchived: false }).lean();
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
 
-    return this._buildReturn(dbTemplate?._id, resolvedKey, dbTemplate?.name || resolvedName, dbTemplate);
+    const finalKey = resolvedKey
+      || (boundTemplateDoc?.category || (boundTemplateDoc?.slug ? boundTemplateDoc.slug.replace(/-profile$/, '') : null))
+      || 'default';
+
+    return this._buildReturn(dbTemplate?._id, finalKey, dbTemplate?.name || match?.name, dbTemplate, themeOverrides);
   }
 
   /** Constructs the normalized return object */
-  _buildReturn(id, key, name, dbTemplate) {
+  _buildReturn(id, key, name, dbTemplate, themeOverrides = null) {
+    const layout = dbTemplate?.layoutConfig || {
+      headerStyle: key === 'executive' ? 'cover_left' : 'centered',
+      colorPalette: {
+        primary: PRIMARY_COLORS[key] || '#2563eb',
+        secondary: '#1e293b',
+        accent: '#818cf8',
+        background: '#ffffff',
+        text: '#0f172a'
+      },
+      fontHeading: 'Inter',
+      fontBody: 'Inter'
+    };
+
+    const colorPalette = {
+      ...(layout.colorPalette || {}),
+      ...(themeOverrides?.primaryColor ? { primary: themeOverrides.primaryColor } : {}),
+      ...(themeOverrides?.secondaryColor ? { secondary: themeOverrides.secondaryColor } : {}),
+      ...(themeOverrides?.accentColor ? { accent: themeOverrides.accentColor } : {})
+    };
+
     return {
       _id: id || null,
       templateId: id || null,
@@ -166,17 +227,11 @@ class TemplateResolverService {
       key,
       name: name || 'Enterprise Profile',
       category: dbTemplate?.category || key,
-      layoutConfig: dbTemplate?.layoutConfig || {
-        headerStyle: key === 'executive' ? 'cover_left' : 'centered',
-        colorPalette: {
-          primary: PRIMARY_COLORS[key] || '#2563eb',
-          secondary: '#1e293b',
-          accent: '#818cf8',
-          background: '#ffffff',
-          text: '#0f172a'
-        },
-        fontHeading: 'Inter',
-        fontBody: 'Inter'
+      layoutConfig: {
+        ...layout,
+        colorPalette,
+        fontHeading: themeOverrides?.fontHeading || layout.fontHeading || 'Inter',
+        fontBody: themeOverrides?.fontBody || layout.fontBody || 'Inter'
       },
       predefinedDetails: dbTemplate?.predefinedDetails || {}
     };

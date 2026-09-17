@@ -65,8 +65,30 @@ export const IdentityFlowSections = ({
   const firstName = profile.name?.trim().split(' ')[0] || 'Member';
   const departmentName = profile.department?.name || profile.department || 'Enterprise';
 
+  // Safe array normalizer for skills/capabilities
+  const normalizeSkillsList = (source) => {
+    if (!source) return [];
+    if (Array.isArray(source)) return source;
+    if (typeof source === 'string') {
+      return source
+        .split(/[,;\n]+/)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map(s => ({ name: s }));
+    }
+    if (typeof source === 'object') {
+      if (Array.isArray(source.skills)) return source.skills;
+      if (Array.isArray(source.list)) return source.list;
+      if (Array.isArray(source.items)) return source.items;
+      return Object.values(source)
+        .filter(v => typeof v === 'string' || (typeof v === 'object' && v !== null))
+        .map(v => (typeof v === 'string' ? { name: v } : v));
+    }
+    return [];
+  };
+
   // Filter media gallery based on active tab
-  const allMedia = profile.mediaGallery || [];
+  const allMedia = Array.isArray(profile.mediaGallery) ? profile.mediaGallery : [];
   const filteredMedia = allMedia.filter(item => {
     if (activeMediaTab === 'all') return true;
     const type = (item.type || '').toLowerCase();
@@ -77,20 +99,25 @@ export const IdentityFlowSections = ({
   });
 
   // Extract contact links
-  const socialLinks = profile.socialLinks || [];
+  const socialLinks = Array.isArray(profile.socialLinks) ? profile.socialLinks : [];
   const linkedinLink = socialLinks.find(l => l.platform?.toLowerCase().includes('linkedin'));
   const twitterLink = socialLinks.find(l => l.platform?.toLowerCase().includes('twitter') || l.platform?.toLowerCase().includes('x'));
   const otherSocials = socialLinks.filter(l => l !== linkedinLink && l !== twitterLink);
 
-  const projectsList = profile.workAndImpact?.projects || profile.projects || [];
-  const rawExperience = (profile.experience && profile.experience.length > 0)
+  const projectsList = Array.isArray(profile.workAndImpact?.projects)
+    ? profile.workAndImpact.projects
+    : Array.isArray(profile.projects)
+    ? profile.projects
+    : [];
+
+  const rawExperience = (Array.isArray(profile.experience) && profile.experience.length > 0)
     ? profile.experience
-    : (profile.journey && profile.journey.length > 0)
+    : (Array.isArray(profile.journey) && profile.journey.length > 0)
     ? profile.journey
-    : (profile.about?.experience || []);
+    : (Array.isArray(profile.about?.experience) ? profile.about.experience : []);
 
   const experienceList = rawExperience
-    .filter(item => (item.company && item.company.trim()) || (item.role && item.role.trim()) || (item.title && item.title.trim()))
+    .filter(item => item && ((item.company && item.company.trim()) || (item.role && item.role.trim()) || (item.title && item.title.trim())))
     .map((item, idx) => {
       const company = item.company || item.organization || item.title || '';
       const role = item.role || item.designation || (item.company ? item.title : '') || item.subtitle || '';
@@ -159,7 +186,6 @@ export const IdentityFlowSections = ({
   const achievementsList = profile.achievements || [];
   const blogsList = profile.blogs || [];
 
-  // ────────────────────────────────────────────────────────────────
   // SCREEN 1: OVERVIEW (Hero Card + Navigation Hub)
   // ────────────────────────────────────────────────────────────────
   const renderScreen1 = () => (
@@ -175,150 +201,90 @@ export const IdentityFlowSections = ({
         />
       </section>
 
-      {/* Quick Navigation Cards Hub (Shown in Tab/Screen mode) */}
+      {/* Quick Navigation Cards Hub (Matching Company Profile Flow) */}
       {activeScreen !== undefined && !isCompact && (
-        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-600" /> Explore {firstName}'s Profile
-              </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Browse detailed background, track record, skills, deliverables and direct channels.
-              </p>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Explore Profile Sections
+            </h4>
+            <span className="text-xs text-purple-600 font-semibold">Quick Jump</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              {
+                id: 2,
+                name: 'About & Bio',
+                subtitle: 'Professional Bio & Key Focus',
+              },
+              {
+                id: 3,
+                name: 'Work Experience',
+                subtitle: experienceList.length > 0 ? `${experienceList.length} professional roles` : 'Roles & Career Timeline',
+              },
+              {
+                id: 4,
+                name: 'Featured Projects',
+                subtitle: projectsList.length > 0 ? `${projectsList.length} delivered projects` : 'Initiatives & Deliverables',
+              },
+              {
+                id: 5,
+                name: 'Achievements',
+                subtitle: achievementsList.length > 0 ? `${achievementsList.length} awards & honors` : 'Honors & Certifications',
+              },
+              {
+                id: 6,
+                name: 'Media Gallery',
+                subtitle: allMedia.length > 0 ? `${allMedia.length} media assets` : 'Photos, Videos & Events',
+              },
+              {
+                id: 7,
+                name: 'Blogs / Thoughts',
+                subtitle: blogsList.length > 0 ? `${blogsList.length} articles published` : 'Articles & Thought Leadership',
+              },
+            ].map((sec) => (
+              <button
+                key={sec.id}
+                type="button"
+                onClick={() => onNavigate(sec.id)}
+                className="clean-card clean-card-hover p-5 text-left flex items-center justify-between group border border-slate-100 bg-white rounded-3xl shadow-2xs cursor-pointer h-full min-h-[82px]"
+              >
+                <div className="min-w-0 pr-2">
+                  <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors truncate font-display">
+                    {sec.name}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5 truncate">{sec.subtitle}</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all shrink-0" />
+              </button>
+            ))}
+          </div>
+
+          {/* Quick Access to Contact Diary */}
+          <button
+            type="button"
+            onClick={() => onNavigate(8)}
+            className="w-full clean-card clean-card-hover p-4 sm:p-5 text-left flex items-center justify-between group border border-purple-100/80 bg-gradient-to-r from-purple-50/50 via-white to-white rounded-3xl shadow-2xs cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-sm shadow-purple-500/25 group-hover:scale-105 transition-transform shrink-0">
+                <Mail className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-purple-700 transition-colors font-display">
+                  Contact Diary & Direct Channels
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Save verified vCard, exchange contact details, or email directly
+                </p>
+              </div>
             </div>
-            <span className="text-[11px] font-semibold text-slate-400 font-mono">01 / 09</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
-            <button
-              onClick={() => onNavigate(2)}
-              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
-                <span>About & Bio</span>
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                {profile.about?.introduction || profile.bio || profile.headline || 'Professional biography, expertise and key focus areas.'}
-              </p>
-            </button>
-
-            <button
-              onClick={() => onNavigate(3)}
-              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                <Briefcase className="w-4 h-4" />
-              </div>
-              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
-                <span>Work Experience</span>
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-1">
-                {experienceList.length > 0 ? `${experienceList.length} professional roles & track record.` : 'Professional roles and experience track record.'}
-              </p>
-            </button>
-
-            <button
-              onClick={() => onNavigate(4)}
-              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                <Zap className="w-4 h-4" />
-              </div>
-              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
-                <span>Skills & Tools</span>
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Core domain capabilities, technical proficiencies, and tools.
-              </p>
-            </button>
-
-            <button
-              onClick={() => onNavigate(5)}
-              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                <FolderGit2 className="w-4 h-4" />
-              </div>
-              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
-                <span>Featured Projects</span>
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-1">
-                {projectsList.length > 0 ? `${projectsList.length} verified projects and portfolio initiatives.` : 'Key enterprise initiatives and delivered work.'}
-              </p>
-            </button>
-
-            <button
-              onClick={() => onNavigate(6)}
-              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                <Award className="w-4 h-4" />
-              </div>
-              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
-                <span>Achievements</span>
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-1">
-                {achievementsList.length > 0 ? `${achievementsList.length} awards, certifications and recognitions.` : 'Certified credentials and industry honors.'}
-              </p>
-            </button>
-
-            <button
-              onClick={() => onNavigate(7)}
-              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                <ImageIcon className="w-4 h-4" />
-              </div>
-              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
-                <span>Media Gallery</span>
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-1">
-                {allMedia.length > 0 ? `${allMedia.length} media assets, photos, and highlights.` : 'Visual gallery and photo highlights.'}
-              </p>
-            </button>
-
-            <button
-              onClick={() => onNavigate(8)}
-              className="p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/70 hover:border-purple-200 text-left transition-all group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                <FileText className="w-4 h-4" />
-              </div>
-              <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-700 flex items-center justify-between">
-                <span>Blogs / Thoughts</span>
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-1">
-                {blogsList.length > 0 ? `${blogsList.length} articles and publications.` : 'Articles and thought leadership.'}
-              </p>
-            </button>
-
-            <button
-              onClick={() => onNavigate(9)}
-              className="p-4 rounded-2xl bg-purple-600 text-white shadow-md shadow-purple-500/20 text-left transition-all hover:bg-purple-700 group cursor-pointer sm:col-span-2 md:col-span-2"
-            >
-              <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                <Mail className="w-4 h-4" />
-              </div>
-              <h4 className="text-xs font-bold text-white flex items-center justify-between">
-                <span>Contact Diary</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </h4>
-              <p className="text-[11px] text-purple-100 mt-1">
-                Save vCard, exchange contact details, or email directly.
-              </p>
-            </button>
-          </div>
+            <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-purple-600 shrink-0">
+              <span>View Channels</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </button>
         </div>
       )}
     </div>
@@ -328,78 +294,104 @@ export const IdentityFlowSections = ({
   // SCREEN 2: ABOUT
   // ────────────────────────────────────────────────────────────────
   const renderScreen2 = () => (
-    <section id="screen-2-about" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-fadeIn">
-      {/* Top Header with Back Button */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-3">
-          {activeScreen !== undefined && (
-            <button
-              type="button"
-              onClick={() => onNavigate(1)}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
-              title="Back to Overview"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          )}
-          <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <Sparkles className="w-4 h-4 shrink-0" /> {profile.about?.title || `About ${firstName}`}
-            </h3>
-            <p className="text-[11px] text-slate-400">Professional Summary, Core Expertise & Bio</p>
-          </div>
-        </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">02 / 09</span>
-      </div>
-
-      {/* 2.1 Introduction */}
-      <div className="space-y-2">
-        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Introduction</h4>
-        <p className="text-sm text-slate-700 leading-relaxed font-sans">
-          {profile.about?.introduction || profile.bio || profile.headline || 'Dedicated enterprise professional passionate about driving technology excellence and collaborative growth.'}
-        </p>
-      </div>
-
-      {/* 2.2 Core Expertise Summary */}
-      {((profile.about?.expertise && profile.about.expertise.length > 0) || (profile.skills && profile.skills.length > 0)) && (
-        <div className="space-y-2.5 pt-2 border-t border-slate-100">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Core Focus Areas</h4>
-          <div className="flex flex-wrap gap-2">
-            {(profile.about?.expertise || profile.skills || []).map((skill, idx) => (
-              <span
-                key={idx}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all"
-                style={{
-                  backgroundColor: `${primaryColor}10`,
-                  borderColor: `${primaryColor}30`,
-                  color: primaryColor
-                }}
+    <div id="screen-2-about" className="clean-card bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between animate-fadeIn space-y-6">
+      <div className="space-y-6">
+        {/* Uniform Screen Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            {activeScreen !== undefined && (
+              <button
+                type="button"
+                onClick={() => onNavigate(1)}
+                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+                title="Back to Overview"
               >
-                {skill.name || skill}
-              </span>
-            ))}
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight font-display">
+                {profile.about?.title || `About ${firstName}`}
+              </h3>
+              <p className="text-xs text-slate-500">Professional Summary, Core Expertise & Bio</p>
+            </div>
           </div>
+          <span className="px-3.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
+            Profile Bio
+          </span>
         </div>
-      )}
 
-      {/* 2.3 Experience Summary */}
-      <div className="space-y-2.5 pt-2 border-t border-slate-100">
-        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience Overview</h4>
-        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
-          {profile.about?.experienceSummary || `${profile.overviewStats?.years || profile.overviewStats?.yearsOfExperience || '5+'} years in ${departmentName} leadership, high-velocity execution, and driving enterprise digital transformation.`}
-        </p>
+        {/* 2.1 Introduction */}
+        <div className="space-y-2">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Introduction</h4>
+          <p className="text-sm text-slate-700 leading-relaxed font-sans">
+            {profile.about?.introduction || profile.bio || profile.headline || 'Dedicated enterprise professional passionate about driving technology excellence and collaborative growth.'}
+          </p>
+        </div>
+
+        {/* 2.2 Core Expertise Summary */}
+        {(() => {
+          const rawExpertiseText = typeof profile.about?.expertise === 'string' && profile.about.expertise.trim()
+            ? profile.about.expertise.trim()
+            : (typeof profile.about?.expertiseText === 'string' && profile.about.expertiseText.trim() ? profile.about.expertiseText.trim() : '');
+
+          const expertiseItems = normalizeSkillsList(
+            (Array.isArray(profile.about?.expertiseList) && profile.about.expertiseList.length > 0)
+              ? profile.about.expertiseList
+              : (Array.isArray(profile.skills) && profile.skills.length > 0)
+              ? profile.skills
+              : null
+          );
+
+          if (!rawExpertiseText && (!expertiseItems || expertiseItems.length === 0)) return null;
+
+          return (
+            <div className="space-y-2.5 pt-4 border-t border-slate-100">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Core Focus Areas</h4>
+              {rawExpertiseText ? (
+                <p className="text-sm text-slate-700 leading-relaxed font-sans">
+                  {rawExpertiseText}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {expertiseItems.map((skill, idx) => {
+                    const name = typeof skill === 'string' ? skill : (skill.name || skill.title || skill.label || 'Capability');
+                    return (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100/80 text-slate-700 border border-slate-200/80"
+                      >
+                        {name}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* 2.3 Experience Summary */}
+        <div className="space-y-2.5 pt-4 border-t border-slate-100">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience Overview</h4>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+            {profile.about?.experienceSummary || `${profile.overviewStats?.years || profile.overviewStats?.yearsOfExperience || '5+'} years in ${departmentName} leadership, high-velocity execution, and driving enterprise digital transformation.`}
+          </p>
+        </div>
       </div>
 
       {/* Screen Navigation Footer */}
       {activeScreen !== undefined && (
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold mt-auto">
           <button
+            type="button"
             onClick={() => onNavigate(1)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
           </button>
           <button
+            type="button"
             onClick={() => onNavigate(3)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
@@ -407,35 +399,35 @@ export const IdentityFlowSections = ({
           </button>
         </div>
       )}
-    </section>
+    </div>
   );
 
   // ────────────────────────────────────────────────────────────────
   // SCREEN 3: WORK EXPERIENCE
   // ────────────────────────────────────────────────────────────────
   const renderScreen3 = () => (
-    <div id="screen-3-experience" className="space-y-6 animate-fadeIn">
-      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+    <div id="screen-3-experience" className="clean-card bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between animate-fadeIn space-y-6">
+      <div className="space-y-6">
+        {/* Uniform Screen Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
             {activeScreen !== undefined && (
               <button
                 type="button"
                 onClick={() => onNavigate(1)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer mr-1"
+                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
                 title="Back to Overview"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
+                <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <div className="w-1.5 h-5 rounded-full bg-purple-600" style={{ backgroundColor: primaryColor }} />
-            <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-slate-900">
-              Work Experience
-            </h3>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight font-display">
+                Work Experience
+              </h3>
+              <p className="text-xs text-slate-500">Career Timeline, Roles & Track Record</p>
+            </div>
           </div>
-          {activeScreen !== undefined && (
-            <span className="text-[11px] font-semibold text-slate-400 font-mono">03 / 09</span>
-          )}
         </div>
 
         {experienceList.length > 0 ? (
@@ -517,671 +509,579 @@ export const IdentityFlowSections = ({
             </p>
           </div>
         )}
+      </div>
 
-        {/* Dynamic Social & Contact Icons */}
-        <div className="pt-8 pb-4 flex flex-wrap items-center justify-center gap-3 border-t border-slate-50 mt-6">
-          {(profile.linkedin || profile.socialLinks?.linkedin) && (
-            <a href={profile.linkedin || profile.socialLinks?.linkedin} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Linkedin className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.instagram || profile.socialLinks?.instagram) && (
-            <a href={profile.instagram || profile.socialLinks?.instagram} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Instagram className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.whatsapp || profile.contact?.whatsapp || profile.phone || profile.contact?.phone) && (
-            <a href={`https://wa.me/${profile.whatsapp || profile.contact?.whatsapp || profile.phone || profile.contact?.phone}`} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <MessageSquare className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.website || profile.socialLinks?.website) && (
-            <a href={profile.website || profile.socialLinks?.website} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Globe className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.email || profile.contact?.email || profile.workEmail) && (
-            <a href={`mailto:${profile.email || profile.contact?.email || profile.workEmail}`} className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Mail className="w-4 h-4" />
-            </a>
-          )}
-          {(profile.phone || profile.contact?.phone || profile.companyPhone) && (
-            <a href={`tel:${profile.phone || profile.contact?.phone || profile.companyPhone}`} className="w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:border-purple-300 hover:bg-purple-50 hover:shadow-sm hover:scale-105 transition-all">
-              <Phone className="w-4 h-4" />
-            </a>
-          )}
+      {activeScreen !== undefined && (
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold mt-auto">
+          <button
+            type="button"
+            onClick={() => onNavigate(2)}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> About
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate(4)}
+            className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
+          >
+            Featured Projects <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
-
-
-        {activeScreen !== undefined && (
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
-            <button
-              onClick={() => onNavigate(2)}
-              className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> About
-            </button>
-            <button
-              onClick={() => onNavigate(4)}
-              className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
-            >
-              Skills & Tools <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-      </section>
+      )}
     </div>
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 4: SKILLS & TECHNICAL CAPABILITIES
+  // SCREEN 4: FEATURED PROJECTS
   // ────────────────────────────────────────────────────────────────
-  const renderScreen4 = () => {
-    const skillsList = (profile.skills && profile.skills.length > 0)
-      ? profile.skills
-      : (profile.about?.expertise && profile.about.expertise.length > 0)
-      ? profile.about.expertise
-      : (profile.expertise && profile.expertise.length > 0)
-      ? profile.expertise
-      : [];
-
-    return (
-      <section id="screen-4-skills" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-fadeIn">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+  const renderScreen4 = () => (
+    <div id="screen-4-work" className="clean-card bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between animate-fadeIn space-y-6">
+      <div className="space-y-6">
+        {/* Uniform Screen Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
             {activeScreen !== undefined && (
               <button
                 type="button"
                 onClick={() => onNavigate(1)}
-                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
                 title="Back to Overview"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
             <div>
-              <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-                <Zap className="w-4 h-4 shrink-0 text-amber-500" /> Skills & Technical Capabilities
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight font-display">
+                {profile.workAndImpact?.title || 'Featured Projects'}
               </h3>
-              <p className="text-[11px] text-slate-400">Core Capabilities, Technical Proficiencies & Tools</p>
+              <p className="text-xs text-slate-500">Enterprise Solutions & Key Initiatives</p>
             </div>
           </div>
-          <span className="text-[11px] font-semibold text-slate-400 font-mono">04 / 09</span>
+          <span className="px-3.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
+            {projectsList.length} {projectsList.length === 1 ? 'Project' : 'Projects'}
+          </span>
         </div>
 
-        {skillsList.length > 0 ? (
-          <div className="space-y-4">
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
-              Key technical proficiencies, strategic frameworks, and domain expertise verified across {firstName}'s enterprise deliverables.
-            </p>
-            <div className="flex flex-wrap gap-2.5 pt-2">
-              {skillsList.map((skill, idx) => {
-                const name = typeof skill === 'string' ? skill : (skill.name || skill.title || skill.label || 'Capability');
-                const level = typeof skill === 'object' ? (skill.level || skill.category) : null;
-                return (
-                  <div
-                    key={idx}
-                    className="px-4 py-2.5 rounded-2xl border flex items-center gap-2.5 transition-all shadow-2xs hover:shadow-xs"
-                    style={{
-                      backgroundColor: `${primaryColor}08`,
-                      borderColor: `${primaryColor}25`,
-                      color: primaryColor
-                    }}
-                  >
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: primaryColor }} />
-                    <span className="text-xs font-bold text-slate-900">{name}</span>
-                    {level && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/80 text-purple-700 border border-purple-200/80">
-                        {level}
-                      </span>
+        {projectsList.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {projectsList.map((proj, idx) => (
+              <div
+                key={idx}
+                className="p-5 rounded-2xl bg-slate-50/80 hover:bg-purple-50/30 border border-slate-200/70 transition-all space-y-3 flex flex-col justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
+                      style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
+                    >
+                      {proj.badge || proj.status || 'Initiative'}
+                    </span>
+                    {proj.url && (
+                      <a
+                        href={proj.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-slate-400 hover:text-slate-700 transition-colors"
+                        title="View Project"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
                     )}
                   </div>
-                );
-              })}
-            </div>
+                  <h4 className="text-sm font-bold text-slate-900 leading-snug font-display">{proj.title}</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                    {proj.description}
+                  </p>
+                </div>
+
+                {proj.technologies && proj.technologies.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-3 border-t border-slate-200/60">
+                    {proj.technologies.map((t, tIdx) => (
+                      <span key={tIdx} className="px-2 py-0.5 rounded-md bg-white text-[10px] font-medium text-slate-600 border border-slate-200/70">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-            <Zap className="w-8 h-8 text-amber-500 mx-auto" />
-            <h4 className="text-xs font-bold text-slate-700">Skills Portfolio</h4>
-            <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-              {firstName}'s skills and core competencies list is currently being curated.
+          <div className="p-12 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+            <FolderGit2 className="w-8 h-8 text-slate-300 mx-auto" />
+            <h4 className="text-sm font-bold text-slate-800 font-display">Projects Portfolio</h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {firstName}'s featured projects and technical initiatives will appear here once published.
             </p>
           </div>
         )}
-
-        {activeScreen !== undefined && (
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
-            <button
-              onClick={() => onNavigate(3)}
-              className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Work Experience
-            </button>
-            <button
-              onClick={() => onNavigate(5)}
-              className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
-            >
-              Featured Projects <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-      </section>
-    );
-  };
-
-  // ────────────────────────────────────────────────────────────────
-  // SCREEN 5: FEATURED PROJECTS
-  // ────────────────────────────────────────────────────────────────
-  const renderScreen5 = () => (
-    <section id="screen-5-work" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5 animate-fadeIn">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-3">
-          {activeScreen !== undefined && (
-            <button
-              type="button"
-              onClick={() => onNavigate(1)}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
-              title="Back to Overview"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          )}
-          <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <FolderGit2 className="w-4 h-4 shrink-0" /> {profile.workAndImpact?.title || 'Featured Projects'}
-            </h3>
-            <p className="text-[11px] text-slate-400">Enterprise Solutions & Key Initiatives</p>
-          </div>
-        </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">05 / 09</span>
       </div>
 
-      {projectsList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-          {projectsList.map((proj, idx) => (
-            <div
-              key={idx}
-              className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-2.5 flex flex-col justify-between hover:bg-white hover:shadow-xs transition-all"
-            >
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span
-                    className="px-2 py-0.5 rounded-full text-[10px] font-bold border"
-                    style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}20`, color: primaryColor }}
-                  >
-                    {proj.badge || proj.status || 'Initiative'}
-                  </span>
-                  {proj.url && (
-                    <a
-                      href={proj.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-slate-400 hover:text-slate-700 transition-colors"
-                      title="View Project"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{proj.title}</h4>
-                <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                  {proj.description}
-                </p>
-              </div>
-
-              {proj.technologies && proj.technologies.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-2 border-t border-slate-200/60">
-                  {proj.technologies.map((t, tIdx) => (
-                    <span key={tIdx} className="px-1.5 py-0.5 rounded bg-white text-[9px] font-medium text-slate-600 border border-slate-200/70">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-          <FolderGit2 className="w-8 h-8 text-slate-300 mx-auto" />
-          <h4 className="text-xs font-bold text-slate-700">Projects Portfolio</h4>
-          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-            {firstName}'s featured projects and technical initiatives will appear here once published.
-          </p>
-        </div>
-      )}
-
       {activeScreen !== undefined && (
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold mt-auto">
           <button
-            onClick={() => onNavigate(4)}
+            type="button"
+            onClick={() => onNavigate(3)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Work Experience
           </button>
           <button
-            onClick={() => onNavigate(6)}
+            type="button"
+            onClick={() => onNavigate(5)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
             Achievements <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
-    </section>
+    </div>
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 6: ACHIEVEMENTS
+  // SCREEN 5: ACHIEVEMENTS
   // ────────────────────────────────────────────────────────────────
-  const renderScreen6 = () => (
-    <section id="screen-6-achievements" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-3">
-          {activeScreen !== undefined && (
-            <button
-              type="button"
-              onClick={() => onNavigate(1)}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
-              title="Back to Overview"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          )}
-          <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <Award className="w-4 h-4 shrink-0 text-amber-500" /> My Achievements
-            </h3>
-            <p className="text-[11px] text-slate-400">Industry Honors, Certifications & Awards</p>
+  const renderScreen5 = () => (
+    <div id="screen-5-achievements" className="clean-card bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between animate-fadeIn space-y-6">
+      <div className="space-y-6">
+        {/* Uniform Screen Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            {activeScreen !== undefined && (
+              <button
+                type="button"
+                onClick={() => onNavigate(1)}
+                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+                title="Back to Overview"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight font-display">
+                My Achievements
+              </h3>
+              <p className="text-xs text-slate-500">Industry Honors, Certifications & Awards</p>
+            </div>
           </div>
+          <span className="px-3.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
+            {achievementsList.length} {achievementsList.length === 1 ? 'Honor' : 'Honors'}
+          </span>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">06 / 09</span>
+
+        {achievementsList.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {achievementsList.map((item, idx) => (
+              <div
+                key={idx}
+                className="p-5 rounded-2xl bg-slate-50/80 hover:bg-purple-50/30 border border-slate-200/70 transition-all flex items-start gap-4"
+              >
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs bg-purple-50 text-purple-600"
+                  style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                >
+                  <Award className="w-6 h-6 text-amber-500" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-sm font-bold text-slate-900 leading-snug font-display">{item.title}</h4>
+                  <p className="text-xs font-medium text-slate-500 mt-0.5">{item.subtitle || item.issuer}</p>
+                  {item.description && (
+                    <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">{item.description}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+            <Award className="w-8 h-8 text-amber-400 mx-auto" />
+            <h4 className="text-sm font-bold text-slate-800 font-display">Honors & Certifications</h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {firstName}'s awards, credentials and industry certifications are maintained here.
+            </p>
+          </div>
+        )}
       </div>
 
-      {achievementsList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {achievementsList.map((item, idx) => (
-            <div
-              key={idx}
-              className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex items-start gap-3.5 hover:bg-slate-50 transition-all"
-            >
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-xs"
-                style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-              >
-                <Award className="w-5 h-5 text-amber-500" />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{item.title}</h4>
-                <p className="text-[11px] font-medium text-slate-500 mt-0.5">{item.subtitle || item.issuer}</p>
-                {item.description && (
-                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{item.description}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-          <Award className="w-8 h-8 text-amber-400 mx-auto" />
-          <h4 className="text-xs font-bold text-slate-700">Honors & Certifications</h4>
-          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-            {firstName}'s awards, credentials and industry certifications are maintained here.
-          </p>
-        </div>
-      )}
-
       {activeScreen !== undefined && (
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold mt-auto">
           <button
-            onClick={() => onNavigate(5)}
+            type="button"
+            onClick={() => onNavigate(4)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Featured Projects
           </button>
           <button
-            onClick={() => onNavigate(7)}
+            type="button"
+            onClick={() => onNavigate(6)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
             Media Gallery <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
-    </section>
+    </div>
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 7: MEDIA GALLERY
+  // SCREEN 6: MEDIA GALLERY
   // ────────────────────────────────────────────────────────────────
-  const renderScreen7 = () => (
-    <section id="screen-7-media" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-3">
-          {activeScreen !== undefined && (
-            <button
-              type="button"
-              onClick={() => onNavigate(1)}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
-              title="Back to Overview"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          )}
-          <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <ImageIcon className="w-4 h-4 shrink-0" /> Media Gallery
-            </h3>
-            <p className="text-[11px] text-slate-400">Photos, Videos, Press & Events</p>
+  const renderScreen6 = () => (
+    <div id="screen-6-media" className="clean-card bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between animate-fadeIn space-y-6">
+      <div className="space-y-6">
+        {/* Uniform Screen Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            {activeScreen !== undefined && (
+              <button
+                type="button"
+                onClick={() => onNavigate(1)}
+                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+                title="Back to Overview"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight font-display">
+                Media Gallery
+              </h3>
+              <p className="text-xs text-slate-500">Photos, Videos, Press & Events</p>
+            </div>
           </div>
+          <span className="px-3.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
+            {allMedia.length} {allMedia.length === 1 ? 'Media' : 'Assets'}
+          </span>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">07 / 09</span>
+
+        {allMedia.length > 0 ? (
+          <>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {['all', 'photos', 'videos', 'events'].map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveMediaTab(tab)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold capitalize transition-all cursor-pointer ${
+                    activeMediaTab === tab
+                      ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/20'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                  style={activeMediaTab === tab ? { backgroundColor: primaryColor } : {}}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+              {(filteredMedia.length > 0 ? filteredMedia : allMedia).map((item, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-2xl overflow-hidden bg-slate-50 border border-slate-200/70 flex flex-col justify-between group shadow-2xs relative"
+                >
+                  <div className="h-44 bg-slate-100 overflow-hidden relative">
+                    <img
+                      src={item.thumbnailUrl || item.url}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-[10px] font-bold capitalize">
+                      {item.type || 'Photo'}
+                    </span>
+                  </div>
+                  <div className="p-4 space-y-1">
+                    <h4 className="text-xs font-bold text-slate-900 truncate font-display">{item.title}</h4>
+                    {item.description && (
+                      <p className="text-[11px] text-slate-500 line-clamp-1">{item.description}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="p-12 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+            <ImageIcon className="w-8 h-8 text-slate-300 mx-auto" />
+            <h4 className="text-sm font-bold text-slate-800 font-display">Media Portfolio</h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {firstName}'s photos, event appearances, and video media will appear here once added.
+            </p>
+          </div>
+        )}
       </div>
 
-      {allMedia.length > 0 ? (
-        <>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {['all', 'photos', 'videos', 'events'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveMediaTab(tab)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold capitalize transition-all cursor-pointer ${
-                  activeMediaTab === tab
-                    ? 'text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-                style={activeMediaTab === tab ? { backgroundColor: primaryColor } : {}}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 pt-1">
-            {(filteredMedia.length > 0 ? filteredMedia : allMedia).map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-slate-50 rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xs group hover:shadow-sm transition-all"
-              >
-                <div className="h-36 bg-slate-200 overflow-hidden relative">
-                  <img
-                    src={item.thumbnailUrl || item.url}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-black/70 text-white text-[10px] font-bold capitalize backdrop-blur-xs">
-                    {item.type || 'Photo'}
-                  </span>
-                </div>
-                <div className="p-3">
-                  <h4 className="text-xs font-bold text-slate-900 truncate">{item.title}</h4>
-                  {item.description && (
-                    <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{item.description}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-          <ImageIcon className="w-8 h-8 text-slate-300 mx-auto" />
-          <h4 className="text-xs font-bold text-slate-700">Media Portfolio</h4>
-          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-            {firstName}'s photos, event appearances, and video media will appear here once added.
-          </p>
-        </div>
-      )}
-
       {activeScreen !== undefined && (
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold mt-auto">
           <button
-            onClick={() => onNavigate(6)}
+            type="button"
+            onClick={() => onNavigate(5)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Achievements
           </button>
           <button
-            onClick={() => onNavigate(8)}
+            type="button"
+            onClick={() => onNavigate(7)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
             Blogs & Thoughts <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
-    </section>
+    </div>
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 8: BLOGS / THOUGHTS
+  // SCREEN 7: BLOGS / THOUGHTS
   // ────────────────────────────────────────────────────────────────
-  const renderScreen8 = () => (
-    <section id="screen-8-blogs" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4 animate-fadeIn">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-3">
-          {activeScreen !== undefined && (
-            <button
-              type="button"
-              onClick={() => onNavigate(1)}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
-              title="Back to Overview"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          )}
-          <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <FileText className="w-4 h-4 shrink-0" /> Blogs / Thoughts
-            </h3>
-            <p className="text-[11px] text-slate-400">Publications, Thought Leadership & Articles</p>
+  const renderScreen7 = () => (
+    <div id="screen-7-blogs" className="clean-card bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between animate-fadeIn space-y-6">
+      <div className="space-y-6">
+        {/* Uniform Screen Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            {activeScreen !== undefined && (
+              <button
+                type="button"
+                onClick={() => onNavigate(1)}
+                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+                title="Back to Overview"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight font-display">
+                Blogs & Thoughts
+              </h3>
+              <p className="text-xs text-slate-500">Publications, Thought Leadership & Articles</p>
+            </div>
           </div>
+          <span className="px-3.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
+            {blogsList.length} {blogsList.length === 1 ? 'Article' : 'Articles'}
+          </span>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">08 / 09</span>
+
+        {blogsList.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {blogsList.map((b, idx) => (
+              <a
+                key={idx}
+                href={b.url || '#'}
+                target={b.url ? '_blank' : '_self'}
+                rel="noreferrer"
+                className="p-5 rounded-2xl bg-slate-50/80 hover:bg-purple-50/30 border border-slate-200/70 transition-all flex gap-4 group"
+              >
+                {b.coverImage && (
+                  <img
+                    src={b.coverImage}
+                    alt={b.title}
+                    className="w-20 h-20 rounded-2xl object-cover shrink-0 group-hover:scale-105 transition-transform"
+                  />
+                )}
+                <div className="flex-1 min-w-0 space-y-1.5 flex flex-col justify-center">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-purple-600 transition-colors line-clamp-2 font-display leading-snug">
+                    {b.title}
+                  </h4>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{b.readTime || 'Published Article'}</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+            <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+            <h4 className="text-sm font-bold text-slate-800 font-display">Publications & Articles</h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {firstName}'s articles and thought leadership pieces will appear here.
+            </p>
+          </div>
+        )}
       </div>
 
-      {blogsList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {blogsList.map((b, idx) => (
-            <a
-              key={idx}
-              href={b.url || '#'}
-              target={b.url ? '_blank' : '_self'}
-              rel="noreferrer"
-              className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-200/70 hover:border-slate-300 transition-all flex gap-3 group"
-            >
-              {b.coverImage && (
-                <img
-                  src={b.coverImage}
-                  alt={b.title}
-                  className="w-16 h-16 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
-                />
-              )}
-              <div className="flex-1 min-w-0 space-y-1">
-                <h4 className="text-xs font-bold text-slate-900 group-hover:text-purple-600 transition-colors line-clamp-2">
-                  {b.title}
-                </h4>
-                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                  <Clock className="w-3 h-3" />
-                  <span>{b.readTime || 'Published Article'}</span>
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
-      ) : (
-        <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-          <FileText className="w-8 h-8 text-slate-300 mx-auto" />
-          <h4 className="text-xs font-bold text-slate-700">Publications & Articles</h4>
-          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-            {firstName}'s articles and thought leadership pieces will appear here.
-          </p>
-        </div>
-      )}
-
       {activeScreen !== undefined && (
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold mt-auto">
           <button
-            onClick={() => onNavigate(7)}
+            type="button"
+            onClick={() => onNavigate(6)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Media Gallery
           </button>
           <button
-            onClick={() => onNavigate(9)}
+            type="button"
+            onClick={() => onNavigate(8)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
             Contact Diary <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
-    </section>
+    </div>
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN 9: CONTACT DIARY
+  // SCREEN 8: CONTACT DIARY
   // ────────────────────────────────────────────────────────────────
-  const renderScreen9 = () => (
-    <section id="screen-9-contact" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-fadeIn">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-3">
-          {activeScreen !== undefined && (
-            <button
-              type="button"
-              onClick={() => onNavigate(1)}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
-              title="Back to Overview"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          )}
-          <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider flex items-center gap-2" style={{ color: primaryColor }}>
-              <Mail className="w-4 h-4 shrink-0" /> Contact Diary
-            </h3>
-            <p className="text-[11px] text-slate-400">Direct Contact Details, Channels & vCard</p>
+  const renderScreen8 = () => (
+    <div id="screen-8-contact" className="clean-card bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between animate-fadeIn space-y-6">
+      <div className="space-y-6">
+        {/* Uniform Screen Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            {activeScreen !== undefined && (
+              <button
+                type="button"
+                onClick={() => onNavigate(1)}
+                className="w-10 h-10 rounded-full bg-slate-50 hover:bg-purple-50 hover:text-purple-600 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+                title="Back to Overview"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight font-display">
+                Contact Diary
+              </h3>
+              <p className="text-xs text-slate-500">Direct Contact Details, Channels & vCard</p>
+            </div>
           </div>
+          <span className="px-3.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
+            Direct Channels
+          </span>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 font-mono">09 / 09</span>
-      </div>
 
-      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
-        {profile.connectAndContact?.note || profile.collaborationNote || 'Open for collaboration, speaking opportunities, and high-impact enterprise projects.'}
-      </p>
+        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+          {profile.connectAndContact?.note || profile.collaborationNote || 'Open for collaboration, speaking opportunities, and high-impact enterprise projects.'}
+        </p>
 
-      <div className="space-y-3">
-        {profile.workEmail && (
-          <a
-            href={`mailto:${profile.workEmail}`}
-            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {profile.workEmail && (
+            <a
+              href={`mailto:${profile.workEmail}`}
+              className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/30 border border-slate-200/70 transition-all text-xs font-semibold text-slate-800"
+            >
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-2xs shrink-0" style={{ color: primaryColor }}>
+                <Mail className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Work Email</div>
+                <div className="truncate text-slate-800 text-xs font-bold">{profile.workEmail}</div>
+              </div>
+            </a>
+          )}
+
+          {profile.phone && (
+            <a
+              href={`tel:${profile.phone}`}
+              className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/30 border border-slate-200/70 transition-all text-xs font-semibold text-slate-800"
+            >
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-2xs shrink-0" style={{ color: primaryColor }}>
+                <Phone className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Phone</div>
+                <div className="truncate text-slate-800 text-xs font-bold">{profile.phone}</div>
+              </div>
+            </a>
+          )}
+
+          {linkedinLink && (
+            <a
+              href={linkedinLink.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/30 border border-slate-200/70 transition-all text-xs font-semibold text-slate-800"
+            >
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-2xs shrink-0" style={{ color: primaryColor }}>
+                <Globe className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">LinkedIn</div>
+                <div className="truncate text-slate-800 text-xs font-bold">{linkedinLink.url.replace(/^https?:\/\//, '')}</div>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            </a>
+          )}
+
+          {twitterLink && (
+            <a
+              href={twitterLink.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/30 border border-slate-200/70 transition-all text-xs font-semibold text-slate-800"
+            >
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-2xs shrink-0" style={{ color: primaryColor }}>
+                <Globe className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Twitter / X</div>
+                <div className="truncate text-slate-800 text-xs font-bold">{twitterLink.url.replace(/^https?:\/\//, '')}</div>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            </a>
+          )}
+
+          {otherSocials.map((social, idx) => (
+            <a
+              key={idx}
+              href={social.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/80 hover:bg-purple-50/30 border border-slate-200/70 transition-all text-xs font-semibold text-slate-800"
+            >
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-2xs shrink-0" style={{ color: primaryColor }}>
+                <Globe className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{social.platform}</div>
+                <div className="truncate text-slate-800 text-xs font-bold">{social.url.replace(/^https?:\/\//, '')}</div>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            </a>
+          ))}
+        </div>
+
+        <div className="space-y-2.5 pt-2">
+          <button
+            type="button"
+            onClick={onConnectClick}
+            className="w-full py-3.5 rounded-2xl text-white text-xs sm:text-sm font-bold shadow-md shadow-purple-500/25 hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+            style={{ backgroundColor: primaryColor }}
           >
-            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-              <Mail className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-slate-400 font-medium">Email</div>
-              <div className="truncate text-slate-800">{profile.workEmail}</div>
-            </div>
-          </a>
-        )}
+            <Send className="w-4 h-4" />
+            <span>Connect With Me</span>
+          </button>
 
-        {profile.phone && (
-          <a
-            href={`tel:${profile.phone}`}
-            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
+          <button
+            type="button"
+            onClick={onDownloadVCard}
+            className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
           >
-            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-              <Phone className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-slate-400 font-medium">Phone</div>
-              <div className="truncate text-slate-800">{profile.phone}</div>
-            </div>
-          </a>
-        )}
-
-        {linkedinLink && (
-          <a
-            href={linkedinLink.url}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
-          >
-            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-              <Globe className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-slate-400 font-medium">LinkedIn</div>
-              <div className="truncate text-slate-800">{linkedinLink.url.replace(/^https?:\/\//, '')}</div>
-            </div>
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-          </a>
-        )}
-
-        {twitterLink && (
-          <a
-            href={twitterLink.url}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
-          >
-            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-              <Globe className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-slate-400 font-medium">Twitter / X</div>
-              <div className="truncate text-slate-800">{twitterLink.url.replace(/^https?:\/\//, '')}</div>
-            </div>
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-          </a>
-        )}
-
-        {otherSocials.map((social, idx) => (
-          <a
-            key={idx}
-            href={social.url}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-xs font-semibold text-slate-800"
-          >
-            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-xs" style={{ color: primaryColor }}>
-              <Globe className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-slate-400 font-medium">{social.platform}</div>
-              <div className="truncate text-slate-800">{social.url.replace(/^https?:\/\//, '')}</div>
-            </div>
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-          </a>
-        ))}
-      </div>
-
-      <div className="space-y-2.5 pt-2">
-        <button
-          onClick={onConnectClick}
-          className="w-full py-3.5 rounded-2xl text-white text-xs sm:text-sm font-bold shadow-md hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-          style={{ backgroundColor: primaryColor }}
-        >
-          <Send className="w-4 h-4" />
-          <span>Connect With Me</span>
-        </button>
-
-        <button
-          onClick={onDownloadVCard}
-          className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
-        >
-          <UserCheck className="w-4 h-4" />
-          <span>Download Verified vCard (.vcf)</span>
-        </button>
+            <UserCheck className="w-4 h-4" />
+            <span>Download Verified vCard (.vcf)</span>
+          </button>
+        </div>
       </div>
 
       {activeScreen !== undefined && (
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold mt-auto">
           <button
-            onClick={() => onNavigate(8)}
+            type="button"
+            onClick={() => onNavigate(7)}
             className="flex items-center gap-1.5 text-slate-500 hover:text-purple-600 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Blogs / Thoughts
           </button>
           <button
+            type="button"
             onClick={() => onNavigate(1)}
             className="flex items-center gap-1.5 text-purple-600 hover:underline cursor-pointer"
           >
@@ -1189,11 +1089,11 @@ export const IdentityFlowSections = ({
           </button>
         </div>
       )}
-    </section>
+    </div>
   );
 
   // ────────────────────────────────────────────────────────────────
-  // SCREEN SELECTOR (When activeScreen is specified: 1 to 9)
+  // SCREEN SELECTOR (When activeScreen is specified: 1 to 8)
   // ────────────────────────────────────────────────────────────────
   if (activeScreen !== undefined && activeScreen !== null && activeScreen !== 'all') {
     switch (Number(activeScreen)) {
@@ -1213,8 +1113,6 @@ export const IdentityFlowSections = ({
         return renderScreen7();
       case 8:
         return renderScreen8();
-      case 9:
-        return renderScreen9();
       default:
         return renderScreen1();
     }
@@ -1229,11 +1127,10 @@ export const IdentityFlowSections = ({
       {renderScreen2()}
       {journeyList.length > 0 && renderScreen3()}
       {renderScreen4()}
-      {renderScreen5()}
-      {achievementsList.length > 0 && renderScreen6()}
-      {allMedia.length > 0 && renderScreen7()}
-      {blogsList.length > 0 && renderScreen8()}
-      {renderScreen9()}
+      {achievementsList.length > 0 && renderScreen5()}
+      {allMedia.length > 0 && renderScreen6()}
+      {blogsList.length > 0 && renderScreen7()}
+      {renderScreen8()}
 
       {showQuote && roleQuote && (
         <div
