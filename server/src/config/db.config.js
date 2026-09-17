@@ -144,7 +144,7 @@ export const connectDB = async (uri = env.MONGODB_URI) => {
             const { enrichAllProfiles } = await import('../seeds/enrichProfiles.js');
             // Auto-enrich all employee profiles with full 8-section dynamic identity flow
             enrichAllProfiles().catch((err) => {
-              logger.error('Error auto-enriching employee profiles:', err.message);
+              logger.error(`Error auto-enriching employee profiles: ${err?.message || err}`, { error: err?.message, stack: err?.stack });
             });
           } catch (enrichErr) {
             logger.warn(`Profile enrichment note: ${enrichErr.message}`);
