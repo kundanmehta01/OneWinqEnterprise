@@ -98,6 +98,7 @@ const achievementItemSchema = new mongoose.Schema(
     certificateUrl: { type: String, default: '', maxlength: 1000 },
     icon: { type: String, default: '', maxlength: 50 },
     badge: { type: String, default: '', maxlength: 50 },
+    imageUrl: { type: String, default: '', maxlength: 1000 },
     isFeatured: { type: Boolean, default: true },
     order: { type: Number, default: 0 }
   },
@@ -133,6 +134,11 @@ const profileMediaItemSchema = new mongoose.Schema(
       type: String,
       enum: ['all', 'photo', 'video', 'event'],
       default: 'photo'
+    },
+    mediaOption: {
+      type: String,
+      enum: ['photo_url', 'photo_upload', 'video_upload', 'video_url'],
+      default: 'photo_url'
     },
     thumbnailUrl: { type: String, default: '', maxlength: 1000 },
     date: { type: Date, default: Date.now },
@@ -193,19 +199,22 @@ const profileDataSchema = new mongoose.Schema(
     about: {
       title: { type: String, default: '', maxlength: 100 },
       introduction: { type: String, default: '', maxlength: 2000 },
-      expertise: [{ type: String, maxlength: 60 }],
-      experienceSummary: { type: String, default: '', maxlength: 2000 }
+      expertise: { type: mongoose.Schema.Types.Mixed, default: '' },
+      experienceSummary: { type: String, default: '', maxlength: 2000 },
+      experience: { type: String, default: '', maxlength: 2000 }
     },
     connectAndContact: {
       title: { type: String, default: "Let's Connect", maxlength: 100 },
       note: { type: String, default: 'Open for collaboration, speaking opportunities and new ideas.', maxlength: 500 },
       workEmail: { type: String, default: '', maxlength: 100 },
       phone: { type: String, default: '', maxlength: 30 },
+      linkedin: { type: String, default: '', maxlength: 1000 },
+      twitter: { type: String, default: '', maxlength: 1000 },
+      socialLinks: [profileSocialLinkSchema],
       ctaButtonText: { type: String, default: 'Connect With Me', maxlength: 50 }
     },
     experience: [experienceItemSchema],
     journey: [journeyItemSchema],
-    skills: [skillItemSchema],
     projects: [projectItemSchema],
     impactMetrics: [impactMetricItemSchema],
     achievements: [achievementItemSchema],
@@ -310,16 +319,22 @@ const employeeProfileSchema = new mongoose.Schema(
 
 // Calculate profile completion percentage based on filled data
 employeeProfileSchema.methods.calculateCompletionScore = function () {
-  const data = this.published || this.draft || {};
+  const hasPublishedData = this.published && (
+    this.published.headline ||
+    this.published.bio ||
+    this.published.avatarUrl ||
+    (this.published.experience && this.published.experience.length > 0)
+  );
+  const data = hasPublishedData ? this.published : (this.draft || {});
   let score = 0;
-  if (data.headline) score += 15;
-  if (data.bio) score += 15;
-  if (data.avatarUrl) score += 20;
+  if (data.headline) score += 10;
+  if (data.bio || data.about?.introduction) score += 15;
+  if (data.avatarUrl) score += 15;
   if (data.workEmail || data.phone) score += 10;
-  if (data.experience && data.experience.length > 0) score += 15;
-  if (data.skills && data.skills.length > 0) score += 10;
-  if (data.projects && data.projects.length > 0) score += 10;
-  if (data.socialLinks && data.socialLinks.length > 0) score += 5;
+  if (data.experience && data.experience.length > 0) score += 20;
+  if (data.projects && data.projects.length > 0) score += 15;
+  if (data.socialLinks && data.socialLinks.length > 0) score += 10;
+  if (data.about?.expertise || data.about?.experienceSummary) score += 15;
   this.completionPercentage = Math.min(score, 100);
   return this.completionPercentage;
 };

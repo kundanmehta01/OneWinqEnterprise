@@ -46,6 +46,7 @@ out/
 !.vscode/extensions.json
 !.vscode/settings.json
 .idea/
+.qoder/
 *.sublime-project
 *.sublime-workspace
 *.swp

@@ -84,19 +84,17 @@ class PublicProfileService {
     const orgCoverUrl = company?.branding?.coverUrl || '';
     const orgLogoUrl = company?.branding?.logoUrl || '';
 
-    // Resolve dynamic profile template based on cascading priority (Role -> Department -> Fallback)
+    // Resolve dynamic profile template based on cascading priority (Explicit Template -> Designation -> Department -> Fallback)
     const resolvedTemplate = await templateResolverService.resolveTemplateForMember({
-      role: profile.memberId.roleId,
-      department: profile.memberId.departmentId,
-      designation: profile.memberId.designation
+      role: profile.memberId?.roleId,
+      department: profile.memberId?.departmentId,
+      designation: profile.memberId?.designation,
+      templateId: profile.templateId,
+      themeOverrides: profile.themeOverrides
     });
 
     const pub = profile.published || profile.draft || {};
     const pre = resolvedTemplate.predefinedDetails || {};
-
-    const profileSkills = (pub.skills && pub.skills.length > 0)
-      ? pub.skills
-      : (pre.skills || []).map((s, idx) => ({ name: s, order: idx }));
 
     // 1. Calculate dynamic connections:
     // Look up real accepted connections in the database for this user
@@ -130,7 +128,6 @@ class PublicProfileService {
     }
 
     const realProjectsCount = (pub.projects || []).length;
-    const realSkillsCount = (pub.skills || profileSkills || []).length;
 
     // Filter out static legacy seed values ('248', '248+', '150+', '25+', '8+', '5+', '6+')
     const isLegacySeed = (val, legacyDefaults) => {
@@ -162,7 +159,7 @@ class PublicProfileService {
     const rawServ = pub.overviewStats?.servicesCount || pub.overviewStats?.services;
     const servicesVal = (!isLegacySeed(rawServ, legacyServices))
       ? String(rawServ)
-      : (realSkillsCount > 0 ? `${realSkillsCount}+` : '0');
+      : '0';
 
     const dynamicOverviewStats = {
       connectionsCount: connectionsVal,
@@ -178,11 +175,21 @@ class PublicProfileService {
 
     const firstName = profile.memberId.name?.trim().split(' ')[0] || 'Member';
     const introductionText = pub.about?.introduction || pub.bio || pub.headline || '';
-    const sortedSkills = profileSkills.sort((a, b) => (a.order || 0) - (b.order || 0));
-    const expertiseList = (pub.about?.expertise && pub.about.expertise.length > 0)
+    let expertiseText = '';
+    if (typeof pub.about?.expertise === 'string' && pub.about.expertise.trim()) {
+      expertiseText = pub.about.expertise.trim();
+    } else if (Array.isArray(pub.about?.expertise) && pub.about.expertise.length > 0) {
+      expertiseText = pub.about.expertise.map(s => s.name || s).join(', ');
+    } else if (pub.headline) {
+      expertiseText = pub.headline;
+    }
+
+    const expertiseList = (Array.isArray(pub.about?.expertise) && pub.about.expertise.length > 0)
       ? pub.about.expertise
-      : sortedSkills.map(s => s.name || s);
+      : (expertiseText ? [expertiseText] : []);
+
     const experienceSummaryText = pub.about?.experienceSummary
+      || pub.about?.experience
       || `${dynamicOverviewStats.years || '5+'} in ${profile.memberId.departmentId?.name || 'Enterprise'} & ${profile.memberId.designation}.`;
 
     const normalizeExperienceItem = (item, idx) => {
@@ -303,7 +310,9 @@ class PublicProfileService {
     const aboutSection = {
       title: pub.about?.title || `About ${firstName}`,
       introduction: introductionText,
-      expertise: expertiseList,
+      expertise: expertiseText || (Array.isArray(expertiseList) && expertiseList.length > 0 ? expertiseList.map(s => s.name || s).join(', ') : ''),
+      expertiseText: expertiseText,
+      expertiseList: expertiseList,
       experienceSummary: experienceSummaryText,
       experience: sortedExperience
     };
@@ -314,12 +323,53 @@ class PublicProfileService {
       impact: sortedImpactMetrics
     };
 
+    const userSlug = profile.memberId.slug || slug || 'member';
+    const fallbackEmail = pub.connectAndContact?.workEmail || pub.workEmail || profile.memberId.workEmail || profile.memberId.email || 'contact@onewinq.com';
+    const fallbackPhone = pub.connectAndContact?.phone || pub.phone || profile.memberId.phone || '+91 731 123 4507';
+
+    // Prioritize user's real custom LinkedIn and Twitter from socialLinks or connectAndContact
+    const userLinkedIn = pub.socialLinks?.find(s => s.platform?.toLowerCase() === 'linkedin')?.url
+      || pub.connectAndContact?.linkedin
+      || pub.linkedin
+      || '';
+
+    const userTwitter = pub.socialLinks?.find(s => ['twitter', 'x'].includes(s.platform?.toLowerCase()))?.url
+      || pub.connectAndContact?.twitter
+      || pub.twitter
+      || '';
+
+    const enrichedSocialLinks = (pub.socialLinks && pub.socialLinks.length > 0)
+      ? pub.socialLinks.filter(l => l.isVisible !== false).map(l => ({ ...l.toObject?.() || l }))
+      : [];
+
+    const hasLinkedIn = enrichedSocialLinks.some(s => s.platform?.toLowerCase() === 'linkedin');
+    const hasTwitter = enrichedSocialLinks.some(s => ['twitter', 'x'].includes(s.platform?.toLowerCase()));
+
+    if (!hasLinkedIn) {
+      enrichedSocialLinks.push({
+        platform: 'LinkedIn',
+        url: userLinkedIn || `https://linkedin.com/in/${userSlug}`,
+        order: 1,
+        isVisible: true
+      });
+    }
+    if (!hasTwitter) {
+      enrichedSocialLinks.push({
+        platform: 'Twitter',
+        url: userTwitter || `https://x.com/@${userSlug}_onewinq`,
+        order: 2,
+        isVisible: true
+      });
+    }
+
     const connectAndContactSection = {
       title: pub.connectAndContact?.title || "Let's Connect",
-      note: pub.connectAndContact?.note || pub.collaborationNote || 'Open for collaboration, speaking opportunities and new ideas.',
-      workEmail: pub.connectAndContact?.workEmail || pub.workEmail || '',
-      phone: pub.connectAndContact?.phone || pub.phone || '',
-      socialLinks: visibleSocialLinks,
+      note: pub.connectAndContact?.note || pub.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
+      workEmail: fallbackEmail,
+      phone: fallbackPhone,
+      linkedin: userLinkedIn || `https://linkedin.com/in/${userSlug}`,
+      twitter: userTwitter || `https://x.com/@${userSlug}_onewinq`,
+      socialLinks: enrichedSocialLinks,
       ctaButtonText: pub.connectAndContact?.ctaButtonText || pre.ctaButtonText || 'Connect With Me'
     };
 
@@ -360,20 +410,26 @@ class PublicProfileService {
       slug: profile.slug,
       headline: pub.headline || pre.headline || '',
       bio: pub.bio || pre.bio || '',
-      workEmail: pub.workEmail || '',
-      phone: pub.phone || '',
+      workEmail: pub.connectAndContact?.workEmail || pub.workEmail || '',
+      phone: pub.connectAndContact?.phone || pub.phone || '',
       avatarUrl: pub.avatarUrl || '',
       coverUrl: orgCoverUrl,
       orgLogoUrl,
       companyBranding: company?.branding || null,
-      collaborationNote: pub.collaborationNote || pre.collaborationNote || 'Open for collaboration, professional networking and exciting opportunities.',
+      collaborationNote: pub.connectAndContact?.note || pub.collaborationNote || pre.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
       ctaButtonText: pre.ctaButtonText || 'Get in Touch',
       badgeLabel: pre.badgeLabel || 'Verified Member',
       overviewStats: dynamicOverviewStats,
       location: pub.location || { city: company?.locations?.[0]?.city || 'Indore', country: company?.locations?.[0]?.country || 'India' },
       experience: sortedExperience,
       journey: sortedJourney,
-      skills: sortedSkills,
+      skills: (Array.isArray(pub.skills) && pub.skills.length > 0)
+        ? pub.skills
+        : (Array.isArray(profile.memberId?.skills) && profile.memberId.skills.length > 0)
+        ? profile.memberId.skills
+        : (Array.isArray(expertiseList) && expertiseList.length > 0)
+        ? expertiseList
+        : [],
       projects: sortedProjects,
       impactMetrics: sortedImpactMetrics,
       socialLinks: visibleSocialLinks,

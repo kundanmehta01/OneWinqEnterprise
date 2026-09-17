@@ -138,35 +138,12 @@ export const seedOrganization = async () => {
       ],
       projects: [
         {
-          title: 'OneWinq Distributed Microservices Cloud',
-          description: 'High-throughput identity service handling millions of profile lookups with sub-50ms global latency.',
-          category: 'Cloud Infrastructure',
+          title: 'PIMR-UG campus, Indore',
+          description: 'Prestige Institute of Management and Research (UG Campus), Indore. Deployed smart digital campus identity cards, contactless NFC student verification, and unified academic event networking infrastructure.',
+          category: 'Higher Education & Campus ID',
           status: 'ongoing',
+          imageUrl: 'https://images.unsplash.com/photo-1562774053-701939374585?w=800&fit=crop',
           order: 1,
-          isVisible: true
-        },
-        {
-          title: 'Zero-Knowledge Contactless Handshake Protocol',
-          description: 'Cryptographic NFC payload transmission ensuring zero-tamper profile credential verification.',
-          category: 'Cybersecurity & IoT',
-          status: 'completed',
-          order: 2,
-          isVisible: true
-        },
-        {
-          title: 'Real-Time Enterprise Analytics Pipeline',
-          description: 'Kafka & Redis streaming architecture delivering live team networking engagement metrics to admins.',
-          category: 'Big Data & Analytics',
-          status: 'completed',
-          order: 3,
-          isVisible: true
-        },
-        {
-          title: 'Enterprise SSO & SCIM Directory Integration',
-          description: 'Automated user sync with Microsoft Azure AD, Google Workspace, and Okta.',
-          category: 'Enterprise Integration',
-          status: 'ongoing',
-          order: 4,
           isVisible: true
         }
       ],

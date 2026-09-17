@@ -244,11 +244,20 @@ const renderFormattedDiffValue = (val, field = '', isOld = false) => {
                 }`}
               >
                 <div className="font-bold flex items-center justify-between gap-2">
-                  <span className={isOld ? 'line-through text-rose-700' : 'text-slate-900'}>
-                    {item.title || 'Achievement'}
-                  </span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {item.imageUrl && (
+                      <img
+                        src={item.imageUrl}
+                        alt="Achievement Badge"
+                        className="w-5 h-5 rounded object-cover border border-slate-200 shrink-0"
+                      />
+                    )}
+                    <span className={`truncate ${isOld ? 'line-through text-rose-700' : 'text-slate-900'}`}>
+                      {item.title || 'Achievement'}
+                    </span>
+                  </div>
                   {item.badge && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-50 text-amber-700 border border-amber-200 font-semibold shrink-0">
                       {item.badge}
                     </span>
                   )}

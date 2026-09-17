@@ -2,13 +2,26 @@ import mongoose from 'mongoose';
 import { connectDB, disconnectDB } from '../config/db.config.js';
 import { EmployeeProfile } from '../modules/employee-profile/employeeProfile.model.js';
 import { TeamMember } from '../modules/team-members/teamMember.model.js';
+import '../modules/roles/role.model.js';
+import '../modules/departments/department.model.js';
+import '../modules/templates/template.model.js';
+import '../modules/users/user.model.js';
 import { logger } from '../config/logger.config.js';
 
 const memberEnrichments = {
   'rajat-chaturvedi': {
     headline: 'Founder & CEO | OneWinq Technologies Pvt. Ltd. | Building One Identity Ecosystem',
     bio: 'Visionary leader and entrepreneur passionate about technology, identity and building impactful solutions.',
-    collaborationNote: 'Open for collaboration, speaking opportunities and new ideas.',
+    workEmail: 'rajat@onewinq.in',
+    phone: '+91 731 123 4507',
+    collaborationNote: 'Open to collaboration, speaking opportunities and new ideas.',
+    connectAndContact: {
+      title: "Let's Connect",
+      note: 'Open to collaboration, speaking opportunities and new ideas.',
+      workEmail: 'rajat@onewinq.in',
+      phone: '+91 731 123 4507',
+      ctaButtonText: 'Connect With Me'
+    },
     overviewStats: {
       connectionsCount: '',
       projectsCount: '',
@@ -817,7 +830,18 @@ export async function enrichAllProfiles() {
       bio: specific?.bio || pub.bio,
       skills: specific?.skills || pub.skills,
       overviewStats: enrichedStats,
-      collaborationNote: specific?.collaborationNote || pub.collaborationNote || 'Open for collaboration, professional networking and exciting opportunities.',
+      workEmail: specific?.workEmail || pub.workEmail || member.email || 'contact@onewinq.com',
+      phone: specific?.phone || pub.phone || member.phone || '+91 731 123 4507',
+      collaborationNote: specific?.collaborationNote || pub.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
+      connectAndContact: specific?.connectAndContact || pub.connectAndContact || {
+        title: "Let's Connect",
+        note: specific?.collaborationNote || pub.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
+        workEmail: specific?.workEmail || pub.workEmail || member.email || 'contact@onewinq.com',
+        phone: specific?.phone || pub.phone || member.phone || '+91 731 123 4507',
+        linkedin: `https://linkedin.com/in/${slug}`,
+        twitter: `https://x.com/@${slug}_onewinq`,
+        ctaButtonText: 'Connect With Me'
+      },
       experience: enrichedExperience,
       journey: enrichedJourney,
       projects: enrichedProjects,
@@ -825,9 +849,20 @@ export async function enrichAllProfiles() {
       achievements: enrichedAchievements,
       mediaGallery: enrichedMedia,
       blogs: enrichedBlogs,
-      socialLinks: specific?.socialLinks || pub.socialLinks || [
-        { platform: 'LinkedIn', url: `https://linkedin.com/in/${slug}`, isVisible: true, order: 1 }
-      ]
+      socialLinks: (specific?.socialLinks && specific.socialLinks.length > 0)
+        ? specific.socialLinks
+        : (pub.socialLinks && pub.socialLinks.length > 0)
+        ? pub.socialLinks
+        : [
+            { platform: 'LinkedIn', url: `https://linkedin.com/in/${slug}`, isVisible: true, order: 1 },
+            { platform: 'Twitter', url: `https://x.com/@${slug}_onewinq`, isVisible: true, order: 2 }
+          ],
+      about: specific?.about || pub.about || {
+        title: `About ${member.name?.trim().split(' ')[0] || 'Member'}`,
+        introduction: specific?.bio || pub.bio || `Dedicated ${designation} at OneWinq Enterprise passionate about driving technology excellence and collaborative innovation.`,
+        expertise: `Specialized in ${designation}, systems architecture, operational optimization, and delivering enterprise solutions at scale.`,
+        experienceSummary: `Proven background in high-velocity execution, team leadership, and driving digital transformation across enterprise ecosystems.`
+      }
     };
 
     profile.published = updatedPublished;

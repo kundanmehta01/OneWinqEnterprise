@@ -107,12 +107,11 @@ export const AppProfileViewPage = () => {
     { id: 1, label: "Overview", icon: Home },
     { id: 2, label: "About", icon: User },
     { id: 3, label: "Experience", icon: Briefcase },
-    { id: 4, label: "Skills", icon: Zap },
-    { id: 5, label: "Projects", icon: FolderGit2 },
-    { id: 6, label: "Achievements", icon: Award },
-    { id: 7, label: "Media", icon: ImageIcon },
-    { id: 8, label: "Blogs", icon: FileText },
-    { id: 9, label: "Contact", icon: Mail }
+    { id: 4, label: "Projects", icon: FolderGit2 },
+    { id: 5, label: "Achievements", icon: Award },
+    { id: 6, label: "Media", icon: ImageIcon },
+    { id: 7, label: "Blogs", icon: FileText },
+    { id: 8, label: "Contact", icon: Mail }
   ];
 
   const handleGoBack = () => {
@@ -123,13 +122,11 @@ export const AppProfileViewPage = () => {
   const handleSelectScreen = (screenId) => {
     setActiveScreen(screenId);
     setMenuOpen(false);
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleNextScreen = () => handleSelectScreen(activeScreen < 9 ? activeScreen + 1 : 1);
-  const handlePrevScreen = () => handleSelectScreen(activeScreen > 1 ? activeScreen - 1 : 9);
+  const handleNextScreen = () => handleSelectScreen(activeScreen < 8 ? activeScreen + 1 : 1);
+  const handlePrevScreen = () => handleSelectScreen(activeScreen > 1 ? activeScreen - 1 : 8);
 
   const swipeHandlers = useSwipeGesture({
     onSwipeLeft: handleNextScreen,
@@ -200,72 +197,6 @@ export const AppProfileViewPage = () => {
 
   return (
     <div className="min-h-full bg-[#fbfaff] flex flex-col -mx-4 sm:-mx-6 lg:-mx-8 -mt-6">
-      {/* Profile Sub-Header (sticky under the UserLayout top navbar) */}
-      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 sm:px-6 lg:px-8 py-2.5">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
-          {/* Left: Back + Profile Identity */}
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              onClick={handleGoBack}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-100 hover:bg-purple-50 hover:text-purple-600 text-slate-700 text-xs font-semibold transition-colors cursor-pointer shrink-0"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Back</span>
-            </button>
-
-            <div className="hidden sm:block h-5 w-px bg-slate-200" />
-
-            <div className="flex items-center gap-2 min-w-0">
-              {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={profile.name} className="w-7 h-7 rounded-full object-cover ring-2 ring-purple-100 shrink-0" />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                  {(profile.name || "?").slice(0, 2).toUpperCase()}
-                </div>
-              )}
-              <div className="min-w-0 hidden sm:block">
-                <p className="text-xs font-bold text-slate-900 truncate leading-none">{profile.name}</p>
-                <p className="text-[10px] text-slate-500 truncate mt-0.5">{profile.designation || profile.department}</p>
-              </div>
-            </div>
-
-            {/* Desktop section nav */}
-            <nav className="hidden lg:flex items-center gap-5 ml-4 text-xs font-medium shrink-0">
-              {navLinks.map((link) => {
-                const isActive = activeScreen === link.id;
-                return (
-                  <button
-                    key={link.id}
-                    onClick={() => handleSelectScreen(link.id)}
-                    className={`relative py-1 transition-colors cursor-pointer ${isActive ? "text-purple-600 font-bold" : "text-slate-500 hover:text-purple-600"}`}
-                  >
-                    {link.label}
-                    {isActive && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600 rounded-full" />}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Right: Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => setIsQrModalOpen(true)} className="p-1.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 transition-colors cursor-pointer" title="Share QR Code">
-              <QrCode className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={handleCopyLink} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer">
-              <Copy className="w-3 h-3" />
-              <span>{copiedLink ? "Copied!" : "Share"}</span>
-            </button>
-            <button onClick={() => setIsConnectModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm shadow-purple-200 transition-all cursor-pointer">
-              <UserCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Connect</span>
-            </button>
-            <button onClick={() => setMenuOpen(!menuOpen)} className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer lg:hidden">
-              <Menu className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Mobile Navigation Drawer */}
       {menuOpen && (
@@ -310,7 +241,7 @@ export const AppProfileViewPage = () => {
       )}
 
       {/* Main Profile Content with Touch Swipe — NO arrow buttons */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-36 lg:pb-8 touch-pan-y" {...swipeHandlers}>
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-24 lg:pb-8 touch-pan-y" {...swipeHandlers}>
         <div key={activeScreen} className="animate-fadeIn">
           <TemplateRenderer
             templateKey={profile?.template?.key || profile?.template?.id}
@@ -324,23 +255,6 @@ export const AppProfileViewPage = () => {
           />
         </div>
       </main>
-
-      {/* Mobile Dot Indicator (minimal, no arrow buttons) */}
-      <div className="fixed bottom-[88px] left-0 right-0 z-20 lg:hidden flex items-center justify-center pointer-events-none">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 border border-purple-100/90 shadow-lg backdrop-blur-md pointer-events-auto">
-          {navLinks.map((link) => {
-            const isActive = activeScreen === link.id;
-            return (
-              <button
-                key={link.id}
-                onClick={() => handleSelectScreen(link.id)}
-                className={`transition-all cursor-pointer ${isActive ? "w-5 h-2 rounded-full bg-purple-600" : "w-2 h-2 rounded-full bg-slate-300 hover:bg-purple-300"}`}
-                title={link.label}
-              />
-            );
-          })}
-        </div>
-      </div>
 
       {/* QR Code Modal */}
       {isQrModalOpen && (

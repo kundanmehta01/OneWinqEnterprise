@@ -6,8 +6,8 @@ export const loginSchema = z.object({
 });
 
 export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required')
-});
+  refreshToken: z.string().optional().nullable()
+}).optional().nullable();
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address').toLowerCase().trim()

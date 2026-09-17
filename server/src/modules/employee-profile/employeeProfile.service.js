@@ -32,8 +32,9 @@ const PROFILE_POPULATE = [
 /** Direct-editable draft fields allowed from user input */
 const DRAFT_FIELDS = [
   'headline', 'bio', 'phone', 'workEmail', 'avatarUrl', 'collaborationNote',
-  'overviewStats', 'location', 'experience', 'journey', 'skills', 'projects',
-  'impactMetrics', 'achievements', 'mediaGallery', 'blogs', 'socialLinks', 'customSections'
+  'overviewStats', 'location', 'about', 'connectAndContact', 'experience', 'journey',
+  'projects', 'impactMetrics', 'achievements', 'mediaGallery', 'blogs',
+  'socialLinks', 'customSections'
 ];
 
 class EmployeeProfileService {
@@ -70,11 +71,13 @@ class EmployeeProfileService {
     const resolvedTemplate = await templateResolverService.resolveTemplateForMember({
       role: profile.memberId?.roleId,
       department: profile.memberId?.departmentId,
-      designation: profile.memberId?.designation
+      designation: profile.memberId?.designation,
+      templateId: profile.templateId,
+      themeOverrides: profile.themeOverrides
     });
 
-    // Keep profile.templateId in sync with the role-resolved template
-    if (resolvedTemplate?._id && String(profile.templateId?._id || profile.templateId) !== String(resolvedTemplate._id)) {
+    // Keep profile.templateId in sync if missing
+    if (!profile.templateId && resolvedTemplate?._id) {
       await EmployeeProfile.findByIdAndUpdate(profile._id, {
         templateId: resolvedTemplate._id,
         templateVersion: resolvedTemplate.version || 1
@@ -127,7 +130,6 @@ class EmployeeProfileService {
     }
 
     const realProjectsCount = (pub.projects || []).length;
-    const realSkillsCount = (pub.skills || []).length;
     const tapCount = nfcCard?.tapCount || 0;
 
     const rawConn = pub.overviewStats?.connectionsCount || pub.overviewStats?.connections;
@@ -148,7 +150,7 @@ class EmployeeProfileService {
     const rawServ = pub.overviewStats?.servicesCount || pub.overviewStats?.services;
     const servicesVal = (!isLegacySeed(rawServ, legacyServices))
       ? String(rawServ)
-      : (realSkillsCount > 0 ? `${realSkillsCount}+` : '0');
+      : '0';
 
     const dynamicOverviewStats = {
       connectionsCount: connectionsVal,
@@ -241,13 +243,25 @@ class EmployeeProfileService {
             headline: member.designation,
             workEmail: member.email || user?.email,
             avatarUrl: member.avatarUrl || '',
-            bio: 'Enterprise professional at OneWinq.'
+            bio: 'Enterprise professional at OneWinq.',
+            about: {
+              title: `About ${member.name?.trim().split(' ')[0] || 'Member'}`,
+              introduction: 'Dedicated enterprise professional passionate about driving technology excellence and collaborative growth.',
+              expertise: `Specialized in ${member.designation}, process optimization, and scalable enterprise execution.`,
+              experienceSummary: `Proven background in driving impact, cross-functional collaboration, and enterprise digital transformation.`
+            }
           },
           published: {
             headline: member.designation,
             workEmail: member.email || user?.email,
             avatarUrl: member.avatarUrl || '',
-            bio: 'Enterprise professional at OneWinq.'
+            bio: 'Enterprise professional at OneWinq.',
+            about: {
+              title: `About ${member.name?.trim().split(' ')[0] || 'Member'}`,
+              introduction: 'Dedicated enterprise professional passionate about driving technology excellence and collaborative growth.',
+              expertise: `Specialized in ${member.designation}, process optimization, and scalable enterprise execution.`,
+              experienceSummary: `Proven background in driving impact, cross-functional collaboration, and enterprise digital transformation.`
+            }
           }
         });
 
@@ -316,6 +330,7 @@ class EmployeeProfileService {
 
     if (updateData.themeOverrides) {
       profile.themeOverrides = { ...profile.themeOverrides, ...updateData.themeOverrides };
+      profile.markModified('themeOverrides');
     }
 
     if (updateData.visibility) {
@@ -329,6 +344,20 @@ class EmployeeProfileService {
       }
     }
 
+    if (updateData.about !== undefined) {
+      const existingAbout = draft.about || {};
+      draft.about = {
+        ...existingAbout,
+        ...updateData.about,
+        title: updateData.about.title !== undefined ? updateData.about.title : (existingAbout.title || ''),
+        introduction: updateData.about.introduction !== undefined ? updateData.about.introduction : (existingAbout.introduction || ''),
+        expertise: updateData.about.expertise !== undefined ? updateData.about.expertise : (existingAbout.expertise || ''),
+        experienceSummary: updateData.about.experienceSummary !== undefined
+          ? updateData.about.experienceSummary
+          : (updateData.about.experience !== undefined ? updateData.about.experience : (existingAbout.experienceSummary || existingAbout.experience || ''))
+      };
+    }
+
     // Keep experience and journey synchronized in draft so there are no stale seed milestones
     if (updateData.experience !== undefined) {
       draft.experience = updateData.experience;
@@ -336,6 +365,38 @@ class EmployeeProfileService {
     } else if (updateData.journey !== undefined && (draft.experience === undefined || draft.experience.length === 0)) {
       draft.experience = updateData.journey;
       draft.journey = updateData.journey;
+    }
+
+    // Keep connectAndContact and direct contact fields (workEmail, phone, collaborationNote, linkedin, twitter, socialLinks) bidirectional synchronized
+    if (updateData.connectAndContact !== undefined) {
+      const existingConnect = draft.connectAndContact || {};
+      draft.connectAndContact = {
+        title: updateData.connectAndContact.title || existingConnect.title || "Let's Connect",
+        note: updateData.connectAndContact.note || existingConnect.note || draft.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
+        workEmail: updateData.connectAndContact.workEmail !== undefined ? updateData.connectAndContact.workEmail : (existingConnect.workEmail || draft.workEmail || ''),
+        phone: updateData.connectAndContact.phone !== undefined ? updateData.connectAndContact.phone : (existingConnect.phone || draft.phone || ''),
+        linkedin: updateData.connectAndContact.linkedin !== undefined ? updateData.connectAndContact.linkedin : (existingConnect.linkedin || draft.linkedin || ''),
+        twitter: updateData.connectAndContact.twitter !== undefined ? updateData.connectAndContact.twitter : (existingConnect.twitter || draft.twitter || ''),
+        socialLinks: updateData.connectAndContact.socialLinks !== undefined ? updateData.connectAndContact.socialLinks : (existingConnect.socialLinks || draft.socialLinks || []),
+        ctaButtonText: updateData.connectAndContact.ctaButtonText || existingConnect.ctaButtonText || 'Connect With Me'
+      };
+      if (updateData.connectAndContact.workEmail !== undefined) draft.workEmail = updateData.connectAndContact.workEmail;
+      if (updateData.connectAndContact.phone !== undefined) draft.phone = updateData.connectAndContact.phone;
+      if (updateData.connectAndContact.note !== undefined) draft.collaborationNote = updateData.connectAndContact.note;
+    } else {
+      draft.connectAndContact = draft.connectAndContact || {
+        title: "Let's Connect",
+        note: draft.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
+        workEmail: draft.workEmail || '',
+        phone: draft.phone || '',
+        linkedin: '',
+        twitter: '',
+        socialLinks: draft.socialLinks || [],
+        ctaButtonText: 'Connect With Me'
+      };
+      if (updateData.workEmail !== undefined) draft.connectAndContact.workEmail = updateData.workEmail;
+      if (updateData.phone !== undefined) draft.connectAndContact.phone = updateData.phone;
+      if (updateData.collaborationNote !== undefined) draft.connectAndContact.note = updateData.collaborationNote;
     }
 
     profile.draft = draft;

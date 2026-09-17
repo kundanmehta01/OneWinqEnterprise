@@ -1,0 +1,697 @@
+================================================================================
+ ONEWINQ ENTERPRISE - COMPLETE PROJECT DETAILS & IMPLEMENTATION REPORT
+================================================================================
+ Project     : OneWinq Enterprise (Digital Identity & Workforce Platform)
+ Repo Root   : d:\A\OneWinqEnterprise
+ Type        : Full-stack monorepo (React SPA client + Node.js modular-monolith API)
+ Generated   : 2026-09-17 (auto-generated from live codebase analysis)
+
+--------------------------------------------------------------------------------
+ 1. WHAT THIS PROJECT IS
+--------------------------------------------------------------------------------
+OneWinq is an enterprise-grade platform for:
+  - Digital identity & verified employee credentials
+  - Smart NFC / physical card integration (tap -> live digital profile)
+  - Employee networking (connections, real-time chat/messaging)
+  - Enterprise events with RSVP + digital ticket passes
+  - Public company branding & public employee profile pages (vanity slugs, QR)
+
+It is a SINGLE-TENANT system: one organization (singleton CompanyProfile),
+multiple employees, served through 4 distinct gateways:
+
+  1) ADMIN CONSOLE        (/api/v1/admin/*)  - Executive management back-office
+  2) EMPLOYEE PORTAL      (/api/v1/me/*)     - Personal workspace & experience
+  3) NETWORKING/EVENTS    (/api/v1/network/*, /events/*, /user/*) - Social layer
+  4) PUBLIC GATEWAY       (/api/v1/public/*) - Anonymous visitors + NFC taps
+
+--------------------------------------------------------------------------------
+ 2. REPOSITORY LAYOUT
+--------------------------------------------------------------------------------
+d:\A\OneWinqEnterprise\
+|
+|-- client\                     React SPA (Vite, port 3000)
+|   |-- index.html              App shell (Google Fonts: Inter, Outfit, Plus Jakarta)
+|   |-- vite.config.js          Dev server + /api & /uploads proxy -> :5000, alias @->src
+|   |-- tailwind.config.js      TailwindCSS design system
+|   |-- public\                 manifest.webmanifest, service-worker.js, icon (PWA assets)
+|   |-- src\
+|   |   |-- main.jsx            React root (StrictMode + QueryClientProvider + BrowserRouter)
+|   |   |-- App.jsx             All routes + 3 route guards + smart admin redirect
+|   |   |-- api\                21 axios-based API modules (auth, card, event, ...)
+|   |   |-- components\         admin tabs / common / company screens / messaging / templates
+|   |   |-- hooks\              useSwipeGesture
+|   |   |-- pages\              Public pages, admin pages, user-portal pages
+|   |   |-- stores\             4 Zustand stores (auth, companyProfile, messaging, preview)
+|   |   `-- utils\              cn, permissions (hasAdminAccess), profileDownload
+|
+|-- server\                    Node.js backend (Express, port 5000)
+|   |-- src\
+|   |   |-- server.js           Boot: connectDB -> listeners -> app -> socket.io -> listen
+|   |   |-- app.js              Express pipeline (helmet, cors, rate limit, swagger, ...)
+|   |   |-- config\             env / db / logger / swagger configs
+|   |   |-- constants\          permissions, roles, error codes, app events
+|   |   |-- errors\             AppError hierarchy (400,401,403,404,409,422)
+|   |   |-- events\             AppEventBus + listeners (audit, notify, analytics)
+|   |   |-- integrations\       EmailService (SMTP/console), StorageService (local/cloudinary)
+|   |   |-- middlewares\        authenticate, authorize(RBAC), validate(zod), rateLimit,
+|   |   |                       errorHandler, requestId, audit-context
+|   |   |-- modules\            24 domain modules (model+service+controller+routes+validation)
+|   |   |-- routes\index.js     Central /api/v1 router
+|   |   |-- seeds\              10 seeders (permissions, roles, org, cards, events, ...)
+|   |   |-- socket\             Socket.IO server + handlers (real-time chat)
+|   |   `-- utils\              apiResponse, hash, token, objectDiff, qrCode, pagination,
+|   |                           rbacHierarchy
+|   |-- data\db\                LOCAL MongoDB WiredTiger database files (committed!)
+|   |-- uploads\                Local storage provider upload target
+|   |-- .env / .env.example     Environment configuration
+|   |-- API.md                  Full endpoint reference
+|   |-- ARCHITECTURE.md         Deep architecture doc + diagrams
+|   `-- README.md               Setup / overview
+`-- README.md                   (near-empty root readme)
+
+--------------------------------------------------------------------------------
+ 3. TECH STACK
+--------------------------------------------------------------------------------
+ BACKEND (server/package.json, ESM "type": "module")
+   Runtime      : Node.js v20+ / v24+
+   Framework    : Express 4.21
+   Database     : MongoDB via Mongoose 8.24 (local instance in server/data/db)
+   Realtime     : Socket.IO 4.8 (websocket + polling)
+   Auth         : jsonwebtoken (access 15m + refresh 7d rotation), argon2 (memory
+                  cost 65536 / time 3 / parallelism 4) with bcryptjs fallback
+   Security     : helmet 8, cors whitelist, express-rate-limit, zod validation
+   Docs         : swagger-jsdoc + swagger-ui-express (/api-docs)
+   Logging      : winston (structured) + morgan (HTTP, with x-request-id)
+   Uploads      : multer (memory storage, 10MB file limit)
+   Misc         : compression, qrcode, uuid, nodemailer, cloudinary
+   Dev tools    : nodemon, jest + supertest + mongodb-memory-server, cross-env
+
+ FRONTEND (client/package.json)
+   UI           : React 18.3 + React Router DOM 6.28
+   Build        : Vite 6 (@vitejs/plugin-react)
+   Styling      : TailwindCSS 3.4 + PostCSS + Autoprefixer, clsx + tailwind-merge
+   Data         : @tanstack/react-query 5 (staleTime 3 min, retry 1), axios
+   State        : Zustand 5 (4 stores)
+   Realtime     : socket.io-client
+   Icons/UX     : lucide-react, react-icons, canvas-confetti
+
+--------------------------------------------------------------------------------
+ 4. HIGH-LEVEL SYSTEM ARCHITECTURE
+--------------------------------------------------------------------------------
+                +---------------------------------------------------+
+                |              CLIENTS / VISITORS                   |
+                |  Admin Browser | Employee App | Public Web | NFC Tap|
+                +------------------------+--------------------------+
+                                         |  HTTP :3000 (Vite proxy)
+                                         v
+                +---------------------------------------------------+
+                |            REACT SPA (client/src)                 |
+                |  Public pages | /app employee portal | /admin      |
+                |  Zustand stores | React Query | Axios (JWT + auto- |
+                |  refresh queue) | Socket.IO client                 |
+                +------------------------+--------------------------+
+                                         |  /api/v1/*  +  /uploads
+                                         v
+                +---------------------------------------------------+
+                |      EXPRESS APP (server/src/app.js :5000)         |
+                |  helmet -> CORS -> compression -> requestId ->      |
+                |  audit-context -> rate limit -> body parsers ->     |
+                |  morgan -> static /uploads -> swagger -> routes    |
+                +------------------------+--------------------------+
+                                         |
+         +---------------+---------------+---------------+---------------+
+         v               v               v               v               v
+   /auth/*          /public/*        /me/*           /network/*       /admin/*
+   /invitations/*   (company,       (dashboard,      /events/*        (dashboard,
+   /cards/*          profiles,       profile,         /user/*           team, dept,
+   /upload/*         QR, NFC tap)    settings,        /support*         roles, cards,
+                                     messages,        (see notes)       approvals, ...)
+                                     notifications
+         |               |               |               |               |
+         +---------------+---------------+---------------+---------------+
+                                         v
+                +---------------------------------------------------+
+                |        MODULAR DOMAIN SERVICES (24 modules)       |
+                |  auth, users, team-members, departments, roles,    |
+                |  permissions, invitations, company-profile,        |
+                |  employee-profile, templates, profile-approvals,   |
+                |  public-profiles, cards, user-dashboard,            |
+                |  connections, events, user-settings, user-directory,|
+                |  messaging, notifications, analytics, settings,     |
+                |  dashboard, upload                                 |
+                +------------------------+--------------------------+
+                                         v
+                +---------------------------------------------------+
+                |        CROSS-CUTTING LAYER                          |
+                |  AppEventBus -> (audit / notification / analytics  |
+                |                  listeners)                         |
+                |  EmailService (SMTP | console)                     |
+                |  StorageService (local disk | cloudinary)          |
+                |  Socket.IO server (JWT-auth rooms per conversation)|
+                +------------------------+--------------------------+
+                                         v
+                +---------------------------------------------------+
+                |   MONGODB (Mongoose ODM, server/data/db local)    |
+                +---------------------------------------------------+
+
+--------------------------------------------------------------------------------
+ 5. FEATURE DIAGRAM (COMPLETE FEATURE MAP)
+--------------------------------------------------------------------------------
+ONEWINQ ENTERPRISE PLATFORM
+|
++-- [A] IDENTITY & ACCESS MANAGEMENT
+|   |-- Login (email + password) -> JWT access (15m) + refresh (7d)
+|   |-- Refresh token ROTATION with token-family reuse detection (theft guard)
+|   |-- Password forgot / reset / change flows
+|   |-- Brute-force lockout: 5 failed attempts -> 15 min lock
+|   |-- Argon2id hashing (bcryptjs fallback), timing-safe compare
+|   |-- Device session manager: view & revoke specific / all other sessions
+|   |-- Invitation-based onboarding (token verify + accept + account creation)
+|
++-- [B] RBAC & ORGANIZATION GOVERNANCE
+|   |-- 43 granular permissions (code) across 13 domains
+|   |   (team, department, company_profile, employee_profile, template,
+|   |    profile_approval, invitation, role, analytics/dashboard, settings,
+|   |    media, event, card)
+|   |-- 5 system roles: Super Admin (all), Admin, HR Admin, Content Admin,
+|   |   Employee (+ custom roles via admin UI)
+|   |-- requirePermission(...) middleware on every admin route
+|   |-- Client mirrors guards: ProtectedRoute / UserPortalRoute /
+|   |   AdminPermissionRoute + permission-driven smart index redirect
+|
++-- [C] EMPLOYEE DIGITAL PROFILE SYSTEM (core feature)
+|   |-- State-isolated profile: "published" (live) vs "draft" (editing)
+|   |-- Rich profile data model:
+|   |   headline, bio, avatar, contact, collaboration note, overview stats,
+|   |   location, about (intro/expertise), connect-and-contact block,
+|   |   experience[], journey[], projects[], impactMetrics[], achievements[],
+|   |   mediaGallery[], blogs[], socialLinks[], customSections[]
+|   |-- Template-driven visual card (templateId + templateVersion snapshot)
+|   |-- Theme overrides (primary/secondary/accent colors, fonts, custom CSS)
+|   |-- Visibility control: public | internal | private
+|   |-- Auto profile completion score (0-100%, weighted field scoring)
+|   |-- Approval workflow (draft -> submit -> review -> approve/reject/changes)
+|   |-- Deep field-level diff (calculateObjectDiff) shown to reviewers
+|   |-- Draft lock (isLocked) while pending_review
+|
++-- [D] SMART NFC CARD SYSTEM (hardware <-> digital bridge)
+|   |-- Card inventory CRUD + bulk registration (cardUid OWQ-NFC-XXXXX)
+|   |-- Card types (e.g. metal_black) + serial numbers + notes
+|   |-- Lifecycle statuses: unassigned -> linked -> blocked/lost (-> unassigned)
+|   |-- Link/unlink card to TeamMember + EmployeeProfile
+|   |-- PUBLIC TAP RESOLVER: GET /public/cards/:cardUid
+|   |   -> increments tapCount, records CARD_TAP telemetry,
+|   |      returns { slug, redirectUrl } -> /p/:slug
+|   |-- Self-service secure card activation by token (/card/activate/:token)
+|
++-- [E] PUBLIC VERIFIED PROFILES GATEWAY
+|   |-- 8-section public company page (/company, /p/company):
+|   |   Overview, About, Products, Team, Projects, Achievements, Media, Contact
+|   |-- Public employee profile by vanity slug (/p/:slug)
+|   |-- Dynamic QR code generation (SVG / Data URL) per profile
+|   |-- Anonymous telemetry ingestion (PROFILE_VIEW, QR_SCAN, CARD_TAP)
+|   |-- Mobile-first company screens w/ swipe gestures (CompanyMobileFrame)
+|
++-- [F] PROFESSIONAL NETWORKING
+|   |-- Colleague discovery feed (search + department filter)
+|   |-- Live connection badges: none | pending_sent | pending_received | connected
+|   |-- Connection request with optional personal note (accept/decline)
+|   |-- Mutual connection directory + remove connection
+|
++-- [G] REAL-TIME MESSAGING (Socket.IO + REST hybrid)
+|   |-- 1:1 direct chats + group chats (participants management)
+|   |-- Real-time events: new_message, message_sent, message_deleted,
+|   |   user_typing / user_stopped_typing, messages_read, joined_conversation
+|   |-- JWT-authenticated socket handshake; auto-join conversation rooms
+|   |-- Text via socket, file attachments via REST (multer, 10MB)
+|   |-- Message pagination history + soft delete
+|   |-- Read receipts + unread counts (per conversation + global badge)
+|   |-- Custom chat folders (create/rename/delete + member organization)
+|   |-- UI: ConversationList, ChatWindow, MessageBubble, GroupCreateModal,
+|   |   GroupInfoPanel, NewDirectChatModal, FolderManageModal
+|
++-- [H] ENTERPRISE EVENTS & TICKETING
+|   |-- Admin event CRUD (title, category, cover image, date range,
+|   |   venue or virtual URL)
+|   |-- Access eligibility scoping: all | departments[] | roles[]
+|   |-- Employee feed auto-filtered by own department/role eligibility
+|   |-- RSVP registration w/ capacity limit + deadline checks
+|   |-- Unique digital ticket pass per registration (OWQ-EVT-XXXXXX)
+|   |-- "My events" view with ticket passes
+|
++-- [I] PROFILE APPROVAL WORKFLOW (moderation queue)
+|   |-- Admin review queue with diff previews + draft snapshots
+|   |-- Actions: approve | reject | request changes (with reviewer feedback)
+|   |-- On approve: draft copied to published, completion recalculated,
+|   |   profile unlocked, employee notified, audit entry recorded
+|
++-- [J] ANALYTICS, AUDIT & OBSERVABILITY
+|   |-- Telemetry event store (analyticsEvent model) + KPI aggregation
+|   |-- Admin analytics dashboard with range filters (today/7d/30d/custom)
+|   |-- Immutable security audit logs (actor, action, module, resource,
+|   |   old/new values, IP, user agent, request id) w/ credential redaction
+|   |-- Executive admin dashboard (member counts, approval queue, completion
+|   |   metrics, department breakdown)
+|   |-- Correlation: x-request-id header threaded through logs
+|
++-- [K] NOTIFICATIONS
+|   |-- In-app notification feed (paginated), unread counter
+|   |-- Mark single / mark-all read
+|   |-- Event-bus driven creation (approvals, connections, events, cards...)
+|   |-- NotificationDrawer UI + nav badges (polls every 30s)
+|
++-- [L] CONTENT & BRANDING STUDIO
+|   |-- Company profile studio (8 tabbed admin editors: Overview, Branding,
+|   |   About, Products, Team, Projects, Achievements, Media, Contact)
+|   |-- Template builder studio: 8 seeded templates (Default, Executive,
+|   |   Engineering, HR, Marketing, Product, Sales + DigitalHeroCard)
+|   |   with duplicate + version snapshot + customize modal
+|   |-- Media/image uploads (ImageUploadInput, MediaUploadInput components)
+|
++-- [M] SUPPORT & HELPDESK  (documented in API.md / README; see notes §12)
+|   |-- Categorized FAQs + ticket submission (OWQ-TCK-XXXXXX tracking)
+
+--------------------------------------------------------------------------------
+ 6. CORE DATA MODEL (ENTITY SEPARATION)
+--------------------------------------------------------------------------------
+   User (authentication identity)                Card (physical NFC hardware)
+   |-- email, passwordHash (argon2)             |-- cardUid: 'OWQ-NFC-89421'
+   |-- status: active|suspended|inactive        |-- serialNumber, cardType
+   |-- failedLoginAttempts, lockUntil            |-- status: unassigned|linked|
+   |-- refreshTokens[]: tokenHash, familyId,    |   blocked|lost
+   |   expiresAt, ipAddress, isRevoked          |-- linked memberId + profileId
+   |                                             |-- tapCount, lastTappedAt
+   |        1-to-1                              `-- linkedAt/By, unlinkedAt/By
+   v
+   TeamMember (organizational identity)
+   |-- employeeId: 'OWQ-001'
+   |-- name, designation, avatarUrl
+   |-- departmentId --> Department (hierarchy, head, member counts)
+   |-- roleId --> Role --> Permissions[]
+   |-- status: active | archived
+   |-- profileCompletionScore: 0-100
+   |        1-to-1
+   v
+   EmployeeProfile (digital card / presentation)
+   |-- slug: 'rajat-chaturvedi' (unique vanity URL)
+   |-- templateId --> Template (+ templateVersion, themeOverrides)
+   |-- visibility: public | internal | private
+   |-- approvalStatus: draft | pending_review | approved |
+   |                    rejected | changes_requested
+   |-- isLocked (frozen during review)
+   |-- published: <profileDataSchema>   (LIVE public card)
+   |-- draft:     <profileDataSchema>   (editing sandbox)
+   |-- completionPercentage, lastSubmittedAt/ApprovedAt, lastReviewedBy
+   `-- profileDataSchema blocks:
+       headline, bio, phone, workEmail, avatarUrl, collaborationNote,
+       overviewStats (projects/years/services + custom metrics), location,
+       about (intro + expertise), connectAndContact (CTA + socials),
+       experience[], journey[], projects[], impactMetrics[],
+       achievements[], mediaGallery[], blogs[], socialLinks[], customSections[]
+
+ OTHER MODELS: Department, Role, Permission, Invitation (token + expiry),
+ Connection (requester/recipient/status), Event + EventRegistration
+ (ticketCode), Conversation (participants, isActive) + Message (contentType,
+ attachments, readBy) + ChatFolder, Notification, AnalyticsEvent, AuditLog,
+ Setting (organization policies), Media, CompanyProfile (8-section singleton).
+
+--------------------------------------------------------------------------------
+ 7. BACKEND IMPLEMENTATION DETAILS
+--------------------------------------------------------------------------------
+ 7.1 STARTUP SEQUENCE (server/src/server.js)
+   1. connectDB()                -> MongoDB connection (Mongoose)
+   2. initializeEventListeners() -> registers audit/notification/analytics
+                                    listeners on AppEventBus
+   3. createApp()               -> builds Express app (middleware pipeline)
+   4. http.createServer(app)
+   5. initSocketServer(server, app) -> Socket.IO bound to same HTTP server;
+      `app.set('io', io)` so REST controllers can emit
+   6. server.listen(PORT=5000)
+   + Graceful shutdown: SIGTERM/SIGINT (10s force-exit), SIGUSR2 (nodemon),
+     unhandledRejection / uncaughtException handlers
+
+ 7.2 MIDDLEWARE PIPELINE (server/src/app.js)
+   trust proxy(1) -> helmet(CSP + cross-origin resources) ->
+   CORS (whitelist: FRONTEND_URL + http://localhost:3000; dev allows all) ->
+   compression -> requestId (x-request-id) -> auditContext ->
+   standardRateLimiter -> JSON/URL body parsers (5MB) ->
+   morgan HTTP log (via winston stream, skipped in test) ->
+   /uploads static -> /api-docs swagger UI -> /api/v1 router ->
+   notFoundHandler -> errorHandler (AppError hierarchy -> JSON envelope)
+
+ 7.3 DOMAIN MODULES (24) - each = model + service + controller + routes + zod validation
+   auth              login, refresh rotation, forgot/reset/change password, /me
+   users             credential store, lockout fields, refresh token families
+   team-members      org records, employee IDs, archive/restore
+   departments       hierarchy + department heads
+   roles             RBAC roles (system roles protected from deletion)
+   permissions       permission matrix listing (by module)
+   invitations       email onboarding, token verify/accept, resend/cancel
+   company-profile   singleton 8-section published brand identity
+   employee-profile  draft/published state isolation + completion scoring
+   templates         visual card layouts + version snapshots + duplicate
+   profile-approvals review queue, deep diff, approve/reject/request changes
+   public-profiles   anonymous gateway: company, slugs, QR, NFC resolver
+   cards             inventory, link/unlink, bulk, status, tap telemetry
+   user-dashboard    /me/home aggregation (hero, KPIs, widgets, events)
+   connections       discovery + badges + request lifecycle
+   events            employee event feed + RSVP + tickets (user side)
+                     + adminEvent.routes (admin CRUD)
+   user-settings      privacy matrix, notification prefs, device sessions
+   user-directory     read-only org explorer (/user/departments, /user/team)
+   messaging         conversations, messages, folders (REST) + socket events
+   notifications     in-app feed, unread counts, mark read
+   analytics         telemetry ingestion + aggregated KPIs w/ range filters
+   settings          global organization policies (e.g. approval enforcement)
+   dashboard         executive admin metrics
+   upload            direct multipart uploads (images / media)
+
+ 7.4 API SURFACE (Base: http://localhost:5000/api/v1)
+   HEALTH        GET  /health
+   AUTH          POST /auth/login | /auth/refresh-token | /auth/forgot-password |
+                       /auth/reset-password | /auth/logout | /auth/change-password
+                 GET  /auth/me  (user + member + role + permissions)
+   PUBLIC        GET  /public/company | /public/team
+                 GET  /public/profiles/:slug (+ /profile/:slug, /p/:slug)
+                 GET  /public/profiles/:slug/qr  (SVG / PNG data)
+                 GET  /public/cards/:cardUid (+ /card/:uid, /c/:uid)  [NFC TAP]
+                 POST /public/events  (telemetry: PROFILE_VIEW/QR_SCAN/CARD_TAP)
+   INVITATIONS   GET  /invitations/verify?token=...   (public)
+                 POST /invitations/accept             (public)
+                 Admin: GET/POST /admin/invitations, :id/resend, :id/cancel
+   ME (employee) GET  /me/home | /me/dashboard
+                 GET/PATCH /me/profile, POST /me/profile/submit,
+                 GET /me/profile/status
+                 GET/PATCH /me/settings, DELETE /me/settings/sessions/:id,
+                 POST /me/settings/sessions/terminate-others
+                 GET /me/notifications, /me/notifications/unread-count,
+                 PATCH /me/notifications/:id/read, POST .../mark-all-read
+                 MESSAGING (see 7.6)
+   NETWORK       GET  /network/people (search + dept filter + badges)
+                 POST /network/requests
+                 PATCH /network/requests/:id/respond (accepted|declined)
+                 GET  /network/connections
+                 DELETE /network/connections/:userId
+   EVENTS        GET  /events | /events/:id | /events/my-events
+                 POST /events/:id/register  (-> ticket OWQ-EVT-XXXXXX)
+   USER EXPLORER GET  /user/departments | /user/departments/:id |
+                       /user/team | /user/company
+   CARDS         POST /cards/activate + /me/cards/*  (secure activation)
+   UPLOAD        POST /upload, /admin/media/upload (multipart)
+   ADMIN         GET  /admin/dashboard (exec metrics)
+                 /admin/team CRUD + restore
+                 /admin/departments CRUD
+                 /admin/roles CRUD, /admin/permissions (list, by-module)
+                 /admin/company-profile GET/PATCH
+                 /admin/templates CRUD + :id/duplicate
+                 /admin/approvals GET, POST :id/review
+                 /admin/events CRUD (admin side)
+                 /admin/cards GET/stats, CRUD, bulk, link, unlink, status
+                 /admin/analytics GET (range filters)
+                 /admin/audit-logs GET (paginated, filterable)
+                 /admin/settings GET/PATCH
+   (Full payload details: server/API.md; interactive: /api-docs Swagger UI)
+
+ 7.5 EVENT-DRIVEN BACKBONE (AppEventBus, constants/events.constant.js)
+   Emitted domains: user.*, member.*, role.*, department.*, company_profile.*,
+   profile.* (draft_updated/submitted/approved/rejected/changes_requested),
+   template.*, settings.*, analytics.*, media.*, connection.*, event.*,
+   support.ticket_*, card.* (created/assigned/activated/linked/unlinked/
+   status_changed/deleted)
+   Listeners: notification listener (in-app fanout to admins/employees),
+   audit listener (immutable trail + sensitive-field redaction),
+   analytics listener (telemetry rollup)
+
+ 7.6 REAL-TIME MESSAGING (Socket.IO)
+   Handshake auth: JWT access token (handshake.auth.token or Bearer header);
+   rejects suspended/inactive users; resolves member + singleton companyId
+   On connect: auto-joins all active conversation rooms of the user
+   Client events -> server: join_conversation, leave_conversation,
+     send_message (text), delete_message, typing_start, typing_stop, mark_read
+   Server -> room broadcasts: new_message, message_deleted, user_typing,
+     user_stopped_typing, messages_read
+   REST complement: file attachments (multipart, 10MB), paginated history,
+     group/participant management, folders
+   Rooms: `conversation:<id>`; io instance shared to controllers via app.set
+
+ 7.7 SECURITY SUMMARY
+   - Argon2id (env-tunable memory/time/parallelism) + bcryptjs fallback
+   - JWT: access 15m / refresh 7d, refresh rotation + FAMILY reuse detection
+     (replay of a revoked token revokes the entire family = all sessions)
+   - RBAC: requirePermission(...) per admin route; Super Admin bypass
+   - Rate limiting: global (500 req/15min) + stricter auth limiter (10/15min)
+   - Helmet security headers + CSP, CORS origin whitelist, credentials mode
+   - Brute force: 5 failed logins -> 15-minute lockout (User.lockUntil)
+   - Zod schema validation on inputs (validate middleware)
+   - Audit logs auto-redact passwords/tokens/secrets
+   - Client-side mirror: ProtectedRoute + permission guards + axios
+     auto-logout on refresh failure (onewinq_auth_expired event)
+
+ 7.8 INTEGRATIONS (pluggable providers)
+   EmailService  : Nodemailer SMTP | console | mock (env EMAIL_PROVIDER)
+   StorageService: local disk (./uploads, statically served) | Cloudinary
+   QR codes      : 'qrcode' npm lib -> SVG / Data URL per profile
+
+ 7.9 RESPONSE ENVELOPES
+   success : { success: true,  message, data, pagination? { totalItems,
+              itemsPerPage, totalPages, currentPage, hasNextPage, hasPrevPage } }
+   error   : { success: false, error: { code, message, details } }
+
+ 7.10 SEED PIPELINE (server/src/seeds, run: npm run seed)
+   permissions -> roles -> departments -> organization profile ->
+   super admin -> sample team members (enriched profiles) -> templates ->
+   enterprise events -> smart NFC card inventory
+   Seeded logins:
+     superadmin@onewinq.com / OneWinq@Admin2026!   (Super Admin)
+     rajat@onewinq.in       / OneWinq@Admin2026!   (Founder & CEO,
+                                public profile /p/rajat-chaturvedi)
+     himanshu.jain@onewinq.in | neha.sharma@onewinq.in |
+     amit.verma@onewinq.in   / Employee@2026!       (sample employees)
+
+--------------------------------------------------------------------------------
+ 8. FRONTEND IMPLEMENTATION DETAILS
+--------------------------------------------------------------------------------
+ 8.1 BOOTSTRAP (main.jsx)
+   ReactDOM root -> StrictMode -> QueryClientProvider (staleTime 3m, retry 1)
+   -> BrowserRouter -> App. Global CSS via Tailwind + index.css.
+   Fonts: Inter / Outfit / Plus Jakarta Sans (Google Fonts).
+
+ 8.2 ROUTE MAP (App.jsx) - 3 guards + smart redirect
+   PUBLIC
+     / , /company , /p/company      -> PublicCompanyPage (8 swipeable screens)
+     /p/:slug , /profile/:slug ,
+     /profiles/:slug                -> PublicEmployeeProfilePage
+     /c/:cardUid , /card/:uid ,
+     /cards/:cardUid                -> PublicCardTapPage (NFC resolver UI)
+     /card/activate/:token (+2)     -> CardActivationPage
+     /invite/:token , /invite/accept,
+     /join/:token                   -> AcceptInvitationPage (onboarding)
+     /admin/login , /login          -> AdminLoginPage
+   EMPLOYEE PORTAL  /app  (ProtectedRoute + UserPortalRoute)
+     /app/home                      -> UserHomePage (hero, KPIs, widgets)
+     /app/my-profile                -> EmployeeSelfProfilePage (draft editor)
+     /app/network                   -> ColleagueNetworkPage
+     /app/team-departments          -> TeamDepartmentsPage
+     /app/events                    -> UserEventsPage (RSVP + tickets)
+     /app/messages                  -> MessagingPage (chat)
+     /app/settings                  -> EmployeeSettingsPage (privacy/sessions)
+     /app/profile/:slug             -> AppProfileViewPage (in-app viewer)
+   ADMIN CONSOLE  /admin  (AdminPermissionRoute per-page permission)
+     dashboard | cards | company-profile (+ /organization alias) | team |
+     departments | roles | invitations | templates | approvals | analytics |
+     settings | events
+     Guard helpers: ProtectedRoute (auth), UserPortalRoute (redirects
+     pure SuperAdmin w/o member identity to admin side),
+     AdminPermissionRoute (permission check w/ SuperAdmin bypass),
+     AdminIndexRedirect (first permitted page by permission priority)
+
+ 8.3 NAVIGATION
+   Employee sidebar: Home, My Profile, Network, Messages (unread badge),
+     Team & Departments, Company (external), Events, Notifications, Settings
+   Admin sidebar groups:
+     [Overview]     Dashboard Overview, Manage Events
+     [Organization] Manage Cards, Organization Studio, Manage Users,
+                    Departments, Roles & Permissions, Invitations
+     [Content]      Templates Studio, Profile Approvals
+     [Insights]     Enterprise Analytics
+     [System]       Organization Settings
+
+ 8.4 STATE MANAGEMENT
+   Zustand stores:
+     authStore           login/logout/checkAuth, user/member/role/
+                         permissions persistence in localStorage
+                         (onewinq_* keys), listens onewinq_auth_expired
+     companyProfileStore company 8-section profile state
+     messagingStore      socket connect/disconnect, conversations,
+                         unread total, real-time message handlers
+     previewStore       live template preview state
+   Server state: React Query (query keys per domain, 30s notification polling)
+
+ 8.5 API LAYER (src/api, 21 modules)
+   Shared axios instance: baseURL /api/v1, withCredentials
+   Request interceptor: attaches Bearer access token from localStorage
+   Response interceptor: unwraps response.data; on 401 triggers SINGLE-FLIGHT
+   refresh (queued failed requests replayed after new token); on refresh
+   failure clears storage + dispatches onewinq_auth_expired -> auto logout
+   Modules: analytics, approval, auth, axios(core), card, company,
+   connection, dashboard, department, event, invitation, messaging,
+   notification, role, settings, team, template, userDashboard,
+   userDirectory, userProfile, userSettings
+
+ 8.6 PAGES INVENTORY (client/src/pages)
+   Public: PublicCompanyPage, PublicEmployeeProfilePage, PublicCardTapPage,
+           CardActivationPage, AcceptInvitationPage
+   Admin : AdminLoginPage, AdminLayout, AdminDashboardPage, AdminCardsPage,
+           AdminTeamPage, AdminDepartmentsPage, AdminRolesPage,
+           AdminInvitationsPage, CompanyProfileStudioPage,
+           AdminTemplatesPage, AdminProfileApprovalPage, AdminEventsPage,
+           AdminAnalyticsPage, AdminSettingsPage,
+           (shared by /app) EmployeeSelfProfilePage, ColleagueNetworkPage,
+           TeamDepartmentsPage, UserHomePage
+   User  : UserLayout, UserEventsPage, EmployeeSettingsPage, MessagingPage,
+           AppProfileViewPage
+
+ 8.7 COMPONENT INVENTORY (client/src/components)
+   admin/tabs    : Overview, Branding, About, Products, Team, Projects,
+                   Achievements, Media, Contact (Company Profile Studio)
+   common        : BadgePill, GlobalSearchModal, ImageUploadInput,
+                   MediaUploadInput, KpiCard, MonthYearCalendarPicker,
+                   NotificationDrawer, Pagination, UserDockNav
+   company       : CompanyDockNav, CompanyMobileFrame, MediaLightboxModal,
+                   screens 1-8 (Overview, About, Products, Team, Projects,
+                   Achievements, Media, Contact)
+   messaging     : ConversationList, ChatWindow, MessageBubble,
+                   GroupCreateModal, GroupInfoPanel, NewDirectChatModal,
+                   FolderManageModal
+   templates     : TemplateRenderer + Default / Executive / Engineering /
+                   HR / Marketing / Product / Sales templates,
+                   DigitalHeroCard, IdentityFlowSections (public profile
+                   sections), TemplateCustomizerModal
+   hooks/utils   : useSwipeGesture; cn(), permissions.hasAdminAccess,
+                   profileDownload (export profile)
+
+--------------------------------------------------------------------------------
+ 9. KEY WORKFLOW DIAGRAMS
+--------------------------------------------------------------------------------
+ 9.1 AUTHENTICATION & TOKEN ROTATION
+   Login -----> verify argon2 hash -----> issue accessToken(15m) +
+                                       refreshToken(7d, familyId #1)
+   API call w/ expired access ---> 401 ---> axios interceptor queue --->
+        POST /auth/refresh-token ---> new pair issued, old refresh revoked
+        (queued requests replayed with new token)
+   REPLAYED (already-revoked) refresh token detected
+        ===> ENTIRE TOKEN FAMILY REVOKED (all sessions killed) + audit
+
+ 9.2 PROFILE APPROVAL LIFECYCLE
+   Employee edits /app/my-profile  ->  saved to DRAFT only
+        |
+        v  POST /me/profile/submit
+   calculateObjectDiff(published, draft) -> ProfileApproval record
+   (diffSummary + draftSnapshot) ; draft LOCKED (isLocked=true) ;
+   status=pending_review ; admins notified
+        |
+        v  Admin reviews at /admin/approvals
+   +----------+------------+------------------+
+   | APPROVE  | REJECT     | REQUEST CHANGES  |
+   | copy     | status=    | status=          |
+   | draft -> | rejected   | changes_requested|
+   | published| unlock     | reviewer feedback |
+   | status=  | notify     | unlock + notify   |
+   | approved |            |                  |
+   | unlock + |            |                  |
+   | recompute|            |                  |
+   | score +  |            |                  |
+   | audit    |            |                  |
+   +----------+------------+------------------+
+   (Workflow only enforced when org setting requireApprovalForProfileChanges)
+
+ 9.3 SMART NFC CARD LIFECYCLE
+   ADMIN SIDE                             PUBLIC SIDE
+   add card stock (POST /admin/cards)     phone taps NFC chip
+   status=unassigned                      GET /public/cards/:cardUid
+        |                                      |
+   link card (POST /admin/cards/link)     resolve by cardUid:
+   bind memberId + profileId             - linked   -> tapCount++ ,
+   status=linked                         |   lastTappedAt, CARD_TAP
+        |                                |   telemetry -> { slug,
+   [lost? blocked? reissue?]              |   redirectUrl /p/:slug }
+   unlink -> status=unassigned            - unassigned -> activation
+   (POST /admin/cards/unlink)             |   pending notice
+                                         - blocked/lost -> security
+                                             deactivation notice
+
+ 9.4 REAL-TIME CHAT FLOW
+   User opens /app/messages -> messagingStore.connectSocket(accessToken)
+   -> socket JWT handshake -> auto-join `conversation:<id>` rooms
+   type text -> typing_start/stop -> opponent sees "typing..."
+   send_message (socket, text) or REST (file attachment)
+   -> io.to(room).emit('new_message') -> both UIs update live
+   mark_read -> messages_read broadcast -> read receipts + unread badges
+
+ 9.5 EVENT RSVP FLOW
+   Admin creates event (eligibility: all | departments | roles)
+   -> employee GET /events (auto-filtered by own dept/role)
+   -> POST /events/:id/register (capacity + deadline checks)
+   -> ticket pass issued (OWQ-EVT-XXXXXX)
+   -> visible in GET /events/my-events + UserEventsPage UI
+
+--------------------------------------------------------------------------------
+ 10. CONFIGURATION REFERENCE (server/.env)
+--------------------------------------------------------------------------------
+   NODE_ENV=development | PORT=5000 | APP_URL | FRONTEND_URL=http://localhost:3000
+   PUBLIC_PROFILE_BASE_URL  (used for QR targets, e.g. .../p/<slug>)
+   MONGODB_URI=mongodb://localhost:27017/onewinq_db
+   JWT_ACCESS_SECRET / JWT_ACCESS_EXPIRATION=15m
+   JWT_REFRESH_SECRET / JWT_REFRESH_EXPIRATION=7d
+   PASSWORD_SALT_ROUNDS=12 | ARGON2_MEMORY_COST / TIME_COST / PARALLELISM
+   RATE_LIMIT_WINDOW_MS=900000 | RATE_LIMIT_MAX_REQUESTS=500
+   AUTH_RATE_LIMIT_MAX_REQUESTS=10
+   EMAIL_PROVIDER=console|smtp  (+ SMTP_HOST/PORT/SECURE/USER/PASSWORD,
+     EMAIL_FROM_NAME/ADDRESS)
+   STORAGE_PROVIDER=local|cloudinary (+ CLOUDINARY_* keys; AWS_S3_* vars
+     present in example but S3 provider not implemented in code)
+   LOG_LEVEL=info | LOG_TO_FILE=true | LOG_DIR=./logs
+
+--------------------------------------------------------------------------------
+ 11. DEVELOPMENT COMMANDS
+--------------------------------------------------------------------------------
+   SERVER (cd server)
+     npm run dev        nodemon hot-reload (port 5000)
+     npm start          production start
+     npm run seed       seed full database
+     npm test           jest suite (see note below)
+   CLIENT (cd client)
+     npm run dev        Vite dev server (port 3000, proxies /api,/uploads)
+     npm run build      production build
+     npm run preview    preview build
+   DOCS: http://localhost:5000/api-docs (Swagger) | server/API.md |
+         server/ARCHITECTURE.md
+
+--------------------------------------------------------------------------------
+ 12. OBSERVATIONS / DISCREPANCIES (from live code vs. docs)
+--------------------------------------------------------------------------------
+   1. SUPPORT MODULE: API.md + README document /support endpoints (FAQs,
+      tickets OWQ-TCK-XXXXXX) and events.constant.js defines
+      support.ticket_* events, but NO support module directory exists in
+      server/src/modules and no /support route is mounted in
+      routes/index.js. Feature is documented but not implemented.
+   2. TESTS: jest.config.js points to ./tests with setup ./tests/setup.js
+      and dev deps include supertest + mongodb-memory-server, but the
+      server/tests directory does not exist (no test files present).
+      README's "npm test across 10 domains" cannot currently run.
+   3. PERMISSION COUNT: docs claim "48 permissions"; the actual
+      permissions.constant.js defines 43.
+   4. STORAGE: S3/R2 described in ARCHITECTURE.md and .env.example has
+      AWS_S3_* vars, but only Local Disk and Cloudinary providers are
+      implemented (integrations/storage/*).
+   5. DATABASE FILES: a full MongoDB WiredTiger data directory
+      (server/data/db) is committed inside the repo - typically this
+      should be gitignored.
+   6. Root README.md is effectively empty (UTF-16 artifact, no content).
+   7. Client still uses 'cardApi' / messaging modules consistent with
+      server; frontend PWA assets (manifest + service-worker) exist in
+      client/public but are not referenced in index.html (PWA not wired).
+
+================================================================================
+ END OF REPORT - OneWinq Enterprise
+================================================================================

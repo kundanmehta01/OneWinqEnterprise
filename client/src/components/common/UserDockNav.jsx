@@ -37,14 +37,14 @@ export const UserDockNav = ({
       label: 'Connect',
       icon: Plus,
       isAction: true,
-      targetScreen: 9
+      targetScreen: 8
     },
     {
-      id: 5,
+      id: 4,
       label: 'Projects',
       icon: FolderGit2,
-      targetScreen: 5,
-      isActive: activeScreen === 5 && !menuOpen
+      targetScreen: 4,
+      isActive: activeScreen === 4 && !menuOpen
     },
     {
       id: 'menu',
@@ -58,12 +58,12 @@ export const UserDockNav = ({
   const isDark = theme === 'dark';
 
   const containerClasses = isFixed
-    ? `fixed bottom-0 left-0 right-0 z-40 lg:hidden px-4 pb-3.5 pt-2 pointer-events-none ${
+    ? `fixed bottom-0 left-0 right-0 z-40 px-4 pb-3.5 pt-2 pointer-events-none ${
         isDark
           ? 'bg-gradient-to-t from-[#04060f] via-[#070b1a]/90 to-transparent'
           : 'bg-gradient-to-t from-white/95 via-white/80 to-transparent'
       } ${className}`
-    : `sticky bottom-0 left-0 right-0 z-30 lg:hidden px-3 pb-3 pt-2 ${
+    : `sticky bottom-0 left-0 right-0 z-30 px-3 pb-3 pt-2 ${
         isDark
           ? 'bg-gradient-to-t from-[#04060f] via-[#070b1a]/95 to-transparent'
           : 'bg-gradient-to-t from-white/95 via-white/80 to-transparent'

@@ -11,8 +11,9 @@ export const DefaultTemplate = ({
   activeScreen,
   onNavigate
 }) => {
-  const primaryColor = profile.template?.layoutConfig?.colorPalette?.primary || '#7c3aed';
-  const accentColor = profile.template?.layoutConfig?.colorPalette?.accent || '#a855f7';
+  const primaryColor = profile.themeOverrides?.primaryColor || profile.template?.themeOverrides?.primaryColor || profile.template?.layoutConfig?.colorPalette?.primary || '#7c3aed';
+  const secondaryColor = profile.themeOverrides?.secondaryColor || profile.template?.themeOverrides?.secondaryColor || profile.template?.layoutConfig?.colorPalette?.secondary || '#4f46e5';
+  const accentColor = profile.themeOverrides?.accentColor || profile.template?.themeOverrides?.accentColor || profile.template?.layoutConfig?.colorPalette?.accent || '#a855f7';
 
   return (
     <IdentityFlowSections
@@ -24,7 +25,7 @@ export const DefaultTemplate = ({
       isCompact={isCompact}
       activeScreen={activeScreen}
       onNavigate={onNavigate}
-      theme={{ primary: primaryColor, accent: accentColor }}
+      theme={{ primary: primaryColor, secondary: secondaryColor, accent: accentColor }}
     />
   );
 };

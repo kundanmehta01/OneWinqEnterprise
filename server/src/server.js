@@ -1,3 +1,4 @@
+// OneWinq Enterprise Core Server
 import http from 'http';
 import { createApp } from './app.js';
 import { connectDB, disconnectDB } from './config/db.config.js';

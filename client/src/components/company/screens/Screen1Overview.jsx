@@ -218,10 +218,10 @@ export const Screen1Overview = ({ profile, onNavigate, isEditable = false, onUpd
                   value={stats.teamSize || ''}
                   onChange={(e) => onUpdateField('overviewStats.teamSize', e.target.value)}
                   placeholder="50+"
-                  className="w-full text-center text-xs sm:text-base font-bold text-purple-600 tracking-tight bg-transparent border-b border-dashed border-purple-200 focus:border-purple-600 outline-none"
+                  className="w-full text-center text-xs sm:text-base font-bold text-slate-900 tracking-tight bg-transparent border-b border-dashed border-purple-200 focus:border-purple-600 outline-none"
                 />
               ) : (
-                <p className="text-xs sm:text-base font-bold text-purple-600 tracking-tight leading-tight line-clamp-2 max-w-full break-words">
+                <p className="text-xs sm:text-base font-bold text-slate-900 tracking-tight leading-tight line-clamp-2 max-w-full break-words">
                   {stats.teamSize || '25+'}
                 </p>
               )}
@@ -343,7 +343,7 @@ export const Screen1Overview = ({ profile, onNavigate, isEditable = false, onUpd
             { id: 2, name: 'About Company', subtitle: 'Vision, Mission & Core Values' },
             { id: 3, name: 'Products & Services', subtitle: 'Smart NFC Cards & AI Solutions' },
             { id: 4, name: 'Team Directory', subtitle: 'Verified Leadership & Staff' },
-            { id: 5, name: 'Projects & Platforms', subtitle: 'Ongoing & Delivered Systems' },
+            { id: 5, name: 'Our Clients', subtitle: 'Academic & Enterprise Partners' },
             { id: 6, name: 'Achievements', subtitle: 'Awards, ISO Trust & Milestones' },
             { id: 7, name: 'Media & Updates', subtitle: 'Photo Gallery, Videos & News' },
           ].map((sec) => (
