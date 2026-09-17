@@ -53,6 +53,10 @@ export const connectDB = async (uri = env.MONGODB_URI) => {
 
     return conn;
   } catch (error) {
+    if (process.env.VERCEL || env.NODE_ENV === 'production') {
+      logger.error(`MongoDB connection failed in production/Vercel: ${error.message}`);
+      throw error;
+    }
     logger.warn(`Remote MongoDB connection failed (${error.message}). Initializing persistent Local DB...`);
 
     try {
