@@ -89,9 +89,15 @@ export const createApp = () => {
     res.send(swaggerSpec);
   });
 
-  // Auto-connect to DB in serverless environments (e.g. Vercel)
+  // Immediate health check and favicon (zero DB dependencies)
+  app.get('/favicon.ico', (req, res) => res.status(204).end());
+  app.get('/health', (req, res) => res.status(200).json({ status: 'ok', app: 'OneWinq Backend' }));
+  app.get('/api/v1/health', (req, res) => res.status(200).json({ status: 'ok', app: 'OneWinq Backend' }));
+
+  // Auto-connect to DB in serverless environments (e.g. Vercel) for data routes
   let isDbConnected = false;
-  app.use(async (req, res, next) => {
+  app.use('/api/v1', async (req, res, next) => {
+    if (req.path === '/health') return next();
     if (process.env.VERCEL && !isDbConnected) {
       try {
         const { connectDB } = await import('./config/db.config.js');
@@ -106,9 +112,6 @@ export const createApp = () => {
 
   // 11. API Routes
   app.use('/api/v1', v1Routes);
-
-  // Favicon handler
-  app.get('/favicon.ico', (req, res) => res.status(204).end());
 
   // 12. 404 & Error Handling
   app.use(notFoundHandler);
