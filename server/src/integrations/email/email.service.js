@@ -11,24 +11,44 @@ class EmailService {
 
   init() {
     if (this.provider === 'smtp') {
-      this.transporter = nodemailer.createTransport({
-        host: env.SMTP_HOST,
-        port: env.SMTP_PORT,
-        secure: env.SMTP_SECURE,
-        auth: env.SMTP_USER ? {
-          user: env.SMTP_USER,
-          pass: env.SMTP_PASSWORD
-        } : undefined
-      });
-      logger.info(`Email service initialized with SMTP host: ${env.SMTP_HOST}`);
+      const isGmail =
+        (env.SMTP_HOST && env.SMTP_HOST.toLowerCase().includes('gmail')) ||
+        (env.SMTP_USER && env.SMTP_USER.toLowerCase().includes('@gmail.com'));
+
+      const transportConfig = isGmail
+        ? {
+            service: 'gmail',
+            auth: {
+              user: env.SMTP_USER,
+              pass: env.SMTP_PASSWORD
+            }
+          }
+        : {
+            host: env.SMTP_HOST || 'smtp.gmail.com',
+            port: env.SMTP_PORT || 587,
+            secure: env.SMTP_SECURE || false,
+            auth: env.SMTP_USER ? {
+              user: env.SMTP_USER,
+              pass: env.SMTP_PASSWORD
+            } : undefined
+          };
+
+      try {
+        this.transporter = nodemailer.createTransport(transportConfig);
+        logger.info(`Email service initialized with ${isGmail ? 'Gmail service' : `SMTP host: ${env.SMTP_HOST}`}`);
+      } catch (err) {
+        logger.error(`Failed to initialize nodemailer transport: ${err.message}`);
+        this.transporter = null;
+      }
     } else {
       logger.info(`Email service initialized with '${this.provider}' provider mode.`);
     }
   }
 
   async sendMail({ to, subject, html, text }) {
+    const fromAddress = env.EMAIL_FROM_ADDRESS || env.SMTP_USER || 'no-reply@onewinq.com';
     const mailOptions = {
-      from: `"${env.EMAIL_FROM_NAME}" <${env.EMAIL_FROM_ADDRESS}>`,
+      from: `"${env.EMAIL_FROM_NAME}" <${fromAddress}>`,
       to,
       subject,
       text: text || html.replace(/<[^>]*>?/gm, ''),

@@ -116,9 +116,14 @@ class InvitationService {
       status: 'pending'
     });
 
-    const inviteLink = `${env.FRONTEND_URL}/invite/${rawToken}`;
+    const frontendBase = (env.FRONTEND_URL && !env.FRONTEND_URL.includes('localhost'))
+      ? env.FRONTEND_URL.replace(/\/+$/, '')
+      : (process.env.VERCEL ? 'https://one-winq-enterprise-pj36.vercel.app' : env.FRONTEND_URL.replace(/\/+$/, ''));
+
+    const inviteLink = `${frontendBase}/invite/${invitation._id}`;
     const inviter = await User.findById(inviterContext.actorId).lean();
 
+    let emailDelivery = { success: true };
     try {
       await emailService.sendInvitationEmail({
         to: normalizedEmail,
@@ -128,7 +133,8 @@ class InvitationService {
         designation: designation || 'Team Member'
       });
     } catch (emailErr) {
-      console.warn('[InvitationService] Failed to send invitation email (proceeding with link generation):', emailErr?.message);
+      emailDelivery = { success: false, error: emailErr?.message };
+      logger.warn(`[InvitationService] Failed to send invitation email (${emailErr?.message}). Invite link: ${inviteLink}`);
     }
 
     eventBus.emitEvent(APP_EVENTS.MEMBER_INVITED, {
@@ -140,8 +146,10 @@ class InvitationService {
 
     return {
       ...invitation.toObject(),
-      token: rawToken,
-      inviteLink
+      token: String(invitation._id),
+      rawToken,
+      inviteLink,
+      emailDelivery
     };
   }
 
