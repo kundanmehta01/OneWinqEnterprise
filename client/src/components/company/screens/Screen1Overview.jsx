@@ -168,8 +168,8 @@ export const Screen1Overview = ({ profile, onNavigate, isEditable = false, onUpd
             )
           )}
 
-          {/* Overview Stats 3-Col Box */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 max-w-xl mx-auto pt-1 items-stretch">
+          {/* Overview Stats 4-Col Box */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 max-w-2xl mx-auto pt-1 items-stretch">
             {/* Stat 1: Founded */}
             <div className="bg-slate-50/80 border border-slate-100/90 rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center justify-center text-center transition-all hover:bg-purple-50/50 hover:border-purple-200 min-h-[72px] sm:min-h-[84px]">
               {isEditable ? (
@@ -229,7 +229,28 @@ export const Screen1Overview = ({ profile, onNavigate, isEditable = false, onUpd
                 Team Size
               </p>
             </div>
+
+            {/* Stat 4: Customer Base */}
+            <div className="bg-slate-50/80 border border-slate-100/90 rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center justify-center text-center transition-all hover:bg-purple-50/50 hover:border-purple-200 min-h-[72px] sm:min-h-[84px]">
+              {isEditable ? (
+                <input
+                  type="text"
+                  value={stats.customerBase || ''}
+                  onChange={(e) => onUpdateField('overviewStats.customerBase', e.target.value)}
+                  placeholder="5000+"
+                  className="w-full text-center text-xs sm:text-base font-bold text-slate-900 tracking-tight bg-transparent border-b border-dashed border-purple-200 focus:border-purple-600 outline-none"
+                />
+              ) : (
+                <p className="text-xs sm:text-base font-bold text-slate-900 tracking-tight leading-tight line-clamp-2 max-w-full break-words">
+                  {stats.customerBase || '—'}
+                </p>
+              )}
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-1 uppercase tracking-wider">
+                Customer Base
+              </p>
+            </div>
           </div>
+
 
           {/* Action Buttons: Explore Products & Contact Us */}
           <div className="grid grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto pt-2">

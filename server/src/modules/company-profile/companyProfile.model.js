@@ -146,6 +146,7 @@ const companyProfileSchema = new mongoose.Schema(
       foundedYear: { type: String, default: '2024' },
       locationShort: { type: String, default: 'Indore' },
       teamSize: { type: String, default: '25+' },
+      customerBase: { type: String, default: '' },
       customMetrics: [
         {
           label: { type: String, default: '' },

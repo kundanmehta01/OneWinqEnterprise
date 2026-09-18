@@ -60,6 +60,7 @@ class CompanyProfileService {
         foundedYear: '2024',
         locationShort: '',
         teamSize: '',
+        customerBase: '',
         customMetrics: []
       },
       location: profile.location,

@@ -46,7 +46,8 @@ export const seedOrganization = async () => {
       overviewStats: {
         foundedYear: '2024',
         locationShort: 'Indore / Silicon Valley',
-        teamSize: '50+ Engineers & Operators'
+        teamSize: '50+ Engineers & Operators',
+        customerBase: '5000+'
       },
       location: {
         address: 'OneWinq Tech Park, Suite 400, Crystal IT Hub',

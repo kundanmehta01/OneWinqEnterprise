@@ -10,6 +10,7 @@ export const updateCompanyProfileSchema = z.object({
     foundedYear: z.string().optional(),
     locationShort: z.string().optional(),
     teamSize: z.string().optional(),
+    customerBase: z.string().optional(),
     customMetrics: z.array(z.object({
       label: z.string(),
       value: z.string()
