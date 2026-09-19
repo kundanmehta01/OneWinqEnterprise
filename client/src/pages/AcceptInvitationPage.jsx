@@ -225,7 +225,7 @@ export const AcceptInvitationPage = () => {
               W
             </div>
             <span className="font-extrabold text-2xl tracking-tight text-slate-900">
-              one<span className="text-purple-600">i</span>nq
+              onew<span className="text-purple-600">i</span>nq
             </span>
           </Link>
           <p className="text-xs text-slate-500 font-medium">Enterprise Employee Onboarding Portal</p>
