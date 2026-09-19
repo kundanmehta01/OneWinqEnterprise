@@ -354,29 +354,116 @@ export const EmployeeSelfProfilePage = () => {
       });
   };
 
+  const cleanProjects = (items) => {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((p) => p && (p.title?.trim() || p.url?.trim() || p.description?.trim() || p.role?.trim()))
+      .map((p, idx) => ({
+        ...p,
+        title: p.title?.trim() || `Project ${idx + 1}`,
+        url: p.url?.trim() || '',
+        description: p.description?.trim() || '',
+        role: p.role?.trim() || '',
+        order: idx + 1
+      }));
+  };
+
+  const cleanAchievements = (items) => {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((a) => a && (a.title?.trim() || a.subtitle?.trim() || a.description?.trim() || a.imageUrl?.trim()))
+      .map((a, idx) => ({
+        ...a,
+        title: a.title?.trim() || `Achievement ${idx + 1}`,
+        subtitle: a.subtitle?.trim() || '',
+        description: a.description?.trim() || '',
+        order: idx + 1
+      }));
+  };
+
+  const cleanMetrics = (items) => {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((m) => m && (m.metric?.trim() || m.label?.trim()))
+      .map((m, idx) => ({
+        ...m,
+        metric: m.metric?.trim() || '-',
+        label: m.label?.trim() || `Metric ${idx + 1}`,
+        order: idx + 1
+      }));
+  };
+
+  const cleanBlogs = (items) => {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((b) => b && (b.title?.trim() || b.url?.trim() || b.content?.trim() || b.excerpt?.trim()))
+      .map((b, idx) => ({
+        ...b,
+        title: b.title?.trim() || `Blog Post ${idx + 1}`,
+        url: b.url?.trim() || '',
+        order: idx + 1
+      }));
+  };
+
+  const cleanSocialLinks = (items) => {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((l) => l && typeof l.url === 'string' && l.url.trim())
+      .map((l, idx) => ({
+        ...l,
+        platform: l.platform?.trim() || 'Other',
+        url: l.url.trim(),
+        order: idx + 1
+      }));
+  };
+
+  const buildCleanProfilePayload = (source) => {
+    const rawEmail = (source.connectAndContact?.workEmail || source.workEmail || '').trim();
+    const rawPhone = (source.connectAndContact?.phone || source.phone || '').trim();
+    const cleanSocials = cleanSocialLinks(source.socialLinks || formData.socialLinks);
+
+    return {
+      ...source,
+      headline: source.headline?.trim() || '',
+      bio: source.bio?.trim() || '',
+      location: parseLocationToString(source.location || formData.location),
+      phone: rawPhone,
+      workEmail: rawEmail,
+      avatarUrl: source.avatarUrl?.trim() || '',
+      collaborationNote: source.connectAndContact?.note || source.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
+      connectAndContact: {
+        title: source.connectAndContact?.title || "Let's Connect",
+        note: source.connectAndContact?.note || source.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
+        workEmail: rawEmail,
+        phone: rawPhone,
+        linkedin: (source.connectAndContact?.linkedin || linkedinUrl || '').trim(),
+        twitter: (source.connectAndContact?.twitter || twitterUrl || '').trim(),
+        socialLinks: cleanSocials,
+        ctaButtonText: source.connectAndContact?.ctaButtonText || 'Connect With Me'
+      },
+      about: {
+        title: source.about?.title || '',
+        introduction: source.about?.introduction || '',
+        expertise: source.about?.expertise || '',
+        experienceSummary: source.about?.experienceSummary || ''
+      },
+      experience: Array.isArray(source.experience) ? source.experience : [],
+      journey: Array.isArray(source.journey) && source.journey.length > 0 ? source.journey : (Array.isArray(source.experience) ? source.experience : []),
+      projects: cleanProjects(source.projects || formData.projects),
+      impactMetrics: cleanMetrics(source.impactMetrics || formData.impactMetrics),
+      achievements: cleanAchievements(source.achievements || formData.achievements),
+      mediaGallery: cleanMediaGallery(source.mediaGallery || formData.mediaGallery),
+      blogs: cleanBlogs(source.blogs || formData.blogs),
+      socialLinks: cleanSocials
+    };
+  };
+
   // Save Draft / Save Changes Mutation
   const saveDraftMutation = useMutation({
     mutationFn: async (payload) => {
       const cleanPayload = {
-        ...payload,
-        mediaGallery: cleanMediaGallery(payload.mediaGallery || formData.mediaGallery),
-        publishImmediately: isAdminUser ? true : Boolean(payload.publishImmediately),
-        location: parseLocationToString(payload.location || formData.location),
-        phone: payload.connectAndContact?.phone || payload.phone || '',
-        workEmail: payload.connectAndContact?.workEmail || payload.workEmail || '',
-        collaborationNote: payload.connectAndContact?.note || payload.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
-        connectAndContact: {
-          title: payload.connectAndContact?.title || "Let's Connect",
-          note: payload.connectAndContact?.note || payload.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
-          workEmail: payload.connectAndContact?.workEmail || payload.workEmail || '',
-          phone: payload.connectAndContact?.phone || payload.phone || '',
-          linkedin: payload.connectAndContact?.linkedin || linkedinUrl || '',
-          twitter: payload.connectAndContact?.twitter || twitterUrl || '',
-          socialLinks: payload.socialLinks || formData.socialLinks || [],
-          ctaButtonText: payload.connectAndContact?.ctaButtonText || 'Connect With Me'
-        },
-        about: payload.about || formData.about,
-        journey: payload.experience || []
+        ...buildCleanProfilePayload(payload),
+        publishImmediately: isAdminUser ? true : Boolean(payload.publishImmediately)
       };
       return await userProfileApi.updateMyDraft(cleanPayload);
     },
@@ -390,43 +477,25 @@ export const EmployeeSelfProfilePage = () => {
       setTimeout(() => setToastMessage(null), 3500);
     },
     onError: (err) => {
-      const msg =
-        err?.response?.data?.error?.details?.[0]?.message ||
-        err?.response?.data?.error?.message ||
-        err?.response?.data?.message ||
-        err?.message ||
-        (isAdminUser ? 'Failed to save changes.' : 'Failed to save draft changes.');
+      const firstDetail = err?.response?.data?.error?.details?.[0];
+      const msg = firstDetail
+        ? `${firstDetail.field ? `${firstDetail.field}: ` : ''}${firstDetail.message}`
+        : err?.response?.data?.error?.message ||
+          err?.response?.data?.message ||
+          err?.message ||
+          (isAdminUser ? 'Failed to save changes.' : 'Failed to save draft changes.');
       setToastMessage({
         type: 'error',
         text: msg
       });
-      setTimeout(() => setToastMessage(null), 4000);
+      setTimeout(() => setToastMessage(null), 5000);
     }
   });
 
   // Submit for Approval Mutation
   const submitApprovalMutation = useMutation({
     mutationFn: async (note) => {
-      const payload = {
-        ...formData,
-        mediaGallery: cleanMediaGallery(formData.mediaGallery),
-        location: parseLocationToString(formData.location),
-        phone: formData.connectAndContact?.phone || formData.phone || '',
-        workEmail: formData.connectAndContact?.workEmail || formData.workEmail || '',
-        collaborationNote: formData.connectAndContact?.note || formData.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
-        connectAndContact: {
-          title: formData.connectAndContact?.title || "Let's Connect",
-          note: formData.connectAndContact?.note || formData.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
-          workEmail: formData.connectAndContact?.workEmail || formData.workEmail || '',
-          phone: formData.connectAndContact?.phone || formData.phone || '',
-          linkedin: formData.connectAndContact?.linkedin || linkedinUrl || '',
-          twitter: formData.connectAndContact?.twitter || twitterUrl || '',
-          socialLinks: formData.socialLinks || [],
-          ctaButtonText: formData.connectAndContact?.ctaButtonText || 'Connect With Me'
-        },
-        about: formData.about,
-        journey: formData.experience || []
-      };
+      const payload = buildCleanProfilePayload(formData);
       // 1. Ensure latest formData is saved to draft first!
       await userProfileApi.updateMyDraft(payload);
       // 2. Submit for review with formData payload
@@ -450,12 +519,14 @@ export const EmployeeSelfProfilePage = () => {
       setTimeout(() => setToastMessage(null), 4000);
     },
     onError: (err) => {
-      const msg =
-        err?.response?.data?.error?.details?.[0]?.message ||
-        err?.response?.data?.error?.message ||
-        err?.response?.data?.message ||
-        err?.message ||
-        'Failed to submit profile for approval.';
+      const firstDetail = err?.response?.data?.error?.details?.[0];
+      const msg = firstDetail
+        ? `${firstDetail.field ? `${firstDetail.field}: ` : ''}${firstDetail.message}`
+        : err?.response?.data?.error?.details?.[0]?.message ||
+          err?.response?.data?.error?.message ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to submit profile for approval.';
       setToastMessage({
         type: 'error',
         text: msg
@@ -704,7 +775,7 @@ END:VCARD`;
   const addSocialLink = () => {
     setFormData({
       ...formData,
-      socialLinks: [...formData.socialLinks, { platform: 'LinkedIn', url: '' }]
+      socialLinks: [...(formData.socialLinks || []), { platform: 'GitHub', url: '' }]
     });
   };
 
