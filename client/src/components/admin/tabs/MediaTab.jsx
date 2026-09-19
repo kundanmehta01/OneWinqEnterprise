@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useCompanyProfileStore } from '../../../stores/companyProfileStore';
+import { getEmbedInfo, normalizeMediaUrl } from '../../../utils/mediaUtils';
 
 export const MediaTab = () => {
   const { draft, addArrayItem, removeArrayItem, updateArrayItem } = useCompanyProfileStore();
@@ -101,9 +102,17 @@ export const MediaTab = () => {
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-[11px] font-semibold text-slate-600">Asset URL</label>
                 <input
-                  type="url"
+                  type="text"
                   value={item.url || ''}
-                  onChange={(e) => updateArrayItem('mediaGallery', idx, { url: e.target.value })}
+                  onChange={(e) => {
+                    const val = normalizeMediaUrl(e.target.value);
+                    const isVid = item.type === 'video';
+                    const embed = isVid ? getEmbedInfo(val) : null;
+                    updateArrayItem('mediaGallery', idx, {
+                      url: val,
+                      ...(embed?.thumbnailUrl && !item.thumbnailUrl ? { thumbnailUrl: embed.thumbnailUrl } : {})
+                    });
+                  }}
                   placeholder="https://..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
                 />

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Play, Image as ImageIcon, Video, Calendar, Newspaper, Plus, Trash2, Camera, X, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Play, Image as ImageIcon, Video, Calendar, Newspaper, Plus, Trash2, Camera, X, UploadCloud, Film } from 'lucide-react';
 import { usePreviewStore } from '../../../stores/previewStore';
-import { ImageUploadInput } from '../../common/ImageUploadInput';
+import { MediaUploadInput } from '../../common/MediaUploadInput';
+import { getEmbedInfo, getMediaThumbnail, normalizeMediaUrl } from '../../../utils/mediaUtils';
 
 export const Screen7Media = ({
   profile,
@@ -98,40 +99,60 @@ export const Screen7Media = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredList.map((item, idx) => {
             const isVideo = item.type === 'video';
+            const displayThumb = getMediaThumbnail(item);
             return (
               <div
                 key={item._id || idx}
                 className="clean-card rounded-3xl overflow-hidden bg-white border border-slate-100 flex flex-col justify-between group shadow-2xs relative"
               >
                 <div
-                  onClick={() => !isEditable && openMediaModal(item)}
-                  className={`relative aspect-[16/10] w-full overflow-hidden bg-slate-100 ${!isEditable ? 'cursor-pointer' : ''}`}
+                  onClick={() => openMediaModal(item)}
+                  className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900 cursor-pointer"
+                  title="Click to view / play media"
                 >
-                  <img
-                    src={item.thumbnailUrl || item.url}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                  {displayThumb ? (
+                    <img
+                      src={displayThumb}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80';
+                      }}
+                    />
+                  ) : isVideo ? (
+                    <div className="w-full h-full bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 flex flex-col items-center justify-center p-4 text-center">
+                      <Film className="w-8 h-8 text-purple-400 mb-2 opacity-80" />
+                      <span className="text-xs font-medium text-slate-300 line-clamp-1">{item.title}</span>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-slate-300" />
+                    </div>
+                  )}
 
-                  {isVideo && !isEditable && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-                      <div className="w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  {isVideo && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/25 group-hover:bg-black/40 transition-colors pointer-events-none">
+                      <div className="w-12 h-12 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                         <Play className="w-5 h-5 fill-white ml-0.5" />
                       </div>
                     </div>
                   )}
 
-                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
                     <span className="px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
                       {isVideo ? <Video className="w-3 h-3 text-red-400" /> : <ImageIcon className="w-3 h-3 text-purple-300" />}
                       <span>{item.type}</span>
                     </span>
 
                     {isEditable && (
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 pointer-events-auto">
                         <button
                           type="button"
-                          onClick={() => setModalItemIdx(idx)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalItemIdx(idx);
+                          }}
                           className="bg-black/70 hover:bg-purple-600 text-white p-1.5 rounded-full transition-colors cursor-pointer shadow-md"
                           title="Upload / Change Media File"
                         >
@@ -139,7 +160,10 @@ export const Screen7Media = ({
                         </button>
                         <button
                           type="button"
-                          onClick={() => onRemoveArrayItem('mediaGallery', idx)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveArrayItem('mediaGallery', idx);
+                          }}
                           className="bg-black/70 hover:bg-rose-600 text-white p-1.5 rounded-full transition-colors cursor-pointer shadow-md"
                           title="Remove Media"
                         >
@@ -170,7 +194,10 @@ export const Screen7Media = ({
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <select
                           value={item.type || 'photo'}
-                          onChange={(e) => onUpdateArrayItem('mediaGallery', idx, { type: e.target.value })}
+                          onChange={(e) => {
+                            const newType = e.target.value;
+                            onUpdateArrayItem('mediaGallery', idx, { type: newType });
+                          }}
                           className="w-full text-xs bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 outline-none"
                         >
                           <option value="photo">Photo</option>
@@ -183,7 +210,7 @@ export const Screen7Media = ({
                           className="w-full py-1 px-2.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-semibold flex items-center justify-center gap-1.5 border border-purple-200 transition-colors cursor-pointer truncate"
                         >
                           <UploadCloud className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">{item.url ? 'Change File' : 'Upload File / URL'}</span>
+                          <span className="truncate">{item.url ? 'Change File / URL' : 'Upload File / URL'}</span>
                         </button>
                       </div>
                     </div>
@@ -215,7 +242,7 @@ export const Screen7Media = ({
           </div>
           <p className="text-sm font-bold text-slate-700">No media found in this category.</p>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Click "+ Add Media" above to upload photos and keynotes to the gallery.
+            Click "+ Add Media" above to upload photos, keynotes, or videos to the gallery.
           </p>
         </div>
       )}
@@ -227,7 +254,7 @@ export const Screen7Media = ({
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Camera className="w-4 h-4 text-purple-600" />
-                Upload Media Asset
+                {list[modalItemIdx].type === 'video' ? 'Attach Video Asset' : 'Upload Media Asset'}
               </h3>
               <button
                 type="button"
@@ -237,15 +264,48 @@ export const Screen7Media = ({
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <ImageUploadInput
+
+            <MediaUploadInput
+              mediaType={list[modalItemIdx].type === 'video' ? 'video' : 'photo'}
               label={list[modalItemIdx].title || 'Media Asset'}
-              description="Choose a photo or graphic from your computer/device or enter a URL."
+              description={
+                list[modalItemIdx].type === 'video'
+                  ? 'Paste a YouTube, Vimeo, or direct video link, or upload an MP4/WebM file.'
+                  : 'Upload a photo from your device or paste an external image link.'
+              }
               value={list[modalItemIdx].url || ''}
-              onChange={(val) => onUpdateArrayItem('mediaGallery', modalItemIdx, { url: val, thumbnailUrl: val })}
-              aspectRatio="banner"
+              onChange={(val) => {
+                const normalized = normalizeMediaUrl(val);
+                const isVid = list[modalItemIdx].type === 'video';
+                const embed = isVid ? getEmbedInfo(normalized) : null;
+                onUpdateArrayItem('mediaGallery', modalItemIdx, {
+                  url: normalized,
+                  thumbnailUrl: embed?.thumbnailUrl || (isVid ? (list[modalItemIdx].thumbnailUrl || '') : normalized)
+                });
+              }}
               entityType="company_media"
-              placeholder="https://images.unsplash.com/..."
+              placeholder={
+                list[modalItemIdx].type === 'video'
+                  ? 'https://youtube.com/watch?v=... or https://.../video.mp4'
+                  : 'https://images.unsplash.com/... or https://.../photo.png'
+              }
             />
+
+            {list[modalItemIdx].type === 'video' && (
+              <div className="space-y-1 pt-2 border-t border-slate-100">
+                <label className="text-[10px] font-bold text-slate-600">
+                  Custom Poster / Thumbnail URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={list[modalItemIdx].thumbnailUrl || ''}
+                  onChange={(e) => onUpdateArrayItem('mediaGallery', modalItemIdx, { thumbnailUrl: e.target.value })}
+                  placeholder="https://.../thumbnail.jpg (Leave empty for auto-generated preview)"
+                  className="w-full text-xs bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 outline-none"
+                />
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"

@@ -27,9 +27,13 @@ import {
   Linkedin,
   Instagram,
   Facebook,
-  Zap
+  Zap,
+  Play,
+  X,
+  Film
 } from 'lucide-react';
 import { DigitalHeroCard } from './DigitalHeroCard';
+import { getEmbedInfo, getMediaThumbnail } from '../../utils/mediaUtils';
 
 /**
  * Universal 8-Section Identity Flow Component
@@ -54,6 +58,7 @@ export const IdentityFlowSections = ({
   theme = {}
 }) => {
   const [activeMediaTab, setActiveMediaTab] = useState('all');
+  const [activeMediaModal, setActiveMediaModal] = useState(null);
 
   if (!profile) return null;
 
@@ -777,31 +782,77 @@ export const IdentityFlowSections = ({
               ))}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-              {(filteredMedia.length > 0 ? filteredMedia : allMedia).map((item, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-2xl overflow-hidden bg-slate-50 border border-slate-200/70 flex flex-col justify-between group shadow-2xs relative"
+            {filteredMedia.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+                {filteredMedia.map((item, idx) => {
+                  const isVideo = item.type === 'video' || Boolean(getEmbedInfo(item.url));
+                  const displayThumb = getMediaThumbnail(item);
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setActiveMediaModal(item)}
+                      className="rounded-2xl overflow-hidden bg-white border border-slate-200/80 flex flex-col justify-between group shadow-2xs hover:shadow-md transition-all cursor-pointer relative"
+                      title="Click to view / play media"
+                    >
+                      <div className="h-44 bg-slate-900 overflow-hidden relative">
+                        {displayThumb ? (
+                          <img
+                            src={displayThumb}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80';
+                            }}
+                          />
+                        ) : isVideo ? (
+                          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 flex flex-col items-center justify-center p-4 text-center">
+                            <Film className="w-8 h-8 text-purple-400 mb-2 opacity-80" />
+                            <span className="text-xs font-medium text-slate-300 line-clamp-1">{item.title}</span>
+                          </div>
+                        ) : (
+                          <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                            <ImageIcon className="w-8 h-8 text-slate-300" />
+                          </div>
+                        )}
+
+                        {isVideo && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/25 group-hover:bg-black/40 transition-colors pointer-events-none">
+                            <div className="w-11 h-11 rounded-full bg-purple-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                              <Play className="w-4 h-4 fill-white ml-0.5" />
+                            </div>
+                          </div>
+                        )}
+
+                        <span className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-[10px] font-bold capitalize flex items-center gap-1 shadow-sm">
+                          {isVideo ? <Film className="w-2.5 h-2.5" /> : <ImageIcon className="w-2.5 h-2.5" />}
+                          <span>{item.type || (isVideo ? 'video' : 'photo')}</span>
+                        </span>
+                      </div>
+                      <div className="p-4 space-y-1">
+                        <h4 className="text-xs font-bold text-slate-900 truncate font-display group-hover:text-purple-600 transition-colors">
+                          {item.title}
+                        </h4>
+                        {item.description && (
+                          <p className="text-[11px] text-slate-500 line-clamp-1">{item.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                <p className="text-xs font-semibold text-slate-600">No media found under "{activeMediaTab}".</p>
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaTab('all')}
+                  className="text-xs text-purple-600 font-bold hover:underline cursor-pointer"
                 >
-                  <div className="h-44 bg-slate-100 overflow-hidden relative">
-                    <img
-                      src={item.thumbnailUrl || item.url}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-[10px] font-bold capitalize">
-                      {item.type || 'Photo'}
-                    </span>
-                  </div>
-                  <div className="p-4 space-y-1">
-                    <h4 className="text-xs font-bold text-slate-900 truncate font-display">{item.title}</h4>
-                    {item.description && (
-                      <p className="text-[11px] text-slate-500 line-clamp-1">{item.description}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  View All Media
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <div className="p-12 text-center bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
@@ -810,6 +861,92 @@ export const IdentityFlowSections = ({
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               {firstName}'s photos, event appearances, and video media will appear here once added.
             </p>
+          </div>
+        )}
+
+        {/* Media Lightbox / Video Player Modal */}
+        {activeMediaModal && (
+          <div
+            onClick={() => setActiveMediaModal(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-3xl bg-slate-900 rounded-3xl border border-slate-700/60 overflow-hidden shadow-2xl space-y-0 text-white"
+            >
+              <button
+                onClick={() => setActiveMediaModal(null)}
+                className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition-all cursor-pointer border border-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
+                {(() => {
+                  const url = (activeMediaModal.url || '').trim();
+                  const embed = getEmbedInfo(url);
+                  const isVid = activeMediaModal.type === 'video' || Boolean(embed);
+
+                  if (isVid) {
+                    if (embed?.type === 'youtube' || embed?.type === 'vimeo') {
+                      return (
+                        <iframe
+                          src={embed.embedUrl}
+                          title={activeMediaModal.title || 'Video Player'}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                      );
+                    }
+                    return (
+                      <video
+                        src={url}
+                        poster={activeMediaModal.thumbnailUrl || undefined}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-contain"
+                      />
+                    );
+                  }
+                  return (
+                    <img
+                      src={url || activeMediaModal.thumbnailUrl}
+                      alt={activeMediaModal.title}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&fit=crop';
+                      }}
+                    />
+                  );
+                })()}
+              </div>
+
+              <div className="p-5 space-y-2 bg-slate-900 border-t border-slate-800">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-wider border border-purple-500/30 flex items-center gap-1.5">
+                    {activeMediaModal.type === 'video' ? <Film className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                    <span>{activeMediaModal.type || 'media'}</span>
+                  </span>
+                  {activeMediaModal.date && (
+                    <span className="text-xs text-slate-400">
+                      {new Date(activeMediaModal.date).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="text-base font-bold text-white tracking-tight">{activeMediaModal.title}</h3>
+                {activeMediaModal.description && (
+                  <p className="text-xs text-slate-300 leading-relaxed">{activeMediaModal.description}</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

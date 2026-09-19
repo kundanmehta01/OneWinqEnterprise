@@ -11,36 +11,9 @@ import {
   Play
 } from 'lucide-react';
 import api from '../../api/axios';
+import { getEmbedInfo, normalizeMediaUrl } from '../../utils/mediaUtils';
 
-/** Helper to detect YouTube / Vimeo embeds */
-export const getEmbedInfo = (url) => {
-  if (!url || typeof url !== 'string') return null;
-  const s = url.trim();
-
-  // YouTube
-  const ytMatch = s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/i);
-  if (ytMatch && ytMatch[1]) {
-    return {
-      type: 'youtube',
-      id: ytMatch[1],
-      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}`,
-      thumbnailUrl: `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`
-    };
-  }
-
-  // Vimeo
-  const vimeoMatch = s.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/i);
-  if (vimeoMatch && vimeoMatch[1]) {
-    return {
-      type: 'vimeo',
-      id: vimeoMatch[1],
-      embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
-      thumbnailUrl: ''
-    };
-  }
-
-  return null;
-};
+export { getEmbedInfo, normalizeMediaUrl };
 
 export const MediaUploadInput = ({
   mediaType = 'photo', // 'photo' | 'video'

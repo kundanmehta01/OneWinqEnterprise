@@ -132,7 +132,7 @@ const profileMediaItemSchema = new mongoose.Schema(
     url: { type: String, required: true, maxlength: 1000 },
     type: {
       type: String,
-      enum: ['all', 'photo', 'video', 'event'],
+      enum: ['all', 'photo', 'video', 'news', 'event'],
       default: 'photo'
     },
     mediaOption: {

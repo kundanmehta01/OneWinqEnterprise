@@ -105,7 +105,7 @@ const profileMediaSchema = z.object({
   _id: z.string().optional(),
   title: z.string().trim().min(1, 'Media title is required').max(150, 'Media title cannot exceed 150 characters'),
   url: z.string().trim().min(1, 'Media URL is required').max(1000, 'Media URL cannot exceed 1000 characters'),
-  type: z.enum(['all', 'photo', 'video', 'event']).default('photo'),
+  type: z.enum(['all', 'photo', 'video', 'news', 'event']).default('photo'),
   mediaOption: z.enum(['photo_url', 'photo_upload', 'video_upload', 'video_url']).optional(),
   uploadUrl: z.string().max(1000).optional().or(z.literal('')),
   linkUrl: z.string().max(1000).optional().or(z.literal('')),
@@ -124,8 +124,16 @@ const profileMediaSchema = z.object({
     return;
   }
 
-  const u = (data.url || '').trim();
-  const isLocalUpload = /^\/?uploads\//i.test(u) || u.includes('/uploads/');
+  let u = (data.url || '').trim();
+  // Auto-prefix https:// if protocol was omitted for common video and web hosts
+  if (/^(?:www\.|youtube\.com|youtu\.be|vimeo\.com)/i.test(u)) {
+    u = `https://${u}`;
+    data.url = u;
+  }
+
+  const isLocalUpload = /^\/?uploads\//i.test(u) || u.includes('/uploads/') || u.startsWith('blob:') || u.startsWith('data:');
+  const isCloudStorage = /cloudinary\.com|amazonaws\.com|digitaloceanspaces\.com|storage\.googleapis\.com/i.test(u);
+  const isUploadedFile = isLocalUpload || isCloudStorage;
   const isWebUrl = /^https?:\/\/[^\s]+$/i.test(u);
 
   if (!isLocalUpload && !isWebUrl) {
@@ -137,12 +145,20 @@ const profileMediaSchema = z.object({
     return;
   }
 
+  // Auto-generate YouTube thumbnail if not provided
+  if ((data.type === 'video' || data.mediaOption?.startsWith('video')) && (!data.thumbnailUrl || !data.thumbnailUrl.trim())) {
+    const ytMatch = u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?.*v=|embed\/|v\/|shorts\/))([\w-]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      data.thumbnailUrl = `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+    }
+  }
+
   // Strict Validation 2: Ensure url matches the chosen dropdown mediaOption
   if (data.mediaOption) {
-    if (data.mediaOption === 'photo_upload' && !isLocalUpload) {
+    if (data.mediaOption === 'photo_upload' && !isUploadedFile) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Option "Upload Image" requires an uploaded file from device (/uploads/...), not an external web link.',
+        message: 'Option "Upload Image" requires an uploaded file from device or cloud storage, not an external web link.',
         path: ['url']
       });
     } else if (data.mediaOption === 'photo_url' && isLocalUpload) {
@@ -151,10 +167,10 @@ const profileMediaSchema = z.object({
         message: 'Option "Upload Image URL" requires an external web link (http:// or https://), not a local upload path.',
         path: ['url']
       });
-    } else if (data.mediaOption === 'video_upload' && !isLocalUpload) {
+    } else if (data.mediaOption === 'video_upload' && !isUploadedFile) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Option "Upload Video" requires an uploaded video file from device (/uploads/...), not an external web link.',
+        message: 'Option "Upload Video" requires an uploaded video file from device or cloud storage, not an external web link.',
         path: ['url']
       });
     } else if (data.mediaOption === 'video_url' && isLocalUpload) {

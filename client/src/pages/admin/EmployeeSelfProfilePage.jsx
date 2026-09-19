@@ -32,6 +32,7 @@ import { userProfileApi } from '../../api/userProfileApi';
 import { useAuthStore } from '../../stores/authStore';
 import { ImageUploadInput } from '../../components/common/ImageUploadInput';
 import { MediaUploadInput } from '../../components/common/MediaUploadInput';
+import { getEmbedInfo, normalizeMediaUrl } from '../../utils/mediaUtils';
 import { TemplateRenderer } from '../../components/templates/TemplateRenderer';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 import { MonthYearCalendarPicker } from '../../components/common/MonthYearCalendarPicker';
@@ -333,11 +334,32 @@ export const EmployeeSelfProfilePage = () => {
     enabled: Boolean(slug) && isQrModalOpen
   });
 
+  const cleanMediaGallery = (items) => {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((m) => m && typeof m.url === 'string' && m.url.trim())
+      .map((m, idx) => {
+        const normalizedUrl = normalizeMediaUrl(m.url);
+        const isVid = m.type === 'video' || m.mediaOption?.startsWith('video');
+        const embed = isVid ? getEmbedInfo(normalizedUrl) : null;
+        return {
+          ...m,
+          title: m.title?.trim() || `Media Asset ${idx + 1}`,
+          url: normalizedUrl,
+          type: isVid ? 'video' : (m.type || 'photo'),
+          thumbnailUrl: m.thumbnailUrl?.trim() || embed?.thumbnailUrl || '',
+          order: idx + 1,
+          isVisible: m.isVisible !== false
+        };
+      });
+  };
+
   // Save Draft / Save Changes Mutation
   const saveDraftMutation = useMutation({
     mutationFn: async (payload) => {
       const cleanPayload = {
         ...payload,
+        mediaGallery: cleanMediaGallery(payload.mediaGallery || formData.mediaGallery),
         publishImmediately: isAdminUser ? true : Boolean(payload.publishImmediately),
         location: parseLocationToString(payload.location || formData.location),
         phone: payload.connectAndContact?.phone || payload.phone || '',
@@ -387,6 +409,7 @@ export const EmployeeSelfProfilePage = () => {
     mutationFn: async (note) => {
       const payload = {
         ...formData,
+        mediaGallery: cleanMediaGallery(formData.mediaGallery),
         location: parseLocationToString(formData.location),
         phone: formData.connectAndContact?.phone || formData.phone || '',
         workEmail: formData.connectAndContact?.workEmail || formData.workEmail || '',
@@ -789,7 +812,21 @@ END:VCARD`;
 
   const updateMedia = (index, field, value) => {
     const next = [...formData.mediaGallery];
-    next[index] = { ...next[index], [field]: value };
+    let sanitizedValue = value;
+    if (field === 'url' && typeof value === 'string') {
+      sanitizedValue = normalizeMediaUrl(value);
+    }
+    next[index] = { ...next[index], [field]: sanitizedValue };
+
+    if (field === 'url') {
+      const isVid = next[index].type === 'video' || next[index].mediaOption?.startsWith('video');
+      if (isVid) {
+        const embed = getEmbedInfo(sanitizedValue);
+        if (embed?.thumbnailUrl && !next[index].thumbnailUrl) {
+          next[index].thumbnailUrl = embed.thumbnailUrl;
+        }
+      }
+    }
     setFormData({ ...formData, mediaGallery: next });
   };
 
