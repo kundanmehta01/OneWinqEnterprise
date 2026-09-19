@@ -32,27 +32,52 @@ export const useCompanyProfileStore = create((set, get) => ({
     set({ draft, isDirty: true });
   },
 
-  updateArrayItem: (arrayKey, index, updatedItem) => {
+  updateArrayItem: (arrayPath, index, updatedItem) => {
     const draft = { ...get().draft };
-    const array = draft[arrayKey] ? [...draft[arrayKey]] : [];
+    const keys = arrayPath.split('.');
+    let current = draft;
+    // Traverse to the parent of the target array
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) current[keys[i]] = {};
+      current[keys[i]] = { ...current[keys[i]] };
+      current = current[keys[i]];
+    }
+    const lastKey = keys[keys.length - 1];
+    const array = current[lastKey] ? [...current[lastKey]] : [];
     array[index] = { ...array[index], ...updatedItem };
-    draft[arrayKey] = array;
+    current[lastKey] = array;
     set({ draft, isDirty: true });
   },
 
-  addArrayItem: (arrayKey, newItem) => {
+  addArrayItem: (arrayPath, newItem) => {
     const draft = { ...get().draft };
-    const array = draft[arrayKey] ? [...draft[arrayKey]] : [];
+    const keys = arrayPath.split('.');
+    let current = draft;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) current[keys[i]] = {};
+      current[keys[i]] = { ...current[keys[i]] };
+      current = current[keys[i]];
+    }
+    const lastKey = keys[keys.length - 1];
+    const array = current[lastKey] ? [...current[lastKey]] : [];
     array.push(newItem);
-    draft[arrayKey] = array;
+    current[lastKey] = array;
     set({ draft, isDirty: true });
   },
 
-  removeArrayItem: (arrayKey, index) => {
+  removeArrayItem: (arrayPath, index) => {
     const draft = { ...get().draft };
-    const array = draft[arrayKey] ? [...draft[arrayKey]] : [];
+    const keys = arrayPath.split('.');
+    let current = draft;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) current[keys[i]] = {};
+      current[keys[i]] = { ...current[keys[i]] };
+      current = current[keys[i]];
+    }
+    const lastKey = keys[keys.length - 1];
+    const array = current[lastKey] ? [...current[lastKey]] : [];
     array.splice(index, 1);
-    draft[arrayKey] = array;
+    current[lastKey] = array;
     set({ draft, isDirty: true });
   },
 

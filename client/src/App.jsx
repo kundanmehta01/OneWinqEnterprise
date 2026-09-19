@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import { PublicCompanyPage } from './pages/PublicCompanyPage';
+import { LandingPage } from './pages/LandingPage';
 import { PublicEmployeeProfilePage } from './pages/PublicEmployeeProfilePage';
 import { CardActivationPage } from './pages/CardActivationPage';
 import { PublicCardTapPage } from './pages/PublicCardTapPage';
@@ -121,8 +122,10 @@ export const App = () => {
     <>
       <ScrollToTop />
       <Routes>
-      {/* 1. Public Company Identity Flow */}
-      <Route path="/" element={<PublicCompanyPage />} />
+      {/* 1. Root landing page */}
+      <Route path="/" element={<LandingPage />} />
+
+      {/* 1b. Public Company Identity Flow */}
       <Route path="/company" element={<PublicCompanyPage />} />
       <Route path="/p/company" element={<PublicCompanyPage />} />
 

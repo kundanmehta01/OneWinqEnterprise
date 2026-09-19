@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { authApi } from '../api/authApi';
+import { queryClient } from '../api/queryClient';
 
 export const useAuthStore = create((set, get) => ({
   user: JSON.parse(localStorage.getItem('onewinq_user') || 'null'),
@@ -73,6 +74,10 @@ export const useAuthStore = create((set, get) => ({
       localStorage.removeItem('onewinq_role');
       localStorage.removeItem('onewinq_is_super_admin');
       localStorage.removeItem('onewinq_permissions');
+
+      // Clear ALL React Query cache so no stale per-user data (admin state, permissions,
+      // company profile, team data, etc.) leaks into the next login session.
+      queryClient.clear();
 
       set({
         user: null,
