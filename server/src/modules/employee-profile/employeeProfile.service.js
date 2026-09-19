@@ -420,7 +420,16 @@ class EmployeeProfileService {
       // Profile draft modified by employee awaiting review:
       // DO NOT overwrite profile.published! profile.published must remain the previous live state
       // so diffs correctly compare [old published state] -> [new draft state].
-      if (profile.approvalStatus === 'approved' || profile.approvalStatus === 'changes_requested') {
+      //
+      // BUG FIX: 'rejected' was missing — after an admin rejection the status stayed 'rejected'
+      // forever, preventing the user from re-submitting. Also reset 'pending_review' guard
+      // in case isLocked was manually cleared without resetting the status.
+      if (
+        profile.approvalStatus === 'approved' ||
+        profile.approvalStatus === 'rejected' ||
+        profile.approvalStatus === 'changes_requested' ||
+        profile.approvalStatus === 'pending_review'
+      ) {
         profile.approvalStatus = 'draft';
       }
     }
@@ -492,13 +501,26 @@ class EmployeeProfileService {
       throw new BadRequestError('A profile submission is already pending review.', ERROR_CODES.PROFILE_ALREADY_PENDING);
     }
 
-    // If there are no diffs detected, don't throw 400 error — return friendly success
+    // BUG FIX: When diffSummary is empty it means draft == published.
+    // This legitimately happens after a rejection or changes_requested cycle where
+    // profile.published was never updated, and the user is re-submitting the same
+    // (or only slightly changed) draft. In that case, treat the full draft as the
+    // submission so it reaches the admin instead of silently returning 'up to date'.
     if (diffSummary.length === 0) {
-      return {
-        message: 'Your profile is already up to date with the published version.',
-        approvalId: null,
-        diffSummary: []
-      };
+      // If the profile has never been meaningfully published (draft-only) or was
+      // rejected/changes_requested, allow submission with a synthetic diff so the
+      // admin still receives the request.
+      const resubmitStatuses = ['rejected', 'changes_requested', 'draft'];
+      const canResubmit = resubmitStatuses.includes(profile.approvalStatus);
+      if (!canResubmit) {
+        return {
+          message: 'Your profile is already up to date with the published version.',
+          approvalId: null,
+          diffSummary: []
+        };
+      }
+      // Build a synthetic diff so the admin can review the full current draft
+      diffSummary = [{ field: 'profile', oldValue: publishedClean, newValue: draftClean }];
     }
 
     const approval = await ProfileApproval.create({
