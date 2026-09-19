@@ -8,10 +8,18 @@ import { Event } from '../../modules/events/event.model.js';
 import { SYSTEM_ROLES } from '../../constants/roles.constant.js';
 import { logger } from '../../config/logger.config.js';
 
-/** Returns all admin/HR user IDs (excludes the given actorId) */
+/** Returns all admin/HR user IDs who should receive approval notifications (excludes the given actorId) */
 const getAdminUserIds = async (excludeUserId = null) => {
+  // All roles that have profile_approval permissions
   const adminRoles = await Role.find({
-    name: { $in: [SYSTEM_ROLES.SUPER_ADMIN, SYSTEM_ROLES.ADMIN, SYSTEM_ROLES.HR_ADMIN] }
+    name: {
+      $in: [
+        SYSTEM_ROLES.SUPER_ADMIN,
+        SYSTEM_ROLES.ADMIN,
+        SYSTEM_ROLES.HR_ADMIN,
+        SYSTEM_ROLES.CONTENT_ADMIN   // Content Admin also has profile_approval permissions
+      ]
+    }
   }).select('_id');
   const adminRoleIds = adminRoles.map((r) => r._id);
 
@@ -21,9 +29,24 @@ const getAdminUserIds = async (excludeUserId = null) => {
     isArchived: false
   }).select('userId');
 
-  return adminMembers
+  const memberUserIds = adminMembers
     .map((m) => m.userId?.toString())
-    .filter((id) => id && id !== excludeUserId?.toString());
+    .filter(Boolean);
+
+  // The system superadmin is identified by email in the auth middleware and may not
+  // have a TeamMember record, so include their User document directly.
+  const superAdminUser = await User.findOne(
+    { email: 'superadmin@onewinq.com' },
+    { _id: 1 }
+  ).lean();
+  if (superAdminUser) {
+    memberUserIds.push(superAdminUser._id.toString());
+  }
+
+  // Deduplicate and exclude the actor who triggered the event
+  return [...new Set(memberUserIds)].filter(
+    (id) => id !== excludeUserId?.toString()
+  );
 };
 
 /** Notify a list of user IDs with the same notification payload */
