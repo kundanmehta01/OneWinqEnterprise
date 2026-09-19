@@ -360,7 +360,7 @@ const renderFormattedDiffValue = (val, field = '', isOld = false) => {
 
     // Key-value object presentation (e.g. overviewStats or location)
     const validEntries = Object.entries(parsed).filter(
-      ([k, v]) => v !== null && v !== undefined && v !== '' && k !== '_id' && k !== 'id'
+      ([k, v]) => v !== null && v !== undefined && v !== '' && v !== '[object Object]' && k !== '_id' && k !== 'id'
     );
     if (validEntries.length > 0) {
       return (

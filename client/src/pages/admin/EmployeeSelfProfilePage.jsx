@@ -38,6 +38,22 @@ import { MonthYearCalendarPicker } from '../../components/common/MonthYearCalend
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+const parseLocationToString = (loc) => {
+  if (!loc) return '';
+  if (typeof loc === 'string') {
+    return loc.trim() === '[object Object]' ? '' : loc.trim();
+  }
+  if (typeof loc === 'object') {
+    const city = (loc.city && typeof loc.city === 'string' && loc.city !== '[object Object]') ? loc.city.trim() : '';
+    const state = (loc.state && typeof loc.state === 'string' && loc.state !== '[object Object]') ? loc.state.trim() : '';
+    const country = (loc.country && typeof loc.country === 'string' && loc.country !== '[object Object]') ? loc.country.trim() : '';
+    const parts = [city, state, country].filter(Boolean);
+    if (parts.length > 0) return parts.join(', ');
+    if (loc.address && typeof loc.address === 'string' && loc.address !== '[object Object]') return loc.address.trim();
+  }
+  return '';
+};
+
 export const EmployeeSelfProfilePage = () => {
   const { isSuperAdmin } = useAuthStore();
   const queryClient = useQueryClient();
@@ -254,7 +270,7 @@ export const EmployeeSelfProfilePage = () => {
         bio: draft.bio ?? published.bio ?? '',
         phone: phoneVal,
         workEmail: emailVal,
-        location: draft.location ?? published.location ?? '',
+        location: parseLocationToString(draft.location ?? published.location),
         avatarUrl: draft.avatarUrl ?? published.avatarUrl ?? '',
         collaborationNote: noteVal,
         connectAndContact: {
@@ -301,6 +317,7 @@ export const EmployeeSelfProfilePage = () => {
     mutationFn: async (payload) => {
       const cleanPayload = {
         ...payload,
+        location: parseLocationToString(payload.location || formData.location),
         phone: payload.connectAndContact?.phone || payload.phone || '',
         workEmail: payload.connectAndContact?.workEmail || payload.workEmail || '',
         collaborationNote: payload.connectAndContact?.note || payload.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
@@ -344,6 +361,7 @@ export const EmployeeSelfProfilePage = () => {
     mutationFn: async (note) => {
       const payload = {
         ...formData,
+        location: parseLocationToString(formData.location),
         phone: formData.connectAndContact?.phone || formData.phone || '',
         workEmail: formData.connectAndContact?.workEmail || formData.workEmail || '',
         collaborationNote: formData.connectAndContact?.note || formData.collaborationNote || 'Open to collaboration, speaking opportunities and new ideas.',
@@ -1036,7 +1054,7 @@ END:VCARD`;
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Work Location</label>
                   <input
                     type="text"
-                    value={formData.location}
+                    value={parseLocationToString(formData.location)}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="e.g. Bangalore, India (Hybrid)"
                     className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500"
@@ -1923,7 +1941,7 @@ END:VCARD`;
                   coverUrl: profileData?.coverUrl,
                   workEmail: formData.workEmail || formData.connectAndContact?.workEmail || profileData?.workEmail,
                   phone: formData.phone || formData.connectAndContact?.phone || profileData?.phone,
-                  location: { city: formData.location || profileData?.location?.city || '' },
+                  location: { city: parseLocationToString(formData.location) || parseLocationToString(profileData?.location) || '' },
                   overviewStats: formData.overviewStats || profileData?.overviewStats,
                   experience: Array.isArray(formData.experience) ? formData.experience : (Array.isArray(profileData?.experience) ? profileData.experience : []),
                   journey: (Array.isArray(formData.experience) && formData.experience.length > 0) ? formData.experience : (Array.isArray(profileData?.experience) ? profileData.experience : (Array.isArray(profileData?.journey) ? profileData.journey : [])),

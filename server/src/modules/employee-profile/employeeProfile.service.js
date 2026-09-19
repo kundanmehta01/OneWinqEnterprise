@@ -37,6 +37,19 @@ const DRAFT_FIELDS = [
   'socialLinks', 'customSections'
 ];
 
+const sanitizeLocation = (loc) => {
+  if (!loc) return { city: '', country: '' };
+  if (typeof loc === 'string') {
+    const s = loc.trim();
+    if (s === '[object Object]' || !s) return { city: '', country: '' };
+    const parts = s.split(',').map((p) => p.trim()).filter((p) => p && p !== '[object Object]');
+    return { city: (parts[0] || '').slice(0, 100), country: (parts[1] || '').slice(0, 100) };
+  }
+  const city = (loc.city && typeof loc.city === 'string' && loc.city.trim() !== '[object Object]') ? loc.city.trim().slice(0, 100) : '';
+  const country = (loc.country && typeof loc.country === 'string' && loc.country.trim() !== '[object Object]') ? loc.country.trim().slice(0, 100) : '';
+  return { city, country };
+};
+
 class EmployeeProfileService {
   /** Normalize raw card status to frontend-friendly values */
   _normalizeCard(card) {
@@ -52,6 +65,16 @@ class EmployeeProfileService {
    * to an already-populated, lean profile document.
    */
   async _buildProfileResponse(profile) {
+    if (profile.draft?.location) {
+      profile.draft.location = sanitizeLocation(profile.draft.location);
+    }
+    if (profile.published?.location) {
+      profile.published.location = sanitizeLocation(profile.published.location);
+    }
+    if (profile.location) {
+      profile.location = sanitizeLocation(profile.location);
+    }
+
     const memberId = profile.memberId?._id || profile.memberId;
 
     // NFC card lookup
@@ -399,6 +422,10 @@ class EmployeeProfileService {
       if (updateData.collaborationNote !== undefined) draft.connectAndContact.note = updateData.collaborationNote;
     }
 
+    if (draft.location !== undefined) {
+      draft.location = sanitizeLocation(draft.location);
+    }
+
     profile.draft = draft;
     profile.calculateCompletionScore();
     profile.markModified('draft');
@@ -477,6 +504,16 @@ class EmployeeProfileService {
 
     const publishedClean = profile.published ? profile.published.toObject() : {};
     const draftClean = profile.draft ? profile.draft.toObject() : {};
+
+    if (draftClean.location !== undefined) {
+      draftClean.location = sanitizeLocation(draftClean.location);
+      if (profile.draft) {
+        profile.draft.location = draftClean.location;
+      }
+    }
+    if (publishedClean.location !== undefined) {
+      publishedClean.location = sanitizeLocation(publishedClean.location);
+    }
 
     // Synchronize draft experience & journey
     if (draftClean.experience !== undefined) {

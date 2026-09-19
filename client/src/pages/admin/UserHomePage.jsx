@@ -165,12 +165,19 @@ export const UserHomePage = () => {
 
   const formatLocation = (loc) => {
     if (!loc) return 'Indore, MP';
-    if (typeof loc === 'string') return loc;
-    if (typeof loc === 'object') {
-      const parts = [loc.city, loc.state, loc.country].filter(Boolean);
-      return parts.length > 0 ? parts.join(', ') : loc.address || 'Indore, MP';
+    if (typeof loc === 'string') {
+      const s = loc.trim();
+      return (s === '[object Object]' || !s) ? 'Indore, MP' : s;
     }
-    return String(loc);
+    if (typeof loc === 'object') {
+      const city = (loc.city && typeof loc.city === 'string' && loc.city.trim() !== '[object Object]') ? loc.city.trim() : '';
+      const state = (loc.state && typeof loc.state === 'string' && loc.state.trim() !== '[object Object]') ? loc.state.trim() : '';
+      const country = (loc.country && typeof loc.country === 'string' && loc.country.trim() !== '[object Object]') ? loc.country.trim() : '';
+      const parts = [city, state, country].filter(Boolean);
+      return parts.length > 0 ? parts.join(', ') : (loc.address && loc.address.trim() !== '[object Object]' ? loc.address.trim() : 'Indore, MP');
+    }
+    const res = String(loc);
+    return res === '[object Object]' ? 'Indore, MP' : res;
   };
 
   const formatActivityTime = (dateStr) => {

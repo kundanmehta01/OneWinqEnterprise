@@ -12,6 +12,23 @@ import {
 } from 'lucide-react';
 import { FaLinkedinIn, FaInstagram, FaWhatsapp, FaPhone, FaEnvelope, FaGlobe } from 'react-icons/fa';
 
+const formatLocation = (loc) => {
+  if (!loc) return '';
+  if (typeof loc === 'string') {
+    const s = loc.trim();
+    return s === '[object Object]' ? '' : s;
+  }
+  if (typeof loc === 'object') {
+    const city = (loc.city && typeof loc.city === 'string' && loc.city.trim() !== '[object Object]') ? loc.city.trim() : '';
+    const state = (loc.state && typeof loc.state === 'string' && loc.state.trim() !== '[object Object]') ? loc.state.trim() : '';
+    const country = (loc.country && typeof loc.country === 'string' && loc.country.trim() !== '[object Object]') ? loc.country.trim() : '';
+    const parts = [city, state, country].filter(Boolean);
+    if (parts.length > 0) return parts.join(', ');
+    if (loc.address && typeof loc.address === 'string' && loc.address.trim() !== '[object Object]') return loc.address.trim();
+  }
+  return '';
+};
+
 /**
  * Standard Digital Hero Card Component
  * Provides a unified, premium digital business card header across all department templates.
@@ -250,10 +267,10 @@ export const DigitalHeroCard = ({
                 {profile.companyName}
               </span>
             )}
-            {(profile.location?.city || profile.location?.country) && (
+            {formatLocation(profile.location) && (
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                {[profile.location?.city, profile.location?.country].filter(Boolean).join(', ')}
+                {formatLocation(profile.location)}
               </span>
             )}
           </div>

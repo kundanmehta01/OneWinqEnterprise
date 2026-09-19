@@ -224,13 +224,20 @@ export const updateDraftProfileSchema = z.object({
   }).optional(),
   location: z.union([
     z.string().max(150, 'Location cannot exceed 150 characters').transform((val) => {
-      const parts = val.split(',').map((p) => p.trim());
+      if (!val || val.trim() === '[object Object]') {
+        return { city: '', country: '' };
+      }
+      const parts = val.split(',').map((p) => p.trim()).filter((p) => p && p !== '[object Object]');
       return { city: (parts[0] || '').slice(0, 100), country: (parts[1] || '').slice(0, 100) };
     }),
     z.object({
       city: z.string().trim().max(100, 'City cannot exceed 100 characters').optional().default(''),
       country: z.string().trim().max(100, 'Country cannot exceed 100 characters').optional().default('')
-    }).passthrough()
+    }).passthrough().transform((obj) => ({
+      ...obj,
+      city: obj.city === '[object Object]' ? '' : (obj.city || ''),
+      country: obj.country === '[object Object]' ? '' : (obj.country || '')
+    }))
   ]).optional(),
   experience: z.array(experienceSchema).max(50, 'Cannot exceed 50 experience entries').optional(),
   journey: z.array(journeySchema).max(50, 'Cannot exceed 50 journey entries').optional(),
