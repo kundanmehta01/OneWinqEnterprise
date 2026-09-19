@@ -133,3 +133,9 @@ export const createApp = () => {
 
   return app;
 };
+
+// Default export for Vercel serverless compatibility.
+// Vercel validates that every JS module in the deployment has a default export
+// that is a function or http.Server. Without this, it throws:
+// "Invalid export found in module ... The default export must be a function or server."
+export default createApp();
