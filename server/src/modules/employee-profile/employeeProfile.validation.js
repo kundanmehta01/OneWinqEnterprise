@@ -59,8 +59,8 @@ const projectSchema = z.object({
   title: z.string().trim().min(1, 'Project title is required').max(150, 'Project title cannot exceed 150 characters'),
   description: z.string().max(2000, 'Project description cannot exceed 2000 characters').optional(),
   role: z.string().max(100, 'Role cannot exceed 100 characters').optional(),
-  url: z.string().url('Invalid URL format').max(1000, 'URL cannot exceed 1000 characters').optional().or(z.literal('')),
-  imageUrl: z.string().url('Invalid image URL format').max(1000, 'Image URL cannot exceed 1000 characters').optional().or(z.literal('')),
+  url: z.string().max(1000, 'URL cannot exceed 1000 characters').optional().or(z.literal('')),
+  imageUrl: z.string().max(1000, 'Image URL cannot exceed 1000 characters').optional().or(z.literal('')),
   status: z.enum(['all', 'ongoing', 'completed']).default('completed'),
   badge: z.string().max(50, 'Badge cannot exceed 50 characters').optional(),
   startDate: z.string().datetime().optional().nullable().or(z.date().optional()),
@@ -76,7 +76,7 @@ const achievementSchema = z.object({
   issuer: z.string().max(100, 'Issuer cannot exceed 100 characters').optional(),
   issueDate: z.string().datetime().optional().nullable().or(z.date().optional()),
   description: z.string().max(1500, 'Achievement description cannot exceed 1500 characters').optional(),
-  certificateUrl: z.string().url('Invalid certificate URL format').max(1000, 'Certificate URL cannot exceed 1000 characters').optional().or(z.literal('')),
+  certificateUrl: z.string().max(1000, 'Certificate URL cannot exceed 1000 characters').optional().or(z.literal('')),
   icon: z.string().max(50, 'Icon cannot exceed 50 characters').optional(),
   badge: z.string().max(50, 'Badge cannot exceed 50 characters').optional(),
   imageUrl: z.string().max(1000, 'Image URL cannot exceed 1000 characters').optional().or(z.literal('')),
@@ -87,7 +87,7 @@ const achievementSchema = z.object({
 const socialLinkSchema = z.object({
   _id: z.string().optional(),
   platform: z.string().trim().min(1, 'Platform name is required').max(50, 'Platform name cannot exceed 50 characters'),
-  url: z.string().url('Invalid social link URL').max(1000, 'URL cannot exceed 1000 characters'),
+  url: z.string().max(1000, 'URL cannot exceed 1000 characters').optional().or(z.literal('')),
   order: z.number().int().default(0),
   isVisible: z.boolean().default(true)
 });
@@ -172,8 +172,8 @@ const profileBlogSchema = z.object({
   title: z.string().trim().min(1, 'Blog title is required').max(200, 'Blog title cannot exceed 200 characters'),
   excerpt: z.string().max(500, 'Excerpt cannot exceed 500 characters').optional(),
   content: z.string().max(15000, 'Blog content cannot exceed 15000 characters').optional(),
-  url: z.string().url('Invalid blog URL').max(1000, 'Blog URL cannot exceed 1000 characters').optional().or(z.literal('')),
-  coverImage: z.string().url('Invalid cover image URL').max(1000, 'Cover image URL cannot exceed 1000 characters').optional().or(z.literal('')),
+  url: z.string().max(1000, 'Blog URL cannot exceed 1000 characters').optional().or(z.literal('')),
+  coverImage: z.string().max(1000, 'Cover image URL cannot exceed 1000 characters').optional().or(z.literal('')),
   publishedDate: z.string().datetime().optional().nullable().or(z.date().optional()),
   readTime: z.string().max(30, 'Read time cannot exceed 30 characters').optional(),
   tags: z.array(z.string().trim().max(40, 'Tag cannot exceed 40 characters')).max(20, 'Cannot exceed 20 tags').optional(),
@@ -186,7 +186,7 @@ export const updateDraftProfileSchema = z.object({
   bio: z.string().trim().max(2000, 'Bio cannot exceed 2000 characters').optional(),
   phone: z.string().trim().max(30, 'Phone number cannot exceed 30 characters').optional().or(z.literal('')),
   workEmail: z.string().email('Invalid email address').max(100, 'Email cannot exceed 100 characters').optional().or(z.literal('')),
-  avatarUrl: z.string().url('Invalid avatar URL').max(1000, 'Avatar URL cannot exceed 1000 characters').optional().or(z.literal('')),
+  avatarUrl: z.string().max(2000, 'Avatar URL cannot exceed 2000 characters').optional().or(z.literal('')),
   collaborationNote: z.string().trim().max(500, 'Collaboration note cannot exceed 500 characters').optional(),
   overviewStats: z.object({
     connectionsCount: z.string().trim().max(30, 'Connections count cannot exceed 30 characters').optional(),
@@ -230,7 +230,7 @@ export const updateDraftProfileSchema = z.object({
     z.object({
       city: z.string().trim().max(100, 'City cannot exceed 100 characters').optional().default(''),
       country: z.string().trim().max(100, 'Country cannot exceed 100 characters').optional().default('')
-    })
+    }).passthrough()
   ]).optional(),
   experience: z.array(experienceSchema).max(50, 'Cannot exceed 50 experience entries').optional(),
   journey: z.array(journeySchema).max(50, 'Cannot exceed 50 journey entries').optional(),

@@ -167,6 +167,8 @@ class ProfileApprovalService {
           profile.published.journey = approval.draftSnapshot.experience;
         }
       }
+      profile.markModified('published');
+      profile.markModified('draft');
       profile.approvalStatus = 'approved';
       profile.isLocked = false;
       profile.lastApprovedAt = new Date();

@@ -325,9 +325,15 @@ export const EmployeeSelfProfilePage = () => {
       setTimeout(() => setToastMessage(null), 3500);
     },
     onError: (err) => {
+      const msg =
+        err?.response?.data?.error?.details?.[0]?.message ||
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to save draft changes.';
       setToastMessage({
         type: 'error',
-        text: err?.response?.data?.message || 'Failed to save draft changes.'
+        text: msg
       });
       setTimeout(() => setToastMessage(null), 4000);
     }
@@ -364,20 +370,30 @@ export const EmployeeSelfProfilePage = () => {
       queryClient.invalidateQueries({ queryKey: ['my-approval-status'] });
       setIsSubmitModalOpen(false);
       setSubmitNote('');
+      const isAutoApproved = res?.data?.autoApproved || res?.autoApproved || res?.data?.status === 'approved' || res?.status === 'approved';
+      const isAlreadyUpToDate = !res?.data?.approvalId && !res?.approvalId && !isAutoApproved;
       setToastMessage({
-        type: 'success',
-        text: res?.data?.status === 'approved' || res?.status === 'approved'
+        type: isAlreadyUpToDate ? 'info' : 'success',
+        text: isAlreadyUpToDate
+          ? (res?.data?.message || res?.message || 'Your profile is already up to date.')
+          : isAutoApproved
           ? 'Profile published immediately!'
           : 'Profile draft submitted for administrator approval!'
       });
       setTimeout(() => setToastMessage(null), 4000);
     },
     onError: (err) => {
+      const msg =
+        err?.response?.data?.error?.details?.[0]?.message ||
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to submit profile for approval.';
       setToastMessage({
         type: 'error',
-        text: err?.response?.data?.message || 'Failed to submit profile for approval.'
+        text: msg
       });
-      setTimeout(() => setToastMessage(null), 4000);
+      setTimeout(() => setToastMessage(null), 5000);
     }
   });
 
@@ -411,7 +427,13 @@ export const EmployeeSelfProfilePage = () => {
       setTimeout(() => setToastMessage(null), 2500);
     },
     onError: (err) => {
-      setToastMessage({ type: 'error', text: err?.response?.data?.message || 'Failed to save theme.' });
+      const msg =
+        err?.response?.data?.error?.details?.[0]?.message ||
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to save theme.';
+      setToastMessage({ type: 'error', text: msg });
       setTimeout(() => setToastMessage(null), 3500);
     }
   });

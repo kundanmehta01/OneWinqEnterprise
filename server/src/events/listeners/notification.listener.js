@@ -10,23 +10,34 @@ import { logger } from '../../config/logger.config.js';
 
 /** Returns all admin/HR user IDs who should receive approval notifications (excludes the given actorId) */
 const getAdminUserIds = async (excludeUserId = null) => {
-  // All roles that have profile_approval permissions
+  // All roles that have profile_approval permissions or match admin role names/slugs
   const adminRoles = await Role.find({
-    name: {
-      $in: [
-        SYSTEM_ROLES.SUPER_ADMIN,
-        SYSTEM_ROLES.ADMIN,
-        SYSTEM_ROLES.HR_ADMIN,
-        SYSTEM_ROLES.CONTENT_ADMIN   // Content Admin also has profile_approval permissions
-      ]
-    }
+    $or: [
+      {
+        name: {
+          $in: [
+            SYSTEM_ROLES.SUPER_ADMIN,
+            SYSTEM_ROLES.ADMIN,
+            SYSTEM_ROLES.HR_ADMIN,
+            SYSTEM_ROLES.CONTENT_ADMIN
+          ]
+        }
+      },
+      {
+        slug: {
+          $in: ['super-admin', 'superadmin', 'admin', 'hr-admin', 'content-admin']
+        }
+      },
+      {
+        permissions: { $in: ['profile_approval.approve', 'profile_approval.read'] }
+      }
+    ]
   }).select('_id');
   const adminRoleIds = adminRoles.map((r) => r._id);
 
   const adminMembers = await TeamMember.find({
     roleId: { $in: adminRoleIds },
-    status: 'active',
-    isArchived: false
+    status: 'active'
   }).select('userId');
 
   const memberUserIds = adminMembers
