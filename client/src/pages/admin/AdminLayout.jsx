@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -37,6 +37,11 @@ export const AdminLayout = () => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
+
+  // Auto-close mobile sidebar whenever route/path changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   // Helper to get descriptive panel name
   const getPanelName = (roleName, isSuper) => {
@@ -200,14 +205,23 @@ export const AdminLayout = () => {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar */}
         <header className="h-16 bg-white border-b border-slate-100 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-          {/* Left: Mobile Toggle */}
-          <div className="flex items-center gap-3">
+          {/* Left: Mobile Toggle & Mobile Logo */}
+          <div className="flex items-center gap-2.5">
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 -ml-1 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Open navigation sidebar"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <Menu className="w-5 h-5" />
             </button>
+            <div className="lg:hidden flex items-center gap-2">
+              <span className="font-bold text-base tracking-tight text-slate-900 font-display">
+                OneWinq
+              </span>
+              <span className="text-[10px] font-bold text-purple-700 uppercase bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+                {isSuperAdmin ? 'Admin' : (role || 'Admin')}
+              </span>
+            </div>
           </div>
 
           {/* Right: Return to User Dashboard, Notifications, User Profile */}
@@ -310,58 +324,120 @@ export const AdminLayout = () => {
           </div>
         </header>
 
-        {/* Mobile Slide Drawer */}
+        {/* Mobile Slide-In Sidebar Drawer (Off-Canvas Overlay) */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-b border-slate-100 p-4 space-y-4 shadow-lg z-40 max-h-[80vh] overflow-y-auto">
-            {!isSuperAdmin && (
-              <div className="pb-2 border-b border-slate-100">
-                <NavLink
-                  to="/app/home"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold"
-                >
-                  <User className="w-4 h-4" />
-                  <span>Return to User Dashboard</span>
-                </NavLink>
-              </div>
-            )}
-            {navSections.map((sec, sIdx) => (
-              <div key={sIdx} className="space-y-1">
-                {sec.sectionTitle && (
-                  <p className="px-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                    {sec.sectionTitle}
+          <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-xs flex justify-start animate-in fade-in duration-200 lg:hidden">
+            {/* Backdrop Tap to Close */}
+            <div
+              className="fixed inset-0"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-hidden="true"
+            />
+
+            {/* Off-Canvas Slide-In Sidebar Panel */}
+            <aside className="relative w-72 max-w-[85vw] bg-white h-full shadow-2xl border-r border-slate-100 flex flex-col justify-between animate-in slide-in-from-left duration-200 select-none z-10">
+              {/* Header with Brand & Close Button */}
+              <div className="h-16 px-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div className="min-w-0">
+                  <span className="font-bold text-lg tracking-tight text-slate-900 font-display block truncate">
+                    OneWinq
+                  </span>
+                  <p className="text-[10px] font-bold text-purple-700 uppercase tracking-wider truncate">
+                    {panelName}
                   </p>
-                )}
-                {sec.items.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={({ isActive }) => {
-                        const isOrgStudioActive = (item.to === '/admin/organization' || item.to === '/admin/company-profile') &&
-                          (location.pathname.startsWith('/admin/organization') || location.pathname.startsWith('/admin/company-profile'));
-                        const active = isActive || isOrgStudioActive;
-                        return `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium ${
-                          active
-                            ? 'bg-indigo-600 text-white font-semibold'
-                            : 'text-slate-600 hover:bg-slate-50'
-                        }`;
-                      }}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.label}</span>
-                    </NavLink>
-                  );
-                })}
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Close sidebar"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            ))}
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-              <button onClick={handleLogout} className="text-xs text-rose-600 font-semibold flex items-center gap-1.5">
-                <LogOut className="w-4 h-4" /> Logout
-              </button>
-            </div>
+
+              {/* Quick Switch to User Dashboard for Non-SuperAdmin */}
+              {!isSuperAdmin && (
+                <div className="p-3 pb-0 shrink-0">
+                  <NavLink
+                    to="/app/home"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold hover:bg-purple-100/80 transition-colors"
+                  >
+                    <User className="w-4 h-4 text-purple-600" />
+                    <span>Return to User Dashboard</span>
+                  </NavLink>
+                </div>
+              )}
+
+              {/* Navigation Items List */}
+              <div className="p-3 space-y-4 flex-1 overflow-y-auto">
+                {navSections.map((sec, sIdx) => (
+                  <div key={sIdx} className="space-y-1">
+                    {sec.sectionTitle && (
+                      <p className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        {sec.sectionTitle}
+                      </p>
+                    )}
+                    {sec.items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={({ isActive }) => {
+                            const isOrgStudioActive =
+                              (item.to === '/admin/organization' || item.to === '/admin/company-profile') &&
+                              (location.pathname.startsWith('/admin/organization') || location.pathname.startsWith('/admin/company-profile'));
+                            const active = isActive || isOrgStudioActive;
+                            return `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                              active
+                                ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-200'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                            }`;
+                          }}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              {/* Bottom Organization/Role Plan Card & Logout */}
+              <div className="p-3 border-t border-slate-100 space-y-2 shrink-0 bg-slate-50/50">
+                <div className="p-2.5 rounded-xl bg-white border border-slate-100 flex items-center gap-2.5 shadow-2xs">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                    {isSuperAdmin ? <Crown className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-slate-800 truncate">
+                      {isSuperAdmin ? 'OneWinq Enterprise' : (member?.name || 'Authorized Member')}
+                    </p>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-[10px] text-purple-600 font-medium truncate">
+                        {isSuperAdmin ? 'Supreme Admin' : `${role || 'Staff'} Role Active`}
+                      </span>
+                      <span className="text-[10px] font-medium text-emerald-600 flex items-center gap-1 shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-xs text-rose-600 hover:bg-rose-50 px-3 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" /> Logout
+                </button>
+              </div>
+            </aside>
           </div>
         )}
 
