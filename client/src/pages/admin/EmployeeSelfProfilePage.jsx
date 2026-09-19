@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   User,
@@ -35,6 +35,7 @@ import { MediaUploadInput } from '../../components/common/MediaUploadInput';
 import { TemplateRenderer } from '../../components/templates/TemplateRenderer';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 import { MonthYearCalendarPicker } from '../../components/common/MonthYearCalendarPicker';
+import { hasAdminAccess } from '../../utils/permissions';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -55,8 +56,28 @@ const parseLocationToString = (loc) => {
 };
 
 export const EmployeeSelfProfilePage = () => {
-  const { isSuperAdmin } = useAuthStore();
+  const { user, member, role, isSuperAdmin, permissions } = useAuthStore();
   const queryClient = useQueryClient();
+
+  // Determine if the current user has administrator privileges
+  const isAdminUser = useMemo(() => {
+    if (isSuperAdmin) return true;
+    if (user?.email === 'superadmin@onewinq.com') return true;
+    if (hasAdminAccess(permissions, isSuperAdmin)) return true;
+    const r = (role || member?.role?.name || member?.roleId?.name || '').toLowerCase();
+    if (r.includes('admin')) return true;
+    if (Array.isArray(permissions) && (
+      permissions.includes('profile_approval.approve') ||
+      permissions.includes('profile_approval.read') ||
+      permissions.includes('team.manage') ||
+      permissions.includes('company_profile.update') ||
+      permissions.includes('all')
+    )) {
+      return true;
+    }
+    return false;
+  }, [isSuperAdmin, user, permissions, role, member]);
+
   const [activeTab, setActiveTab] = useState('identity'); // 'identity', 'about', 'experience', 'projects', 'blogs', 'social', 'impact'
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -312,11 +333,12 @@ export const EmployeeSelfProfilePage = () => {
     enabled: Boolean(slug) && isQrModalOpen
   });
 
-  // Save Draft Mutation
+  // Save Draft / Save Changes Mutation
   const saveDraftMutation = useMutation({
     mutationFn: async (payload) => {
       const cleanPayload = {
         ...payload,
+        publishImmediately: isAdminUser ? true : Boolean(payload.publishImmediately),
         location: parseLocationToString(payload.location || formData.location),
         phone: payload.connectAndContact?.phone || payload.phone || '',
         workEmail: payload.connectAndContact?.workEmail || payload.workEmail || '',
@@ -338,7 +360,11 @@ export const EmployeeSelfProfilePage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
-      setToastMessage({ type: 'success', text: 'Draft profile saved successfully!' });
+      queryClient.invalidateQueries({ queryKey: ['my-approval-status'] });
+      setToastMessage({
+        type: 'success',
+        text: isAdminUser ? 'Profile changes saved and published live!' : 'Draft profile saved successfully!'
+      });
       setTimeout(() => setToastMessage(null), 3500);
     },
     onError: (err) => {
@@ -347,7 +373,7 @@ export const EmployeeSelfProfilePage = () => {
         err?.response?.data?.error?.message ||
         err?.response?.data?.message ||
         err?.message ||
-        'Failed to save draft changes.';
+        (isAdminUser ? 'Failed to save changes.' : 'Failed to save draft changes.');
       setToastMessage({
         type: 'error',
         text: msg
@@ -437,7 +463,10 @@ export const EmployeeSelfProfilePage = () => {
 
   const saveThemeMutation = useMutation({
     mutationFn: async (overrides) => {
-      return await userProfileApi.updateMyDraft({ themeOverrides: overrides });
+      return await userProfileApi.updateMyDraft({
+        themeOverrides: overrides,
+        publishImmediately: isAdminUser ? true : undefined
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
@@ -805,8 +834,10 @@ END:VCARD`;
 
   const memberName = profileData?.memberId?.name || 'Employee';
   const designation = formData.headline || profileData?.memberId?.designation || 'Team Member';
-  const status = profileData?.approvalStatus || 'draft';
-  const isLocked = profileData?.isLocked;
+  const status = isAdminUser
+    ? (profileData?.approvalStatus === 'pending_review' ? 'approved' : (profileData?.approvalStatus || 'approved'))
+    : (profileData?.approvalStatus || 'draft');
+  const isLocked = !isAdminUser && Boolean(profileData?.isLocked);
   const completionScore = profileData?.completionScore || 75;
 
   return (
@@ -908,23 +939,36 @@ END:VCARD`;
               <span>Share & QR</span>
             </button>
 
-            <button
-              onClick={handleSaveDraft}
-              disabled={saveDraftMutation.isPending || isLocked}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{saveDraftMutation.isPending ? 'Saving...' : 'Save Draft'}</span>
-            </button>
+            {isAdminUser ? (
+              <button
+                onClick={handleSaveDraft}
+                disabled={saveDraftMutation.isPending}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-purple-200 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>{saveDraftMutation.isPending ? 'Saving Changes...' : 'Save Changes'}</span>
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleSaveDraft}
+                  disabled={saveDraftMutation.isPending || isLocked}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{saveDraftMutation.isPending ? 'Saving...' : 'Save Draft'}</span>
+                </button>
 
-            <button
-              onClick={() => setIsSubmitModalOpen(true)}
-              disabled={isLocked || status === 'pending_review'}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-purple-200 transition-all disabled:opacity-50"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>{status === 'pending_review' ? 'In Review' : 'Submit for Approval'}</span>
-            </button>
+                <button
+                  onClick={() => setIsSubmitModalOpen(true)}
+                  disabled={isLocked || status === 'pending_review'}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-purple-200 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{status === 'pending_review' ? 'In Review' : 'Submit for Approval'}</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -964,8 +1008,8 @@ END:VCARD`;
           </div>
         )}
 
-        {/* Pending Review Notice */}
-        {isLocked && (
+        {/* Pending Review Notice (Only for regular employees awaiting approval) */}
+        {isLocked && !isAdminUser && (
           <div className="mt-6 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-start gap-3 text-xs text-amber-900">
             <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>

@@ -51,6 +51,32 @@ const sanitizeLocation = (loc) => {
 };
 
 class EmployeeProfileService {
+  /** Check if actor or member has administrator privileges */
+  _checkIsAdmin(userDoc, memberDoc, actorContext = {}) {
+    if (actorContext?.isSuperAdmin) return true;
+    if (userDoc?.email === 'superadmin@onewinq.com') return true;
+    if (memberDoc?.isSystem) return true;
+
+    const roleName = (memberDoc?.roleId?.name || actorContext?.roleName || '').toLowerCase();
+    const roleSlug = (memberDoc?.roleId?.slug || '').toLowerCase();
+    if (roleName.includes('admin') || roleSlug.includes('admin')) return true;
+
+    const perms = [
+      ...(memberDoc?.roleId?.permissions || []),
+      ...(actorContext?.permissions || [])
+    ];
+    if (
+      perms.includes('all') ||
+      perms.includes('profile_approval.approve') ||
+      perms.includes('profile_approval.read') ||
+      perms.includes('team.manage') ||
+      perms.includes('company_profile.update')
+    ) {
+      return true;
+    }
+    return false;
+  }
+
   /** Normalize raw card status to frontend-friendly values */
   _normalizeCard(card) {
     if (!card) return null;
@@ -295,7 +321,7 @@ class EmployeeProfileService {
     return profile;
   }
 
-  async getProfileByUserId(userId) {
+  async getProfileByUserId(userId, actorContext = {}) {
     let profile = await EmployeeProfile.findOne({ userId }).populate(PROFILE_POPULATE).lean();
 
     if (!profile) {
@@ -305,6 +331,17 @@ class EmployeeProfileService {
 
     if (!profile) {
       throw new NotFoundError('Employee profile not found', ERROR_CODES.PROFILE_NOT_FOUND);
+    }
+
+    const member = profile.memberId;
+    const userDoc = await User.findById(userId).select('email').lean();
+    const isSuperOrAdmin = this._checkIsAdmin(userDoc, member, actorContext);
+
+    if (isSuperOrAdmin) {
+      profile.isLocked = false;
+      if (profile.approvalStatus === 'pending_review') {
+        profile.approvalStatus = 'approved';
+      }
     }
 
     return this._buildProfileResponse(profile);
@@ -326,11 +363,19 @@ class EmployeeProfileService {
       profile = await this._ensureProfileForUser(userId);
     }
 
-    if (profile.isLocked) {
+    const member = await TeamMember.findOne({ userId }).populate('roleId');
+    const userDoc = await User.findById(userId).select('email').lean();
+    const isSuperOrAdmin = this._checkIsAdmin(userDoc, member, actorContext);
+
+    if (profile.isLocked && !isSuperOrAdmin) {
       throw new ForbiddenError(
         'Profile is currently locked for review and cannot be modified.',
         ERROR_CODES.PROFILE_LOCKED
       );
+    }
+
+    if (isSuperOrAdmin) {
+      profile.isLocked = false;
     }
 
     if (updateData.slug && updateData.slug !== profile.slug) {
@@ -430,24 +475,11 @@ class EmployeeProfileService {
     profile.calculateCompletionScore();
     profile.markModified('draft');
 
-    const member = await TeamMember.findOne({ userId }).populate('roleId');
-    const userDoc = await User.findById(userId).select('email').lean();
-    const roleSlug = member?.roleId?.slug?.toLowerCase() || '';
-    const roleName = member?.roleId?.name?.toLowerCase() || '';
-    const isSuperOrAdmin =
-      userDoc?.email === 'superadmin@onewinq.com' ||
-      member?.isSystem ||
-      roleSlug === 'super-admin' ||
-      roleSlug === 'superadmin' ||
-      roleSlug === 'admin' ||
-      roleName === 'super admin' ||
-      roleName === 'admin';
-
     // Check organization approval policy
     const orgSettings = await OrganizationSettings.findOne().lean();
     const requireApproval = orgSettings?.profileSettings?.requireApprovalForProfileChanges ?? true;
 
-    // If approval is not required OR user is administrator, also promote directly to published
+    // If approval is not required OR user is administrator OR publishImmediately requested, promote directly to published
     if (!requireApproval || isSuperOrAdmin || updateData.publishImmediately) {
       profile.published = draft;
       profile.markModified('published');
@@ -455,6 +487,12 @@ class EmployeeProfileService {
       profile.isLocked = false;
       profile.lastApprovedAt = new Date();
       profile.lastReviewedBy = userId;
+
+      // Clean any pending approval records for this profile so admin count resets
+      await ProfileApproval.updateMany(
+        { profileId: profile._id, status: 'pending' },
+        { status: 'approved', reviewedBy: userId, reviewedAt: new Date() }
+      );
     } else {
       // Profile draft modified by employee awaiting review:
       // DO NOT overwrite profile.published! profile.published must remain the previous live state
@@ -491,16 +529,7 @@ class EmployeeProfileService {
 
     const member = await TeamMember.findOne({ userId }).populate('roleId');
     const userDoc = await User.findById(userId).select('email').lean();
-    const roleSlug = member?.roleId?.slug?.toLowerCase() || '';
-    const roleName = member?.roleId?.name?.toLowerCase() || '';
-    const isSuperOrAdmin =
-      userDoc?.email === 'superadmin@onewinq.com' ||
-      member?.isSystem ||
-      roleSlug === 'super-admin' ||
-      roleSlug === 'superadmin' ||
-      roleSlug === 'admin' ||
-      roleName === 'super admin' ||
-      roleName === 'admin';
+    const isSuperOrAdmin = this._checkIsAdmin(userDoc, member, actorContext);
 
     const publishedClean = profile.published ? profile.published.toObject() : {};
     const draftClean = profile.draft ? profile.draft.toObject() : {};
@@ -547,6 +576,12 @@ class EmployeeProfileService {
       profile.lastReviewedBy = userId;
       profile.calculateCompletionScore();
       await profile.save();
+
+      // Clean any pending approval
+      await ProfileApproval.updateMany(
+        { profileId: profile._id, status: 'pending' },
+        { status: 'approved', reviewedBy: userId, reviewedAt: new Date() }
+      );
 
       return {
         message: 'Profile changes published and live immediately.',

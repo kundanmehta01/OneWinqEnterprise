@@ -4,7 +4,14 @@ import { ApiResponse } from '../../utils/apiResponse.util.js';
 export class EmployeeProfileController {
   async getMyProfile(req, res, next) {
     try {
-      const profile = await employeeProfileService.getProfileByUserId(req.user._id);
+      const actorContext = {
+        actorId: req.user._id,
+        isSuperAdmin: req.isSuperAdmin,
+        roleName: req.roleName,
+        permissions: req.permissions,
+        member: req.member
+      };
+      const profile = await employeeProfileService.getProfileByUserId(req.user._id, actorContext);
       return ApiResponse.success(res, { data: profile });
     } catch (error) {
       next(error);
@@ -15,6 +22,10 @@ export class EmployeeProfileController {
     try {
       const actorContext = {
         actorId: req.user._id,
+        isSuperAdmin: req.isSuperAdmin,
+        roleName: req.roleName,
+        permissions: req.permissions,
+        member: req.member,
         ipAddress: req.auditContext?.ipAddress,
         userAgent: req.auditContext?.userAgent,
         requestId: req.id
@@ -33,6 +44,10 @@ export class EmployeeProfileController {
     try {
       const actorContext = {
         actorId: req.user._id,
+        isSuperAdmin: req.isSuperAdmin,
+        roleName: req.roleName,
+        permissions: req.permissions,
+        member: req.member,
         ipAddress: req.auditContext?.ipAddress,
         userAgent: req.auditContext?.userAgent,
         requestId: req.id

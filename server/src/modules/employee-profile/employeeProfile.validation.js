@@ -259,7 +259,8 @@ export const updateDraftProfileSchema = z.object({
   }).optional(),
   templateId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Template ID').optional(),
   visibility: z.enum(['public', 'private', 'internal']).optional(),
-  slug: z.string().min(2, 'Slug must be at least 2 characters').max(100, 'Slug cannot exceed 100 characters').regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens').optional()
+  slug: z.string().min(2, 'Slug must be at least 2 characters').max(100, 'Slug cannot exceed 100 characters').regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens').optional(),
+  publishImmediately: z.boolean().optional()
 });
 
 export const submitProfileForApprovalSchema = z.object({
