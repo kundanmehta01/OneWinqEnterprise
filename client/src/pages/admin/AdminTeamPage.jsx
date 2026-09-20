@@ -16,7 +16,10 @@ import {
   Loader2,
   AlertCircle,
   Check,
-  UserCog
+  UserCog,
+  Eye,
+  EyeOff,
+  Globe
 } from 'lucide-react';
 import { teamApi } from '../../api/teamApi';
 import { departmentApi } from '../../api/departmentApi';
@@ -47,7 +50,9 @@ export const AdminTeamPage = () => {
     employeeId: '',
     designation: '',
     departmentId: '',
-    roleId: ''
+    roleId: '',
+    slug: '',
+    showOnCompanyProfile: true
   });
 
   // Query Team Members (Dynamic)
@@ -134,14 +139,16 @@ export const AdminTeamPage = () => {
         designation: payload.designation && payload.designation.trim() !== 'Team Member' ? payload.designation.trim() : fallbackDesig,
         departmentId: payload.departmentId ? payload.departmentId : undefined,
         roleId: payload.roleId ? payload.roleId : targetRole?._id,
-        slug: payload.slug ? payload.slug.trim() : undefined
+        slug: payload.slug ? payload.slug.trim() : undefined,
+        showOnCompanyProfile: payload.showOnCompanyProfile !== undefined ? payload.showOnCompanyProfile : true
       };
       return await teamApi.create(cleanPayload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['publicTeamMembers'] });
       setIsAddModalOpen(false);
-      setFormData({ name: '', email: '', employeeId: '', designation: '', departmentId: '', roleId: '', slug: '' });
+      setFormData({ name: '', email: '', employeeId: '', designation: '', departmentId: '', roleId: '', slug: '', showOnCompanyProfile: true });
       setSuccessToast('Team member added successfully!');
       setTimeout(() => setSuccessToast(''), 3000);
     },
@@ -161,18 +168,41 @@ export const AdminTeamPage = () => {
         departmentId: data.departmentId ? data.departmentId : null,
         roleId: data.roleId ? data.roleId : undefined,
         status: data.status || 'active',
-        slug: data.slug ? data.slug.trim() : undefined
+        slug: data.slug ? data.slug.trim() : undefined,
+        showOnCompanyProfile: data.showOnCompanyProfile !== undefined ? data.showOnCompanyProfile : true
       };
       return await teamApi.update(id, cleanData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['publicTeamMembers'] });
       setEditingMember(null);
       setSuccessToast('Member updated and role assigned successfully!');
       setTimeout(() => setSuccessToast(''), 3000);
     },
     onError: (err) => {
       setErrorMessage(err?.message || 'Failed to update member or assign role.');
+    }
+  });
+
+  // Toggle Company Profile Visibility Mutation
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async ({ id, showOnCompanyProfile }) => {
+      return await teamApi.toggleCompanyProfileVisibility(id, showOnCompanyProfile);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['publicTeamMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminAllTeamMembers'] });
+      setSuccessToast(
+        variables.showOnCompanyProfile
+          ? 'Member is now visible on Company Profile!'
+          : 'Member is now hidden from Company Profile.'
+      );
+      setTimeout(() => setSuccessToast(''), 3000);
+    },
+    onError: (err) => {
+      alert(err?.message || 'Failed to update company profile visibility.');
     }
   });
 
@@ -183,6 +213,7 @@ export const AdminTeamPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['publicTeamMembers'] });
       setActiveMenuId(null);
       setSuccessToast('Member removed from team.');
       setTimeout(() => setSuccessToast(''), 3000);
@@ -206,7 +237,9 @@ export const AdminTeamPage = () => {
       designation: m.designation || '',
       departmentId: deptId,
       roleId: roleId,
-      status: m.status || 'active'
+      status: m.status || 'active',
+      slug: m.profileId?.slug || '',
+      showOnCompanyProfile: m.showOnCompanyProfile !== false
     });
   };
 
@@ -419,6 +452,7 @@ export const AdminTeamPage = () => {
                   <th className="py-3.5 px-3">Department</th>
                   <th className="py-3.5 px-3">Role</th>
                   <th className="py-3.5 px-3">Status</th>
+                  <th className="py-3.5 px-3 text-center">Company Profile</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -427,6 +461,7 @@ export const AdminTeamPage = () => {
                   const isSelected = selectedMembers.includes(m._id);
                   const deptName = m.departmentId?.name || (departments.find((d) => d._id === m.departmentId)?.name) || 'General';
                   const roleName = m.roleId?.name || (roles.find((r) => r._id === m.roleId)?.name) || 'Viewer';
+                  const isPublic = m.showOnCompanyProfile !== false;
 
                   return (
                     <tr
@@ -469,6 +504,31 @@ export const AdminTeamPage = () => {
                       <td className="py-3.5 px-3">
                         <StatusBadge status={m.status || 'active'} />
                       </td>
+                      <td className="py-3.5 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => toggleVisibilityMutation.mutate({ id: m._id, showOnCompanyProfile: !isPublic })}
+                          disabled={toggleVisibilityMutation.isPending}
+                          title={isPublic ? 'Click to hide from company profile' : 'Click to show on company profile'}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer border ${
+                            isPublic
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 shadow-2xs'
+                              : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                          }`}
+                        >
+                          {isPublic ? (
+                            <>
+                              <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Visible</span>
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Hidden</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
                       <td className="py-3.5 px-4 text-right relative">
                         <button
                           type="button"
@@ -479,13 +539,32 @@ export const AdminTeamPage = () => {
                         </button>
 
                         {activeMenuId === m._id && (
-                          <div className="absolute right-4 mt-1 w-44 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-1.5 z-30 text-xs text-left animate-fadeIn">
+                          <div className="absolute right-4 mt-1 w-48 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-1.5 z-30 text-xs text-left animate-fadeIn">
                             <button
                               type="button"
                               onClick={() => handleOpenEdit(m)}
                               className="w-full px-3.5 py-2 flex items-center gap-2 hover:bg-purple-50 text-slate-700 font-semibold cursor-pointer"
                             >
                               <UserCog className="w-3.5 h-3.5 text-purple-600" /> Edit & Assign Role
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toggleVisibilityMutation.mutate({ id: m._id, showOnCompanyProfile: !isPublic });
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-3.5 py-2 flex items-center gap-2 hover:bg-purple-50 text-slate-700 font-semibold cursor-pointer"
+                            >
+                              {isPublic ? (
+                                <>
+                                  <EyeOff className="w-3.5 h-3.5 text-slate-500" /> Hide from Profile
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="w-3.5 h-3.5 text-emerald-600" /> Show on Profile
+                                </>
+                              )}
                             </button>
 
                             {m.profileId?.slug && (
@@ -676,6 +755,24 @@ export const AdminTeamPage = () => {
                 </div>
               </div>
 
+              <div className="flex items-center justify-between p-3.5 bg-purple-50/50 border border-purple-100 rounded-2xl">
+                <div className="space-y-0.5">
+                  <label htmlFor="add-show-profile" className="text-xs font-bold text-slate-800 flex items-center gap-1.5 cursor-pointer">
+                    <Globe className="w-3.5 h-3.5 text-purple-600" /> Show on Company Profile
+                  </label>
+                  <p className="text-[11px] text-slate-500">
+                    When enabled, this member is displayed in the public verified team directory.
+                  </p>
+                </div>
+                <input
+                  id="add-show-profile"
+                  type="checkbox"
+                  checked={formData.showOnCompanyProfile !== false}
+                  onChange={(e) => setFormData({ ...formData, showOnCompanyProfile: e.target.checked })}
+                  className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 cursor-pointer"
+                />
+              </div>
+
               {errorMessage && (
                 <div className="flex items-center gap-2 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -837,6 +934,24 @@ export const AdminTeamPage = () => {
                   <option value="inactive">Inactive</option>
                   <option value="suspended">Suspended</option>
                 </select>
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 bg-purple-50/50 border border-purple-100 rounded-2xl">
+                <div className="space-y-0.5">
+                  <label htmlFor="edit-show-profile" className="text-xs font-bold text-slate-800 flex items-center gap-1.5 cursor-pointer">
+                    <Globe className="w-3.5 h-3.5 text-purple-600" /> Show on Company Profile
+                  </label>
+                  <p className="text-[11px] text-slate-500">
+                    Control whether this member appears in the public verified directory.
+                  </p>
+                </div>
+                <input
+                  id="edit-show-profile"
+                  type="checkbox"
+                  checked={editingMember.showOnCompanyProfile !== false}
+                  onChange={(e) => setEditingMember({ ...editingMember, showOnCompanyProfile: e.target.checked })}
+                  className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-slate-300 cursor-pointer"
+                />
               </div>
 
               {errorMessage && (

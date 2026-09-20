@@ -99,6 +99,11 @@ const teamMemberSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null
+    },
+    showOnCompanyProfile: {
+      type: Boolean,
+      default: true,
+      index: true
     }
   },
   {
@@ -108,6 +113,7 @@ const teamMemberSchema = new mongoose.Schema(
 
 // Compound indexes for fast searching and filtering
 teamMemberSchema.index({ status: 1, departmentId: 1 });
+teamMemberSchema.index({ status: 1, showOnCompanyProfile: 1 });
 teamMemberSchema.index({ name: 'text', designation: 'text', employeeId: 'text' });
 
 export const TeamMember = mongoose.model('TeamMember', teamMemberSchema);

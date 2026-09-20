@@ -18,7 +18,8 @@ class PublicProfileService {
       status: 'active',
       isArchived: false,
       isDeleted: { $ne: true },
-      isSystem: { $ne: true }
+      isSystem: { $ne: true },
+      showOnCompanyProfile: { $ne: false }
     })
       .populate('departmentId', 'name slug')
       .populate({
@@ -39,7 +40,8 @@ class PublicProfileService {
         avatarUrl: pub.avatarUrl || m.avatarUrl || '',
         bio: pub.bio || pub.headline || '',
         slug: m.profileId?.slug || '',
-        isVerified: true
+        isVerified: true,
+        showOnCompanyProfile: m.showOnCompanyProfile !== false
       };
     });
   }

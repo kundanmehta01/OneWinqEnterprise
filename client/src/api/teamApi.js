@@ -24,5 +24,9 @@ export const teamApi = {
   checkSlugAvailability: async (slug, memberId = null) => {
     const res = await api.get('/admin/team/check-slug', { params: { slug, memberId } });
     return res.data;
+  },
+  toggleCompanyProfileVisibility: async (id, showOnCompanyProfile) => {
+    const res = await api.patch(`/admin/team/${id}`, { showOnCompanyProfile });
+    return res.data;
   }
 };

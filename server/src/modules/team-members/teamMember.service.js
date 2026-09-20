@@ -191,7 +191,8 @@ class TeamMemberService {
       departmentId: departmentId || null,
       roleId,
       status,
-      joiningDate: joiningDate || new Date()
+      joiningDate: joiningDate || new Date(),
+      showOnCompanyProfile: data.showOnCompanyProfile !== undefined ? Boolean(data.showOnCompanyProfile) : true
     });
 
     let profile = null;
@@ -305,6 +306,9 @@ class TeamMemberService {
     if (updateData.employeeId) member.employeeId = updateData.employeeId;
     if (updateData.designation) member.designation = updateData.designation;
     if (updateData.joiningDate) member.joiningDate = updateData.joiningDate;
+    if (updateData.showOnCompanyProfile !== undefined) {
+      member.showOnCompanyProfile = Boolean(updateData.showOnCompanyProfile);
+    }
 
     if (updateData.slug && member.profileId) {
       const profile = await EmployeeProfile.findById(member.profileId);
