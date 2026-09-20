@@ -6,6 +6,11 @@ const router = Router();
 
 router.use(authenticate);
 
+router.get(
+  '/signature',
+  uploadController.getUploadSignature.bind(uploadController)
+);
+
 router.post(
   '/',
   uploadMiddleware.single('file'),

@@ -9,6 +9,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import api from '../../api/axios';
+import { uploadFileAsset } from '../../api/uploadApi';
 export const ImageUploadInput = ({
   label,
   description,
@@ -45,20 +46,18 @@ export const ImageUploadInput = ({
 
     setUploadError('');
     setIsUploading(true);
-    setUploadProgress(20);
+    setUploadProgress(10);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('entityType', entityType);
+      const result = await uploadFileAsset({
+        file,
+        entityType,
+        isVideo: false,
+        onProgress: (percent) => setUploadProgress(percent)
+      });
 
-      setUploadProgress(50);
-      const res = await api.post('/admin/media/upload', formData);
-      setUploadProgress(90);
-
-      const uploadedUrl = res?.data?.data?.url || res?.data?.url || res?.url || (typeof res === 'string' ? res : null);
-      if (uploadedUrl) {
-        onChange(uploadedUrl);
+      if (result?.url) {
+        onChange(result.url);
         setUploadProgress(100);
       } else {
         throw new Error('Upload succeeded but no image URL was returned.');

@@ -1,6 +1,8 @@
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { v2 as cloudinary } from 'cloudinary';
 import { storageService } from '../../integrations/storage/storage.service.js';
+import { env } from '../../config/env.config.js';
 import { BadRequestError } from '../../errors/index.js';
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
 
@@ -99,6 +101,45 @@ class UploadService {
       }
       throw storageError;
     }
+  }
+
+  getUploadSignature({ entityType = 'general' }) {
+    const isCloudinaryActive =
+      (env.STORAGE_PROVIDER === 'cloudinary' || (process.env.VERCEL && env.CLOUDINARY_CLOUD_NAME)) &&
+      env.CLOUDINARY_CLOUD_NAME &&
+      env.CLOUDINARY_API_KEY &&
+      env.CLOUDINARY_API_SECRET;
+
+    if (isCloudinaryActive) {
+      cloudinary.config({
+        cloud_name: env.CLOUDINARY_CLOUD_NAME,
+        api_key: env.CLOUDINARY_API_KEY,
+        api_secret: env.CLOUDINARY_API_SECRET,
+        secure: true
+      });
+
+      const timestamp = Math.round(Date.now() / 1000);
+      const baseFolder = env.CLOUDINARY_FOLDER || 'onewinq';
+      const folder = `${baseFolder}/${entityType}`;
+      const paramsToSign = {
+        folder,
+        timestamp
+      };
+      const signature = cloudinary.utils.api_sign_request(paramsToSign, env.CLOUDINARY_API_SECRET);
+
+      return {
+        provider: 'cloudinary',
+        cloudName: env.CLOUDINARY_CLOUD_NAME,
+        apiKey: env.CLOUDINARY_API_KEY,
+        folder,
+        timestamp,
+        signature
+      };
+    }
+
+    return {
+      provider: env.STORAGE_PROVIDER || 'local'
+    };
   }
 }
 

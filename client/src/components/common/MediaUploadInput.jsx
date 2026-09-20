@@ -11,6 +11,7 @@ import {
   Play
 } from 'lucide-react';
 import api from '../../api/axios';
+import { uploadFileAsset } from '../../api/uploadApi';
 import { getEmbedInfo, normalizeMediaUrl, isUploadedMedia } from '../../utils/mediaUtils';
 
 export { getEmbedInfo, normalizeMediaUrl, isUploadedMedia };
@@ -95,20 +96,18 @@ export const MediaUploadInput = ({
 
     setUploadError('');
     setIsUploading(true);
-    setUploadProgress(20);
+    setUploadProgress(10);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('entityType', entityType);
+      const result = await uploadFileAsset({
+        file,
+        entityType,
+        isVideo,
+        onProgress: (percent) => setUploadProgress(percent)
+      });
 
-      setUploadProgress(50);
-      const res = await api.post('/admin/media/upload', formData);
-      setUploadProgress(90);
-
-      const uploadedUrl = res?.data?.data?.url || res?.data?.url || res?.url || (typeof res === 'string' ? res : null);
-      if (uploadedUrl) {
-        onChange(uploadedUrl);
+      if (result?.url) {
+        onChange(result.url);
         setUploadProgress(100);
       } else {
         setUploadError('Server did not return a valid media URL.');

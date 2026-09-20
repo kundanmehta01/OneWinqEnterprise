@@ -28,6 +28,19 @@ export class UploadController {
       next(error);
     }
   }
+
+  async getUploadSignature(req, res, next) {
+    try {
+      const entityType = req.query.entityType || req.query.folder || 'general';
+      const signatureData = uploadService.getUploadSignature({ entityType });
+      return ApiResponse.success(res, {
+        message: 'Upload signature generated successfully',
+        data: signatureData
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const uploadController = new UploadController();
