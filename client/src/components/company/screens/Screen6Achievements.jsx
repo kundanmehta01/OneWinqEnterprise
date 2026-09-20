@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, ShieldCheck, Building2, Users2, ArrowLeft, ArrowRight, Award, Plus, Trash2 } from 'lucide-react';
+import { Trophy, ShieldCheck, Building2, Users2, ArrowLeft, Award, Plus, Trash2 } from 'lucide-react';
 
 export const Screen6Achievements = ({
   profile,
@@ -21,12 +21,6 @@ export const Screen6Achievements = ({
     if (t.includes('business') || t.includes('enterprises') || t.includes('client'))
       return <Building2 className="w-5 h-5 text-purple-600" />;
     return <Users2 className="w-5 h-5 text-purple-600" />;
-  };
-
-  const handleInquire = () => {
-    if (onNavigate) {
-      onNavigate(8);
-    }
   };
 
   const handleAddAchievement = () => {
@@ -178,20 +172,6 @@ export const Screen6Achievements = ({
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             Click "+ Add Achievement" above to showcase certifications and milestones.
           </p>
-        </div>
-      )}
-
-      {/* Action CTA */}
-      {items.length > 0 && (
-        <div className="pt-2">
-          <button
-            type="button"
-            onClick={handleInquire}
-            className="w-full py-3.5 px-6 rounded-full btn-outline-purple text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-2xs group cursor-pointer"
-          >
-            <span>Verify Credentials & Security Compliance</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
         </div>
       )}
     </div>
