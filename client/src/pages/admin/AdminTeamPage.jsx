@@ -133,14 +133,15 @@ export const AdminTeamPage = () => {
         employeeId: payload.employeeId ? payload.employeeId.trim() : undefined,
         designation: payload.designation && payload.designation.trim() !== 'Team Member' ? payload.designation.trim() : fallbackDesig,
         departmentId: payload.departmentId ? payload.departmentId : undefined,
-        roleId: payload.roleId ? payload.roleId : targetRole?._id
+        roleId: payload.roleId ? payload.roleId : targetRole?._id,
+        slug: payload.slug ? payload.slug.trim() : undefined
       };
       return await teamApi.create(cleanPayload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-team-members'] });
       setIsAddModalOpen(false);
-      setFormData({ name: '', email: '', employeeId: '', designation: '', departmentId: '', roleId: '' });
+      setFormData({ name: '', email: '', employeeId: '', designation: '', departmentId: '', roleId: '', slug: '' });
       setSuccessToast('Team member added successfully!');
       setTimeout(() => setSuccessToast(''), 3000);
     },
@@ -159,7 +160,8 @@ export const AdminTeamPage = () => {
         designation: data.designation ? data.designation.trim() : undefined,
         departmentId: data.departmentId ? data.departmentId : null,
         roleId: data.roleId ? data.roleId : undefined,
-        status: data.status || 'active'
+        status: data.status || 'active',
+        slug: data.slug ? data.slug.trim() : undefined
       };
       return await teamApi.update(id, cleanData);
     },
@@ -658,6 +660,22 @@ export const AdminTeamPage = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Profile URL Handle <span className="text-slate-400 font-normal">(Optional — auto-generated from full name)</span>
+                </label>
+                <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus-within:border-purple-600 focus-within:bg-white transition-all">
+                  <span className="text-slate-400 text-xs font-mono select-none">/p/</span>
+                  <input
+                    type="text"
+                    placeholder={formData.name ? formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') : 'handle'}
+                    value={formData.slug || ''}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                    className="flex-1 bg-transparent px-1 text-xs font-mono text-slate-900 outline-none"
+                  />
+                </div>
+              </div>
+
               {errorMessage && (
                 <div className="flex items-center gap-2 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -787,6 +805,25 @@ export const AdminTeamPage = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Profile URL Handle <span className="text-slate-400 font-normal">(Canonical Slug)</span>
+                </label>
+                <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus-within:border-purple-600 focus-within:bg-white transition-all">
+                  <span className="text-slate-400 text-xs font-mono select-none">/p/</span>
+                  <input
+                    type="text"
+                    placeholder="vanity-handle"
+                    value={editingMember.slug !== undefined ? editingMember.slug : (editingMember.profileId?.slug || '')}
+                    onChange={(e) => setEditingMember({ ...editingMember, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                    className="flex-1 bg-transparent px-1 text-xs font-mono text-slate-900 outline-none"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Changing this handle creates an automatic redirect for existing links and physical cards.
+                </p>
               </div>
 
               <div>

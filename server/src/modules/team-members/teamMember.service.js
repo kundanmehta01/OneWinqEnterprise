@@ -3,6 +3,8 @@ import { User } from '../users/user.model.js';
 import { Role } from '../roles/role.model.js';
 import { Department } from '../departments/department.model.js';
 import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
+import { slugService } from '../employee-profile/slug.service.js';
+import { ProfileSlugHistory } from '../employee-profile/profileSlugHistory.model.js';
 import { Template } from '../templates/template.model.js';
 import { templateResolverService } from '../templates/templateResolver.service.js';
 import { templateService } from '../templates/template.service.js';
@@ -169,12 +171,16 @@ class TeamMemberService {
       assignedTemplate = await templateService.getDefaultTemplate();
     }
 
-    let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    let slug = baseSlug;
-    let counter = 1;
-    while (await EmployeeProfile.findOne({ slug })) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
+    let slug = '';
+    if (data.slug) {
+      const customSlug = slugService.normalizeSlug(data.slug);
+      const check = await slugService.isSlugAvailable(customSlug);
+      if (!check.available) {
+        throw new ConflictError(check.reason || `The requested profile URL handle '${data.slug}' is not available.`);
+      }
+      slug = customSlug;
+    } else {
+      slug = await slugService.generateUniqueSlug(name);
     }
 
     const member = await TeamMember.create({
@@ -188,35 +194,49 @@ class TeamMemberService {
       joiningDate: joiningDate || new Date()
     });
 
-    const profile = await EmployeeProfile.create({
-      memberId: member._id,
-      userId: user._id,
-      slug,
-      templateId: assignedTemplate._id,
-      templateVersion: assignedTemplate.version || 1,
-      visibility: 'public',
-      approvalStatus: 'approved',
-      published: {
-        headline: `${finalDesignation} at OneWinq`,
-        bio: '',
-        workEmail: user.email,
-        experience: [],
-        skills: [],
-        projects: [],
-        achievements: [],
-        socialLinks: []
-      },
-      draft: {
-        headline: `${finalDesignation} at OneWinq`,
-        bio: '',
-        workEmail: user.email,
-        experience: [],
-        skills: [],
-        projects: [],
-        achievements: [],
-        socialLinks: []
+    let profile = null;
+    let retries = 3;
+    while (retries > 0 && !profile) {
+      try {
+        profile = await EmployeeProfile.create({
+          memberId: member._id,
+          userId: user._id,
+          slug,
+          templateId: assignedTemplate._id,
+          templateVersion: assignedTemplate.version || 1,
+          visibility: 'public',
+          approvalStatus: 'approved',
+          published: {
+            headline: `${finalDesignation} at OneWinq`,
+            bio: '',
+            workEmail: user.email,
+            experience: [],
+            skills: [],
+            projects: [],
+            achievements: [],
+            socialLinks: []
+          },
+          draft: {
+            headline: `${finalDesignation} at OneWinq`,
+            bio: '',
+            workEmail: user.email,
+            experience: [],
+            skills: [],
+            projects: [],
+            achievements: [],
+            socialLinks: []
+          }
+        });
+      } catch (createErr) {
+        if (createErr.code === 11000 && createErr.keyPattern?.slug) {
+          retries--;
+          slug = await slugService.generateUniqueSlug(name);
+          if (retries === 0) throw createErr;
+        } else {
+          throw createErr;
+        }
       }
-    });
+    }
 
     member.profileId = profile._id;
     member.profileCompletionScore = profile.calculateCompletionScore();
@@ -285,6 +305,29 @@ class TeamMemberService {
     if (updateData.employeeId) member.employeeId = updateData.employeeId;
     if (updateData.designation) member.designation = updateData.designation;
     if (updateData.joiningDate) member.joiningDate = updateData.joiningDate;
+
+    if (updateData.slug && member.profileId) {
+      const profile = await EmployeeProfile.findById(member.profileId);
+      if (profile && updateData.slug !== profile.slug) {
+        const normalizedNewSlug = slugService.normalizeSlug(updateData.slug);
+        if (normalizedNewSlug !== profile.slug) {
+          const check = await slugService.isSlugAvailable(normalizedNewSlug, profile._id);
+          if (!check.available) {
+            throw new ConflictError(check.reason || `The profile URL handle '${updateData.slug}' is not available.`);
+          }
+          const oldSlug = profile.slug;
+          if (oldSlug) {
+            await ProfileSlugHistory.findOneAndUpdate(
+              { slug: oldSlug.toLowerCase() },
+              { slug: oldSlug.toLowerCase(), profileId: profile._id },
+              { upsert: true, new: true }
+            );
+          }
+          profile.slug = normalizedNewSlug;
+          await profile.save();
+        }
+      }
+    }
 
     // Automatically synchronize profile template & designation on role / dept change
     if ((updateData.roleId || updateData.departmentId !== undefined || updateData.designation) && member.profileId) {

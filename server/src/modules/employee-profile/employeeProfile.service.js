@@ -14,6 +14,8 @@ import { calculateObjectDiff } from '../../utils/objectDiff.util.js';
 import { NotFoundError, BadRequestError, ForbiddenError, ConflictError } from '../../errors/index.js';
 import { ERROR_CODES } from '../../constants/errorCodes.constant.js';
 import { eventBus } from '../../events/appEventBus.js';
+import { slugService } from './slug.service.js';
+import { ProfileSlugHistory } from './profileSlugHistory.model.js';
 import { APP_EVENTS } from '../../constants/events.constant.js';
 
 /** Shared populate options for profile queries */
@@ -274,48 +276,61 @@ class EmployeeProfileService {
           assignedTemplate = (await Template.findOne({ isDefault: true })) || (await Template.findOne({}));
         }
 
-        const baseSlug = member.name ? member.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'profile';
-        let slug = baseSlug;
-        let count = 1;
-        while (await EmployeeProfile.findOne({ slug })) {
-          slug = `${baseSlug}-${count++}`;
-        }
+        const candidateName = member.name || user?.name || 'profile';
+        let slug = await slugService.generateUniqueSlug(candidateName);
+        let createdProfile = null;
+        let retries = 3;
 
-        profile = await EmployeeProfile.create({
-          userId,
-          memberId: member._id,
-          slug,
-          templateId: assignedTemplate?._id,
-          templateVersion: assignedTemplate?.version || 1,
-          approvalStatus: 'approved',
-          draft: {
-            headline: member.designation,
-            workEmail: member.email || user?.email,
-            avatarUrl: member.avatarUrl || '',
-            bio: 'Enterprise professional at OneWinq.',
-            about: {
-              title: `About ${member.name?.trim().split(' ')[0] || 'Member'}`,
-              introduction: 'Dedicated enterprise professional passionate about driving technology excellence and collaborative growth.',
-              expertise: `Specialized in ${member.designation}, process optimization, and scalable enterprise execution.`,
-              experienceSummary: `Proven background in driving impact, cross-functional collaboration, and enterprise digital transformation.`
-            }
-          },
-          published: {
-            headline: member.designation,
-            workEmail: member.email || user?.email,
-            avatarUrl: member.avatarUrl || '',
-            bio: 'Enterprise professional at OneWinq.',
-            about: {
-              title: `About ${member.name?.trim().split(' ')[0] || 'Member'}`,
-              introduction: 'Dedicated enterprise professional passionate about driving technology excellence and collaborative growth.',
-              expertise: `Specialized in ${member.designation}, process optimization, and scalable enterprise execution.`,
-              experienceSummary: `Proven background in driving impact, cross-functional collaboration, and enterprise digital transformation.`
+        while (retries > 0 && !createdProfile) {
+          try {
+            createdProfile = await EmployeeProfile.create({
+              userId,
+              memberId: member._id,
+              slug,
+              templateId: assignedTemplate?._id,
+              templateVersion: assignedTemplate?.version || 1,
+              approvalStatus: 'approved',
+              draft: {
+                headline: member.designation,
+                workEmail: member.email || user?.email,
+                avatarUrl: member.avatarUrl || '',
+                bio: 'Enterprise professional at OneWinq.',
+                about: {
+                  title: `About ${member.name?.trim().split(' ')[0] || 'Member'}`,
+                  introduction: 'Dedicated enterprise professional passionate about driving technology excellence and collaborative growth.',
+                  expertise: `Specialized in ${member.designation}, process optimization, and scalable enterprise execution.`,
+                  experienceSummary: `Proven background in driving impact, cross-functional collaboration, and enterprise digital transformation.`
+                }
+              },
+              published: {
+                headline: member.designation,
+                workEmail: member.email || user?.email,
+                avatarUrl: member.avatarUrl || '',
+                bio: 'Enterprise professional at OneWinq.',
+                about: {
+                  title: `About ${member.name?.trim().split(' ')[0] || 'Member'}`,
+                  introduction: 'Dedicated enterprise professional passionate about driving technology excellence and collaborative growth.',
+                  expertise: `Specialized in ${member.designation}, process optimization, and scalable enterprise execution.`,
+                  experienceSummary: `Proven background in driving impact, cross-functional collaboration, and enterprise digital transformation.`
+                }
+              }
+            });
+            profile = createdProfile;
+          } catch (createErr) {
+            if (createErr.code === 11000 && createErr.keyPattern?.slug) {
+              retries--;
+              slug = await slugService.generateUniqueSlug(candidateName);
+              if (retries === 0) throw createErr;
+            } else {
+              throw createErr;
             }
           }
-        });
+        }
 
-        member.profileId = profile._id;
-        await member.save();
+        if (profile) {
+          member.profileId = profile._id;
+          await member.save();
+        }
       }
     }
     return profile;
@@ -379,14 +394,25 @@ class EmployeeProfileService {
     }
 
     if (updateData.slug && updateData.slug !== profile.slug) {
-      const existing = await EmployeeProfile.findOne({
-        _id: { $ne: profile._id },
-        slug: updateData.slug.toLowerCase()
-      });
-      if (existing) {
-        throw new ConflictError(`The profile URL slug '${updateData.slug}' is already taken.`);
+      const normalizedNewSlug = slugService.normalizeSlug(updateData.slug);
+      if (normalizedNewSlug !== profile.slug) {
+        const availability = await slugService.isSlugAvailable(normalizedNewSlug, profile._id);
+        if (!availability.available) {
+          throw new ConflictError(availability.reason || `The profile URL slug '${updateData.slug}' is not available.`);
+        }
+
+        const oldSlug = profile.slug;
+        if (oldSlug) {
+          // Record old slug into ProfileSlugHistory so all existing QR codes/links redirect permanently
+          await ProfileSlugHistory.findOneAndUpdate(
+            { slug: oldSlug.toLowerCase() },
+            { slug: oldSlug.toLowerCase(), profileId: profile._id },
+            { upsert: true, new: true }
+          );
+        }
+
+        profile.slug = normalizedNewSlug;
       }
-      profile.slug = updateData.slug.toLowerCase();
     }
 
     if (updateData.templateId) {

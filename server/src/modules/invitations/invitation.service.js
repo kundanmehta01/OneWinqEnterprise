@@ -6,6 +6,7 @@ import { TeamMember } from '../team-members/teamMember.model.js';
 import { Role } from '../roles/role.model.js';
 import { Department } from '../departments/department.model.js';
 import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
+import { slugService } from '../employee-profile/slug.service.js';
 import { Template } from '../templates/template.model.js';
 import { templateResolverService } from '../templates/templateResolver.service.js';
 import { templateService } from '../templates/template.service.js';
@@ -221,14 +222,8 @@ class InvitationService {
       const memberCount = await TeamMember.countDocuments();
       const employeeId = `OWQ-${String(memberCount + 1).padStart(3, '0')}`;
 
-      // Generate slug for profile
-      let baseSlug = memberName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-      let slug = baseSlug;
-      let slugCounter = 1;
-      while (await EmployeeProfile.findOne({ slug })) {
-        slug = `${baseSlug}-${slugCounter}`;
-        slugCounter++;
-      }
+      // Generate slug for profile using centralized slug service
+      let slug = await slugService.generateUniqueSlug(memberName);
 
       const defaultTemplate = await templateService.getDefaultTemplate();
 
@@ -265,36 +260,50 @@ class InvitationService {
         assignedTemplate = defaultTemplate;
       }
 
-      // Create EmployeeProfile for existing user
-      const profile = await EmployeeProfile.create({
-        memberId: member._id,
-        userId: existingUser._id,
-        slug,
-        templateId: assignedTemplate._id,
-        templateVersion: assignedTemplate.version || defaultTemplate.version,
-        visibility: 'public',
-        approvalStatus: 'approved',
-        published: {
-          headline: `${invitation.designation} at OneWinq`,
-          bio: '',
-          workEmail: existingUser.email,
-          experience: [],
-          skills: [],
-          projects: [],
-          achievements: [],
-          socialLinks: []
-        },
-        draft: {
-          headline: `${invitation.designation} at OneWinq`,
-          bio: '',
-          workEmail: existingUser.email,
-          experience: [],
-          skills: [],
-          projects: [],
-          achievements: [],
-          socialLinks: []
+      // Create EmployeeProfile for existing user with duplicate key retry
+      let profile = null;
+      let retries = 3;
+      while (retries > 0 && !profile) {
+        try {
+          profile = await EmployeeProfile.create({
+            memberId: member._id,
+            userId: existingUser._id,
+            slug,
+            templateId: assignedTemplate._id,
+            templateVersion: assignedTemplate.version || defaultTemplate.version,
+            visibility: 'public',
+            approvalStatus: 'approved',
+            published: {
+              headline: `${invitation.designation} at OneWinq`,
+              bio: '',
+              workEmail: existingUser.email,
+              experience: [],
+              skills: [],
+              projects: [],
+              achievements: [],
+              socialLinks: []
+            },
+            draft: {
+              headline: `${invitation.designation} at OneWinq`,
+              bio: '',
+              workEmail: existingUser.email,
+              experience: [],
+              skills: [],
+              projects: [],
+              achievements: [],
+              socialLinks: []
+            }
+          });
+        } catch (createErr) {
+          if (createErr.code === 11000 && createErr.keyPattern?.slug) {
+            retries--;
+            slug = await slugService.generateUniqueSlug(memberName);
+            if (retries === 0) throw createErr;
+          } else {
+            throw createErr;
+          }
         }
-      });
+      }
 
       member.profileId = profile._id;
       member.profileCompletionScore = profile.calculateCompletionScore();
@@ -346,14 +355,8 @@ class InvitationService {
     const memberCount = await TeamMember.countDocuments();
     const employeeId = `OWQ-${String(memberCount + 1).padStart(3, '0')}`;
 
-    // Generate base slug
-    let baseSlug = memberName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    let slug = baseSlug;
-    let counter = 1;
-    while (await EmployeeProfile.findOne({ slug })) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
-    }
+    // Generate base slug using centralized slug service
+    let slug = await slugService.generateUniqueSlug(memberName);
 
     // Default template
     const defaultTemplate = await templateService.getDefaultTemplate();
@@ -402,36 +405,50 @@ class InvitationService {
       assignedTemplate = defaultTemplate;
     }
 
-    // 3. Create EmployeeProfile
-    const profile = await EmployeeProfile.create({
-      memberId: member._id,
-      userId: user._id,
-      slug,
-      templateId: assignedTemplate._id,
-      templateVersion: assignedTemplate.version || defaultTemplate.version,
-      visibility: 'public',
-      approvalStatus: 'approved',
-      published: {
-        headline: `${invitation.designation} at OneWinq`,
-        bio: '',
-        workEmail: user.email,
-        experience: [],
-        skills: [],
-        projects: [],
-        achievements: [],
-        socialLinks: []
-      },
-      draft: {
-        headline: `${invitation.designation} at OneWinq`,
-        bio: '',
-        workEmail: user.email,
-        experience: [],
-        skills: [],
-        projects: [],
-        achievements: [],
-        socialLinks: []
+    // 3. Create EmployeeProfile with duplicate key retry
+    let profile = null;
+    let createRetries = 3;
+    while (createRetries > 0 && !profile) {
+      try {
+        profile = await EmployeeProfile.create({
+          memberId: member._id,
+          userId: user._id,
+          slug,
+          templateId: assignedTemplate._id,
+          templateVersion: assignedTemplate.version || defaultTemplate.version,
+          visibility: 'public',
+          approvalStatus: 'approved',
+          published: {
+            headline: `${invitation.designation} at OneWinq`,
+            bio: '',
+            workEmail: user.email,
+            experience: [],
+            skills: [],
+            projects: [],
+            achievements: [],
+            socialLinks: []
+          },
+          draft: {
+            headline: `${invitation.designation} at OneWinq`,
+            bio: '',
+            workEmail: user.email,
+            experience: [],
+            skills: [],
+            projects: [],
+            achievements: [],
+            socialLinks: []
+          }
+        });
+      } catch (createErr) {
+        if (createErr.code === 11000 && createErr.keyPattern?.slug) {
+          createRetries--;
+          slug = await slugService.generateUniqueSlug(memberName);
+          if (createRetries === 0) throw createErr;
+        } else {
+          throw createErr;
+        }
       }
-    });
+    }
 
     // 4. Link profile to member
     member.profileId = profile._id;

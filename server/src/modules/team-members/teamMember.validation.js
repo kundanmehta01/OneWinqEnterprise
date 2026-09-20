@@ -9,7 +9,8 @@ export const createTeamMemberSchema = z.object({
   departmentId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Department ID').optional().nullable().or(z.literal('')),
   roleId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Role ID').optional().or(z.literal('')),
   joiningDate: z.string().datetime().optional().nullable().or(z.date().optional()),
-  status: z.enum(['active', 'inactive', 'suspended']).default('active')
+  status: z.enum(['active', 'inactive', 'suspended']).default('active'),
+  slug: z.string().min(2, 'Slug must be at least 2 characters').max(100, 'Slug cannot exceed 100 characters').regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase alphanumeric characters and hyphens').optional().or(z.literal(''))
 });
 
 export const updateTeamMemberSchema = z.object({
@@ -19,7 +20,8 @@ export const updateTeamMemberSchema = z.object({
   departmentId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Department ID').optional().nullable().or(z.literal('')),
   roleId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid Role ID').optional().or(z.literal('')),
   joiningDate: z.string().datetime().optional().nullable().or(z.date().optional()),
-  status: z.enum(['active', 'inactive', 'suspended', 'archived']).optional()
+  status: z.enum(['active', 'inactive', 'suspended', 'archived']).optional(),
+  slug: z.string().min(2, 'Slug must be at least 2 characters').max(100, 'Slug cannot exceed 100 characters').regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase alphanumeric characters and hyphens').optional().or(z.literal(''))
 });
 
 export const teamMemberIdParamSchema = z.object({

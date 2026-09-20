@@ -20,5 +20,9 @@ export const teamApi = {
   delete: async (id) => {
     const res = await api.delete(`/admin/team/${id}`);
     return res.data;
+  },
+  checkSlugAvailability: async (slug, memberId = null) => {
+    const res = await api.get('/admin/team/check-slug', { params: { slug, memberId } });
+    return res.data;
   }
 };

@@ -86,6 +86,12 @@ export const EmployeeSelfProfilePage = () => {
   const [toastMessage, setToastMessage] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Profile URL & Vanity Handle State
+  const [customSlug, setCustomSlug] = useState('');
+  const [slugChecking, setSlugChecking] = useState(false);
+  const [slugStatus, setSlugStatus] = useState(null);
+  const [isSavingSlug, setIsSavingSlug] = useState(false);
+
   const PROFILE_TABS = [
     { id: 'identity', label: 'Identity & Stats', icon: User },
     { id: 'about', label: 'About & Bio', icon: FileText },
@@ -324,7 +330,60 @@ export const EmployeeSelfProfilePage = () => {
         achievements: draft.achievements?.length ? draft.achievements : published.achievements || []
       });
     }
+    if (profileData?.slug) {
+      setCustomSlug(profileData.slug);
+    }
   }, [profileData]);
+
+  // Debounced availability check for vanity slug
+  useEffect(() => {
+    if (!customSlug || customSlug === profileData?.slug) {
+      setSlugStatus(null);
+      setSlugChecking(false);
+      return;
+    }
+
+    setSlugChecking(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await userProfileApi.checkSlugAvailability(customSlug);
+        const data = res?.data || res;
+        setSlugStatus(data);
+      } catch (err) {
+        setSlugStatus({
+          available: false,
+          reason: err.response?.data?.error?.message || err.message || 'Error checking availability'
+        });
+      } finally {
+        setSlugChecking(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [customSlug, profileData?.slug]);
+
+  const handleSaveSlug = async () => {
+    if (!customSlug || customSlug === profileData?.slug) return;
+    setIsSavingSlug(true);
+    try {
+      await userProfileApi.updateMyDraft({ slug: customSlug });
+      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+      setToastMessage({
+        type: 'success',
+        title: 'Profile URL Updated!',
+        description: `Your profile is now live at /p/${customSlug}. Old links and QR codes will automatically redirect.`
+      });
+      setSlugStatus(null);
+    } catch (err) {
+      setToastMessage({
+        type: 'error',
+        title: 'Failed to update handle',
+        description: err.response?.data?.message || err.message || 'Handle is not available.'
+      });
+    } finally {
+      setIsSavingSlug(false);
+    }
+  };
 
   // QR Code query
   const slug = profileData?.slug;
@@ -1171,6 +1230,88 @@ END:VCARD`;
               <h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
                 Profile Identity & Media
               </h2>
+
+              {/* Profile URL & Vanity Handle Card */}
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-50/60 via-slate-50 to-indigo-50/40 border border-purple-100/80 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-purple-600" />
+                      Public Profile URL & Vanity Handle
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Personalize your public digital identity. Used for NFC business cards, QR codes, and sharing.
+                    </p>
+                  </div>
+                  {profileData?.slug && (
+                    <a
+                      href={`/p/${profileData.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-purple-700 bg-purple-100/70 hover:bg-purple-100 rounded-lg transition-colors shrink-0"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Live /p/{profileData.slug}</span>
+                    </a>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="flex-1 flex items-center bg-white border border-slate-200 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-600 transition-all">
+                    <span className="text-slate-400 text-xs font-mono select-none">
+                      {window.location.host}/p/
+                    </span>
+                    <input
+                      type="text"
+                      value={customSlug}
+                      onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                      placeholder="your-vanity-name"
+                      className="flex-1 text-xs font-mono font-medium text-slate-900 outline-none bg-transparent px-1"
+                    />
+                    {slugChecking && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600 shrink-0" />
+                    )}
+                    {!slugChecking && slugStatus?.available && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md shrink-0">
+                        <Check className="w-3 h-3" /> Available
+                      </span>
+                    )}
+                    {!slugChecking && slugStatus && !slugStatus.available && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded-md shrink-0">
+                        <AlertCircle className="w-3 h-3" /> Taken
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleSaveSlug}
+                    disabled={
+                      isSavingSlug ||
+                      slugChecking ||
+                      !customSlug ||
+                      customSlug === profileData?.slug ||
+                      (slugStatus && !slugStatus.available)
+                    }
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-sm transition-all shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    {isSavingSlug ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    <span>Save URL</span>
+                  </button>
+                </div>
+
+                {slugStatus && !slugStatus.available && (
+                  <p className="text-[11px] text-rose-600 font-medium">
+                    {slugStatus.reason || 'This handle is not available.'}
+                  </p>
+                )}
+
+                <div className="pt-2 border-t border-purple-100/60 flex items-center gap-2 text-[11px] text-slate-500">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>
+                    <strong>Zero-breakage redirect:</strong> Changing your handle permanently protects your previous link — existing QR codes, NFC cards, and bookmarks automatically redirect to your new URL.
+                  </span>
+                </div>
+              </div>
 
               {/* Avatar Upload */}
               <div className="space-y-2">

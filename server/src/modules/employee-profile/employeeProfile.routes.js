@@ -27,5 +27,6 @@ router.post(
 );
 
 router.get('/status', employeeProfileController.getMyApprovalStatus.bind(employeeProfileController));
+router.get('/check-slug', employeeProfileController.checkSlugAvailability.bind(employeeProfileController));
 
 export const employeeProfileRoutes = router;

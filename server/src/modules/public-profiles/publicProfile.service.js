@@ -1,4 +1,5 @@
 import { EmployeeProfile } from '../employee-profile/employeeProfile.model.js';
+import { ProfileSlugHistory } from '../employee-profile/profileSlugHistory.model.js';
 import { TeamMember } from '../team-members/teamMember.model.js';
 import { templateResolverService } from '../templates/templateResolver.service.js';
 import { CompanyProfile } from '../company-profile/companyProfile.model.js';
@@ -44,24 +45,82 @@ class PublicProfileService {
   }
 
   async getPublicProfileBySlug(slug, clientContext = {}) {
-    const profile = await EmployeeProfile.findOne({
-      slug: slug.toLowerCase(),
-      visibility: 'public'
-    })
-      .populate({
+    const rawIdentifier = (slug || '').trim();
+    if (!rawIdentifier) {
+      throw new NotFoundError('Profile identifier is required.', ERROR_CODES.PROFILE_NOT_FOUND);
+    }
+
+    const normalizedSlug = rawIdentifier.toLowerCase();
+    let isRedirect = false;
+    let canonicalSlug = null;
+
+    const populateOpts = [
+      {
         path: 'memberId',
-        match: { status: 'active', isArchived: false },
+        match: { status: 'active', isArchived: false, isDeleted: { $ne: true } },
         select: 'name employeeId designation departmentId roleId joiningDate',
         populate: [
           { path: 'departmentId', select: 'name slug description templateId', populate: { path: 'templateId' } },
           { path: 'roleId', select: 'name slug permissions isSystem' }
         ]
-      })
-      .populate('templateId')
+      },
+      { path: 'templateId' }
+    ];
+
+    // 1. Resolve by current active slug
+    let profile = await EmployeeProfile.findOne({
+      slug: normalizedSlug,
+      visibility: 'public'
+    })
+      .populate(populateOpts)
       .lean();
 
+    // 2. Resolve by historical slug (for old QR codes, NFC cards, shared links)
     if (!profile || !profile.memberId) {
-      throw new NotFoundError(`Public profile '${slug}' not found or is private.`, ERROR_CODES.PROFILE_NOT_FOUND);
+      const historyRecord = await ProfileSlugHistory.findOne({ slug: normalizedSlug }).lean();
+      if (historyRecord?.profileId) {
+        const histProfile = await EmployeeProfile.findOne({
+          _id: historyRecord.profileId,
+          visibility: 'public'
+        })
+          .populate(populateOpts)
+          .lean();
+
+        if (histProfile && histProfile.memberId) {
+          profile = histProfile;
+          isRedirect = true;
+          canonicalSlug = profile.slug;
+        }
+      }
+    }
+
+    // 3. Resolve by active employeeId (e.g. OWQ-001) as an alternative identifier
+    if (!profile || !profile.memberId) {
+      const member = await TeamMember.findOne({
+        employeeId: rawIdentifier.toUpperCase(),
+        status: 'active',
+        isArchived: false,
+        isDeleted: { $ne: true }
+      }).select('_id profileId').lean();
+
+      if (member) {
+        const empProfile = await EmployeeProfile.findOne({
+          $or: [{ memberId: member._id }, { _id: member.profileId }],
+          visibility: 'public'
+        })
+          .populate(populateOpts)
+          .lean();
+
+        if (empProfile && empProfile.memberId) {
+          profile = empProfile;
+          isRedirect = true;
+          canonicalSlug = profile.slug;
+        }
+      }
+    }
+
+    if (!profile || !profile.memberId) {
+      throw new NotFoundError(`Public profile '${rawIdentifier}' not found or is private.`, ERROR_CODES.PROFILE_NOT_FOUND);
     }
 
     const publicUrl = `${env.PUBLIC_PROFILE_BASE_URL}/${profile.slug}`;
@@ -444,15 +503,42 @@ class PublicProfileService {
         themeOverrides: profile.themeOverrides
       },
       qrCode: qrCodeDataUrl,
-      publicUrl
+      publicUrl,
+      isRedirect,
+      canonicalSlug: canonicalSlug || profile.slug,
+      redirectUrl: `/p/${profile.slug}`
     };
   }
 
   async getQrCodeForSlug(slug, format = 'dataUrl') {
-    const profile = await EmployeeProfile.findOne({
-      slug: slug.toLowerCase(),
+    const rawIdentifier = (slug || '').trim();
+    const normalizedSlug = rawIdentifier.toLowerCase();
+
+    let profile = await EmployeeProfile.findOne({
+      slug: normalizedSlug,
       visibility: 'public'
     }).lean();
+
+    if (!profile) {
+      const historyRecord = await ProfileSlugHistory.findOne({ slug: normalizedSlug }).lean();
+      if (historyRecord?.profileId) {
+        profile = await EmployeeProfile.findOne({ _id: historyRecord.profileId, visibility: 'public' }).lean();
+      }
+    }
+
+    if (!profile) {
+      const member = await TeamMember.findOne({
+        employeeId: rawIdentifier.toUpperCase(),
+        status: 'active'
+      }).select('_id profileId').lean();
+
+      if (member) {
+        profile = await EmployeeProfile.findOne({
+          $or: [{ memberId: member._id }, { _id: member.profileId }],
+          visibility: 'public'
+        }).lean();
+      }
+    }
 
     if (!profile) {
       throw new NotFoundError(`Profile '${slug}' not found`, ERROR_CODES.PROFILE_NOT_FOUND);

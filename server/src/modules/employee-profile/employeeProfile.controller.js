@@ -1,4 +1,6 @@
 import { employeeProfileService } from './employeeProfile.service.js';
+import { slugService } from './slug.service.js';
+import { EmployeeProfile } from './employeeProfile.model.js';
 import { ApiResponse } from '../../utils/apiResponse.util.js';
 
 export class EmployeeProfileController {
@@ -82,6 +84,17 @@ export class EmployeeProfileController {
     try {
       const profile = await employeeProfileService.getProfileByMemberId(req.params.memberId);
       return ApiResponse.success(res, { data: profile });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async checkSlugAvailability(req, res, next) {
+    try {
+      const { slug } = req.query;
+      const profile = await EmployeeProfile.findOne({ userId: req.user._id }).select('_id').lean();
+      const result = await slugService.checkAvailabilityWithDetails(slug, profile?._id);
+      return ApiResponse.success(res, { data: result });
     } catch (error) {
       next(error);
     }

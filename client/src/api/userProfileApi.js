@@ -22,6 +22,11 @@ export const userProfileApi = {
     return res.data || res;
   },
 
+  checkSlugAvailability: async (slug) => {
+    const res = await api.get('/me/profile/check-slug', { params: { slug } });
+    return res.data || res;
+  },
+
   getMyDashboard: async () => {
     const res = await api.get('/me/dashboard');
     return res.data || res;

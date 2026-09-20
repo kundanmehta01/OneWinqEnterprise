@@ -34,6 +34,12 @@ router.get(
 );
 
 router.get(
+  '/check-slug',
+  requirePermission(PERMISSIONS.TEAM_READ),
+  teamMemberController.checkSlugAvailability.bind(teamMemberController)
+);
+
+router.get(
   '/:id',
   requirePermission(PERMISSIONS.TEAM_READ),
   validate({ params: teamMemberIdParamSchema }),

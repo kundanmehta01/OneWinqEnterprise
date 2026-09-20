@@ -1,4 +1,6 @@
 import { teamMemberService } from './teamMember.service.js';
+import { TeamMember } from './teamMember.model.js';
+import { slugService } from '../employee-profile/slug.service.js';
 import { ApiResponse } from '../../utils/apiResponse.util.js';
 
 export class TeamMemberController {
@@ -97,6 +99,23 @@ export class TeamMemberController {
         message: 'Team member restored successfully',
         data: member
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async checkSlugAvailability(req, res, next) {
+    try {
+      const { slug, memberId } = req.query;
+      let excludeProfileId = null;
+      if (memberId) {
+        const member = await TeamMember.findById(memberId).select('profileId').lean();
+        if (member?.profileId) {
+          excludeProfileId = member.profileId;
+        }
+      }
+      const result = await slugService.checkAvailabilityWithDetails(slug, excludeProfileId);
+      return ApiResponse.success(res, { data: result });
     } catch (error) {
       next(error);
     }

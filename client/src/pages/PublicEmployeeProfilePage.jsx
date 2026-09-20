@@ -70,6 +70,12 @@ export const PublicEmployeeProfilePage = () => {
   }, [slug]);
 
   useEffect(() => {
+    if (profile?.isRedirect && profile?.canonicalSlug && profile.canonicalSlug.toLowerCase() !== (slug || '').toLowerCase()) {
+      navigate(`/p/${profile.canonicalSlug}`, { replace: true });
+    }
+  }, [profile, slug, navigate]);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
