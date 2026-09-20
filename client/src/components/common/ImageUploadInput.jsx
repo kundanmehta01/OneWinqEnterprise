@@ -35,8 +35,10 @@ export const ImageUploadInput = ({
     }
 
     // Validate type
+    const ext = '.' + (file.name?.split('.').pop() || '').toLowerCase();
+    const validExts = ['.jpeg', '.jpg', '.png', '.webp', '.svg', '.gif'];
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
+    if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
       setUploadError('Unsupported format. Please upload JPG, PNG, WEBP, or SVG.');
       return;
     }
@@ -51,9 +53,7 @@ export const ImageUploadInput = ({
       formData.append('entityType', entityType);
 
       setUploadProgress(50);
-      const res = await api.post('/admin/media/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await api.post('/admin/media/upload', formData);
       setUploadProgress(90);
 
       const uploadedUrl = res?.data?.data?.url || res?.data?.url || res?.url || (typeof res === 'string' ? res : null);

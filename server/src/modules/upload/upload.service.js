@@ -14,8 +14,35 @@ const ALLOWED_MIME_TYPES = new Set([
   'video/mp4',
   'video/webm',
   'video/ogg',
-  'video/quicktime'
+  'video/quicktime',
+  'video/x-m4v',
+  'video/m4v',
+  'video/x-matroska',
+  'video/x-msvideo',
+  'video/3gpp',
+  'video/mpeg'
 ]);
+
+const EXT_MIME_MAP = {
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
+  '.webm': 'video/webm',
+  '.ogg': 'video/ogg',
+  '.ogv': 'video/ogg',
+  '.mov': 'video/quicktime',
+  '.mkv': 'video/x-matroska',
+  '.avi': 'video/x-msvideo',
+  '.3gp': 'video/3gpp',
+  '.mpg': 'video/mpeg',
+  '.mpeg': 'video/mpeg',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.gif': 'image/gif',
+  '.pdf': 'application/pdf'
+};
 
 class UploadService {
   async uploadFile({ file, entityType = 'general' }) {
@@ -23,8 +50,14 @@ class UploadService {
       throw new BadRequestError('No file buffer provided', ERROR_CODES.FILE_UPLOAD_FAILED);
     }
 
+    // Fallback: If browser or OS sent application/octet-stream or empty mime type, detect from extension
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    if ((!file.mimetype || file.mimetype === 'application/octet-stream' || !ALLOWED_MIME_TYPES.has(file.mimetype)) && EXT_MIME_MAP[ext]) {
+      file.mimetype = EXT_MIME_MAP[ext];
+    }
+
     if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      throw new BadRequestError(`Unsupported file type: ${file.mimetype}. Allowed types: JPEG, PNG, WEBP, SVG, GIF, PDF, MP4, WEBM, OGG, MOV`, ERROR_CODES.UNSUPPORTED_FILE_TYPE);
+      throw new BadRequestError(`Unsupported file type: ${file.mimetype}. Allowed types: JPEG, PNG, WEBP, SVG, GIF, PDF, MP4, WEBM, OGG, MOV, MKV, AVI`, ERROR_CODES.UNSUPPORTED_FILE_TYPE);
     }
 
     const maxSizeBytes = 50 * 1024 * 1024; // 50MB
@@ -32,8 +65,8 @@ class UploadService {
       throw new BadRequestError('File size exceeds maximum limit of 50MB', ERROR_CODES.FILE_SIZE_EXCEEDED);
     }
 
-    const ext = path.extname(file.originalname).toLowerCase() || '.bin';
-    const uniqueFilename = `${uuidv4()}${ext}`;
+    const fileExtension = ext || '.bin';
+    const uniqueFilename = `${uuidv4()}${fileExtension}`;
 
     try {
       const uploadResult = await storageService.uploadFile({

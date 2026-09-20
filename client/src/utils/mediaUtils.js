@@ -61,17 +61,42 @@ export const getEmbedInfo = (url) => {
   }
 
   // 3. Direct video files or Cloudinary video uploads
-  const isDirectVideo = /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(s) || /\/video\/upload\//i.test(s);
+  const isDirectVideo = /\.(mp4|webm|ogg|mov|m4v|mkv|avi)(\?.*)?$/i.test(s) || /\/video\/upload\//i.test(s);
   if (isDirectVideo) {
+    let thumbnailUrl = '';
+    if (/res\.cloudinary\.com/i.test(s) && /\/video\/upload\//i.test(s)) {
+      thumbnailUrl = s.replace(/\/video\/upload\/(?:v\d+\/)?/, '/video/upload/so_0/').replace(/\.[^/.]+$/, '.jpg');
+    }
     return {
       type: 'direct',
       id: s,
       embedUrl: s,
-      thumbnailUrl: ''
+      thumbnailUrl
     };
   }
 
   return null;
+};
+
+/**
+ * Detects if a URL is an uploaded media asset (local /uploads/, Cloudinary, S3, or blob/data).
+ * @param {string} url
+ * @returns {boolean}
+ */
+export const isUploadedMedia = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  const s = url.trim().toLowerCase();
+  return (
+    s.includes('/uploads/') ||
+    s.includes('/video/upload/') ||
+    s.includes('/image/upload/') ||
+    s.startsWith('blob:') ||
+    s.startsWith('data:') ||
+    s.includes('cloudinary.com') ||
+    s.includes('amazonaws.com') ||
+    s.includes('storage.googleapis.com') ||
+    s.includes('digitaloceanspaces.com')
+  );
 };
 
 /**
@@ -84,7 +109,7 @@ export const getMediaThumbnail = (item) => {
   if (item.thumbnailUrl && item.thumbnailUrl.trim()) {
     // If thumbnailUrl was incorrectly saved as a raw video URL or YouTube page, don't use it as an image src
     const rawThumb = item.thumbnailUrl.trim();
-    if (!/youtube\.com\/watch|youtu\.be\/|\.mp4$|\.webm$/i.test(rawThumb)) {
+    if (!/youtube\.com\/watch|youtu\.be\/|\.mp4$|\.webm$|\.mov$|\.m4v$/i.test(rawThumb)) {
       return rawThumb;
     }
   }

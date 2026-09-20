@@ -11,9 +11,9 @@ import {
   Play
 } from 'lucide-react';
 import api from '../../api/axios';
-import { getEmbedInfo, normalizeMediaUrl } from '../../utils/mediaUtils';
+import { getEmbedInfo, normalizeMediaUrl, isUploadedMedia } from '../../utils/mediaUtils';
 
-export { getEmbedInfo, normalizeMediaUrl };
+export { getEmbedInfo, normalizeMediaUrl, isUploadedMedia };
 
 export const MediaUploadInput = ({
   mediaType = 'photo', // 'photo' | 'video'
@@ -27,9 +27,7 @@ export const MediaUploadInput = ({
 }) => {
   const fileInputRef = useRef(null);
   
-  // Detect if current value is an uploaded file or direct web URL
-  const isUploaded = (val) => Boolean(val && (val.includes('/uploads/') || val.startsWith('blob:')));
-  const [internalMode, setInternalMode] = useState(() => (isUploaded(value) ? 'upload' : (value ? 'url' : 'upload')));
+  const [internalMode, setInternalMode] = useState(() => (isUploadedMedia(value) ? 'upload' : (value ? 'url' : 'upload')));
   const mode = forcedMode || internalMode;
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -62,9 +60,22 @@ export const MediaUploadInput = ({
         setUploadError('Video file size exceeds 50MB limit.');
         return;
       }
-      const validVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
-      if (!validVideoTypes.includes(file.type)) {
-        setUploadError('Unsupported video format. Please upload MP4, WEBM, OGG, or MOV.');
+      const ext = '.' + (file.name?.split('.').pop() || '').toLowerCase();
+      const validExts = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.m4v', '.mkv', '.avi'];
+      const validVideoTypes = [
+        'video/mp4',
+        'video/webm',
+        'video/ogg',
+        'video/quicktime',
+        'video/x-m4v',
+        'video/m4v',
+        'video/x-matroska',
+        'video/x-msvideo',
+        'video/3gpp',
+        'video/mpeg'
+      ];
+      if (!validVideoTypes.includes(file.type) && !validExts.includes(ext)) {
+        setUploadError('Unsupported video format. Please upload MP4, WEBM, MOV, or M4V.');
         return;
       }
     } else {
@@ -73,8 +84,10 @@ export const MediaUploadInput = ({
         setUploadError('Image file size exceeds 10MB limit.');
         return;
       }
+      const ext = '.' + (file.name?.split('.').pop() || '').toLowerCase();
+      const validExts = ['.jpeg', '.jpg', '.png', '.webp', '.svg', '.gif'];
       const validImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/gif'];
-      if (!validImageTypes.includes(file.type)) {
+      if (!validImageTypes.includes(file.type) && !validExts.includes(ext)) {
         setUploadError('Unsupported image format. Please upload JPG, PNG, WEBP, or SVG.');
         return;
       }
@@ -90,9 +103,7 @@ export const MediaUploadInput = ({
       formData.append('entityType', entityType);
 
       setUploadProgress(50);
-      const res = await api.post('/admin/media/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await api.post('/admin/media/upload', formData);
       setUploadProgress(90);
 
       const uploadedUrl = res?.data?.data?.url || res?.data?.url || res?.url || (typeof res === 'string' ? res : null);
@@ -137,6 +148,7 @@ export const MediaUploadInput = ({
   };
 
   const embedInfo = isVideo ? getEmbedInfo(value) : null;
+  const isEmbed = embedInfo?.type === 'youtube' || embedInfo?.type === 'vimeo';
 
   return (
     <div className="space-y-2.5">
@@ -198,7 +210,7 @@ export const MediaUploadInput = ({
             type="file"
             accept={
               isVideo
-                ? 'video/mp4,video/webm,video/ogg,video/quicktime'
+                ? 'video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v,video/m4v,video/x-matroska,video/x-msvideo'
                 : 'image/png,image/jpeg,image/webp,image/svg+xml,image/gif'
             }
             className="hidden"
@@ -215,7 +227,7 @@ export const MediaUploadInput = ({
               {/* Preview Box */}
               <div className="relative overflow-hidden rounded-xl bg-slate-900 border border-slate-200 shrink-0 w-full sm:w-28 h-24 flex items-center justify-center">
                 {isVideo ? (
-                  embedInfo ? (
+                  isEmbed ? (
                     <iframe
                       src={embedInfo.embedUrl}
                       title="Video preview"
@@ -227,6 +239,7 @@ export const MediaUploadInput = ({
                       className="w-full h-full object-cover"
                       muted
                       preload="metadata"
+                      playsInline
                     />
                   )
                 ) : (
@@ -352,7 +365,7 @@ export const MediaUploadInput = ({
           {value && (
             <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-slate-900 max-w-sm h-32 relative flex items-center justify-center">
               {isVideo ? (
-                embedInfo ? (
+                isEmbed ? (
                   <iframe
                     src={embedInfo.embedUrl}
                     title="Video Preview"
@@ -360,7 +373,7 @@ export const MediaUploadInput = ({
                     allowFullScreen
                   />
                 ) : (
-                  <video src={value} controls className="w-full h-full object-contain" />
+                  <video src={value} controls playsInline preload="metadata" className="w-full h-full object-contain" />
                 )
               ) : (
                 <img

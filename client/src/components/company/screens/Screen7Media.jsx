@@ -100,9 +100,11 @@ export const Screen7Media = ({
           {filteredList.map((item, idx) => {
             const isVideo = item.type === 'video';
             const displayThumb = getMediaThumbnail(item);
+            const realIdx = list.indexOf(item);
+            const targetIdx = realIdx !== -1 ? realIdx : idx;
             return (
               <div
-                key={item._id || idx}
+                key={item._id || targetIdx}
                 className="clean-card rounded-3xl overflow-hidden bg-white border border-slate-100 flex flex-col justify-between group shadow-2xs relative"
               >
                 <div
@@ -151,7 +153,7 @@ export const Screen7Media = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setModalItemIdx(idx);
+                            setModalItemIdx(targetIdx);
                           }}
                           className="bg-black/70 hover:bg-purple-600 text-white p-1.5 rounded-full transition-colors cursor-pointer shadow-md"
                           title="Upload / Change Media File"
@@ -162,7 +164,7 @@ export const Screen7Media = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onRemoveArrayItem('mediaGallery', idx);
+                            onRemoveArrayItem('mediaGallery', targetIdx);
                           }}
                           className="bg-black/70 hover:bg-rose-600 text-white p-1.5 rounded-full transition-colors cursor-pointer shadow-md"
                           title="Remove Media"
@@ -180,14 +182,14 @@ export const Screen7Media = ({
                       <input
                         type="text"
                         value={item.title || ''}
-                        onChange={(e) => onUpdateArrayItem('mediaGallery', idx, { title: e.target.value })}
+                        onChange={(e) => onUpdateArrayItem('mediaGallery', targetIdx, { title: e.target.value })}
                         placeholder="Media Title"
                         className="w-full text-sm font-bold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 outline-none"
                       />
                       <textarea
                         rows={2}
                         value={item.description || ''}
-                        onChange={(e) => onUpdateArrayItem('mediaGallery', idx, { description: e.target.value })}
+                        onChange={(e) => onUpdateArrayItem('mediaGallery', targetIdx, { description: e.target.value })}
                         placeholder="Description / Caption..."
                         className="w-full text-xs text-slate-600 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200 outline-none resize-none"
                       />
@@ -196,7 +198,7 @@ export const Screen7Media = ({
                           value={item.type || 'photo'}
                           onChange={(e) => {
                             const newType = e.target.value;
-                            onUpdateArrayItem('mediaGallery', idx, { type: newType });
+                            onUpdateArrayItem('mediaGallery', targetIdx, { type: newType });
                           }}
                           className="w-full text-xs bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 outline-none"
                         >
@@ -206,7 +208,7 @@ export const Screen7Media = ({
                         </select>
                         <button
                           type="button"
-                          onClick={() => setModalItemIdx(idx)}
+                          onClick={() => setModalItemIdx(targetIdx)}
                           className="w-full py-1 px-2.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-semibold flex items-center justify-center gap-1.5 border border-purple-200 transition-colors cursor-pointer truncate"
                         >
                           <UploadCloud className="w-3.5 h-3.5 shrink-0" />

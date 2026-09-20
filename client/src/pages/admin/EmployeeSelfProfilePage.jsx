@@ -32,7 +32,7 @@ import { userProfileApi } from '../../api/userProfileApi';
 import { useAuthStore } from '../../stores/authStore';
 import { ImageUploadInput } from '../../components/common/ImageUploadInput';
 import { MediaUploadInput } from '../../components/common/MediaUploadInput';
-import { getEmbedInfo, normalizeMediaUrl } from '../../utils/mediaUtils';
+import { getEmbedInfo, normalizeMediaUrl, isUploadedMedia } from '../../utils/mediaUtils';
 import { TemplateRenderer } from '../../components/templates/TemplateRenderer';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 import { MonthYearCalendarPicker } from '../../components/common/MonthYearCalendarPicker';
@@ -1766,8 +1766,8 @@ END:VCARD`;
                             value={
                               m.mediaOption ||
                               (m.type === 'video'
-                                ? (m.url?.includes('/uploads/') ? 'video_upload' : 'video_url')
-                                : (m.url?.includes('/uploads/') ? 'photo_upload' : 'photo_url'))
+                                ? (isUploadedMedia(m.url) ? 'video_upload' : 'video_url')
+                                : (isUploadedMedia(m.url) ? 'photo_upload' : 'photo_url'))
                             }
                             onChange={(e) => handleMediaOptionChange(mIdx, e.target.value)}
                             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs cursor-pointer"

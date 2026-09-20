@@ -40,7 +40,8 @@ export class CloudinaryStorageProvider {
         const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
 
         const isRawType = mimeType === 'application/pdf' || mimeType.startsWith('application/');
-        const resourceType = isRawType ? 'raw' : 'auto';
+        const isVideo = mimeType.startsWith('video/');
+        const resourceType = isRawType ? 'raw' : (isVideo ? 'video' : 'auto');
 
         const uploadStream = cloudinary.uploader.upload_stream(
           {
@@ -49,7 +50,8 @@ export class CloudinaryStorageProvider {
             resource_type: resourceType,
             use_filename: true,
             unique_filename: false,
-            overwrite: true
+            overwrite: true,
+            chunk_size: isVideo ? 6000000 : undefined
           },
           (error, result) => {
             if (error) {
@@ -93,7 +95,12 @@ export class CloudinaryStorageProvider {
       // First attempt deleting as image/auto
       let result = await cloudinary.uploader.destroy(key);
       
-      // If not found as image, attempt raw deletion (for PDFs/documents)
+      // If not found as image, attempt video deletion
+      if (result.result !== 'ok') {
+        result = await cloudinary.uploader.destroy(key, { resource_type: 'video' });
+      }
+
+      // If not found as video, attempt raw deletion (for PDFs/documents)
       if (result.result !== 'ok') {
         result = await cloudinary.uploader.destroy(key, { resource_type: 'raw' });
       }
